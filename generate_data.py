@@ -15,6 +15,12 @@ LEAGUES = [
     {"id": "I1", "name": "意甲", "source_name": "Italy Serie A"},
     {"id": "D1", "name": "德甲", "source_name": "Germany Bundesliga"},
     {"id": "F1", "name": "法甲", "source_name": "France Ligue 1"},
+    {"id": "N1", "name": "荷甲", "source_name": "Netherlands Eredivisie"},
+    {"id": "P1", "name": "葡超", "source_name": "Portugal Liga Portugal"},
+    {"id": "B1", "name": "比甲", "source_name": "Belgium Pro League"},
+    {"id": "SC0", "name": "苏超", "source_name": "Scottish Premiership"},
+    {"id": "T1", "name": "土超", "source_name": "Turkey Super Lig"},
+    {"id": "G1", "name": "希腊超", "source_name": "Greece Super League"},
 ]
 USER_AGENT = "poisson-football-lab/1.0 (+https://github.com/shanyan0820/poisson-football)"
 
@@ -58,6 +64,45 @@ TEAM_ZH = {
     "Marseille": "马赛", "Monaco": "摩纳哥", "Nice": "尼斯",
     "Paris FC": "巴黎FC", "Paris SG": "巴黎圣日耳曼", "Rennes": "雷恩",
     "Strasbourg": "斯特拉斯堡", "Toulouse": "图卢兹", "Troyes": "特鲁瓦",
+    # 荷甲
+    "AZ Alkmaar": "阿尔克马尔", "Ajax": "阿贾克斯", "Cambuur": "坎布尔",
+    "Den Haag": "海牙", "Excelsior": "鹿特丹精英", "Feyenoord": "费耶诺德",
+    "For Sittard": "福图纳锡塔德", "Go Ahead Eagles": "前进之鹰", "Groningen": "格罗宁根",
+    "Heerenveen": "海伦芬", "Nijmegen": "奈梅亨", "PSV Eindhoven": "PSV埃因霍温",
+    "Sparta Rotterdam": "鹿特丹斯巴达", "Telstar": "特尔斯达", "Twente": "特温特",
+    "Utrecht": "乌德勒支", "Willem II": "威廉二世", "Zwolle": "兹沃勒",
+    # 葡超
+    "Academico Viseu": "维塞乌学院", "Alverca": "阿尔韦卡", "Arouca": "阿罗卡",
+    "Benfica": "本菲卡", "Casa Pia": "卡萨皮亚", "Estoril": "埃斯托里尔",
+    "Estrela": "阿马多拉之星", "Famalicao": "法马利康", "Gil Vicente": "吉尔维森特",
+    "Guimaraes": "吉马良斯", "Maritimo": "马里迪莫", "Moreirense": "莫雷拉人",
+    "Nacional": "葡萄牙国民", "Porto": "波尔图", "Rio Ave": "里奥阿维",
+    "Santa Clara": "圣克拉拉", "Sp Braga": "布拉加", "Sp Lisbon": "葡萄牙体育",
+    # 比甲
+    "Anderlecht": "安德莱赫特", "Antwerp": "安特卫普", "Beveren": "贝弗伦",
+    "Cercle Brugge": "色格拉布鲁日", "Charleroi": "沙勒罗瓦", "Club Brugge": "布鲁日",
+    "Genk": "亨克", "Gent": "根特", "Kortrijk": "科特赖克",
+    "Lommel SK": "洛默尔", "Mechelen": "梅赫伦", "Oud-Heverlee Leuven": "鲁汶",
+    "RAAL La Louviere": "拉卢维耶尔", "St Truiden": "圣图尔登", "St. Gilloise": "圣吉罗斯联合",
+    "Standard": "标准列日", "Waregem": "聚尔特瓦雷赫姆", "Westerlo": "韦斯特洛",
+    # 苏超
+    "Aberdeen": "阿伯丁", "Celtic": "凯尔特人", "Dundee": "邓迪",
+    "Dundee United": "邓迪联", "Falkirk": "福尔柯克", "Hearts": "哈茨",
+    "Hibernian": "希伯尼安", "Kilmarnock": "基尔马诺克", "Motherwell": "马瑟韦尔",
+    "Rangers": "格拉斯哥流浪者", "St Johnstone": "圣约翰斯通", "St Mirren": "圣米伦",
+    # 土超
+    "Alanyaspor": "阿兰亚体育", "Amedspor": "阿梅德体育", "Besiktas": "贝西克塔斯",
+    "Buyuksehyr": "巴萨克赛尔", "Corum": "科鲁姆", "Erzurumspor": "埃尔祖鲁姆体育",
+    "Eyupspor": "埃于普体育", "Fenerbahce": "费内巴切", "Galatasaray": "加拉塔萨雷",
+    "Gaziantep": "加济安泰普", "Genclerbirligi": "根克勒比利吉", "Goztep": "哥兹塔比",
+    "Kasimpasa": "卡斯帕萨", "Kocaelispor": "科贾埃利体育", "Konyaspor": "科尼亚体育",
+    "Rizespor": "里泽体育", "Samsunspor": "萨姆松体育", "Trabzonspor": "特拉布宗体育",
+    # 希腊超
+    "AEK": "雅典AEK", "Aris": "阿里斯", "Asteras Tripolis": "特里波利斯之星",
+    "Atromitos": "阿特罗米托斯", "Iraklis": "伊拉克利斯", "Kalamata": "卡拉马塔",
+    "Kifisia": "基菲夏", "Levadeiakos": "莱瓦贾科斯", "OFI Crete": "OFI克里特",
+    "Olympiakos": "奥林匹亚科斯", "PAOK": "塞萨洛尼基", "Panathinaikos": "帕纳辛奈科斯",
+    "Panetolikos": "帕纳托利克斯", "Volos NFC": "沃洛斯",
 }
 
 

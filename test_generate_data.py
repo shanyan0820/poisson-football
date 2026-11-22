@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from generate_data import localize_matches, parse_matches, season_code, standings
+from generate_data import LEAGUES, TEAM_ZH, localize_matches, parse_matches, season_code, standings
 
 
 SAMPLE = """Div,Date,Time,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r
@@ -42,6 +42,14 @@ class GenerateDataTests(unittest.TestCase):
         translated = localize_matches([{"home": "New Club", "away": "Arsenal"}])[0]
         self.assertEqual(translated["home"], "New Club")
         self.assertEqual(translated["away"], "阿森纳")
+
+    def test_additional_mainstream_leagues_and_translations(self):
+        ids = {league["id"] for league in LEAGUES}
+        self.assertEqual(len(LEAGUES), 11)
+        self.assertTrue({"N1", "P1", "B1", "SC0", "T1", "G1"}.issubset(ids))
+        self.assertEqual(TEAM_ZH["Ajax"], "阿贾克斯")
+        self.assertEqual(TEAM_ZH["Porto"], "波尔图")
+        self.assertEqual(TEAM_ZH["Celtic"], "凯尔特人")
 
     def test_wrong_league_is_rejected(self):
         with self.assertRaises(ValueError):

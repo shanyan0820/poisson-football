@@ -33,12 +33,13 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          from generate_data import LEAGUES
           data = json.loads(Path('data/leagues.json').read_text(encoding='utf-8'))
-          assert len(data['leagues']) == 5
+          assert len(data['leagues']) == len(LEAGUES)
           for league in data['leagues']:
-              assert league['matches'] and len(league['teams']) >= 18
+              assert league['matches'] and len(league['teams']) >= 12
               assert all(m['home_goals'] >= 0 and m['away_goals'] >= 0 for m in league['matches'])
-          print('All five league datasets passed validation.')
+          print(f"All {len(data['leagues'])} league datasets passed validation.")
           PY
       - name: Prepare static site
         run: |

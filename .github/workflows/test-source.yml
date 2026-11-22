@@ -22,11 +22,12 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
+          from generate_data import LEAGUES
           data = json.loads(Path('data/leagues.json').read_text(encoding='utf-8'))
-          assert len(data['leagues']) == 5
+          assert len(data['leagues']) == len(LEAGUES)
           for league in data['leagues']:
               assert len(league['matches']) > 0
-              assert len(league['teams']) >= 18
+              assert len(league['teams']) >= 12
               assert all(m['home_goals'] >= 0 and m['away_goals'] >= 0 for m in league['matches'])
               print(f"VALID {league['name']} {len(league['matches'])} matches")
           PY
