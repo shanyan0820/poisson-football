@@ -58,8 +58,12 @@ jobs:
                   assert fixture['total_analysis'] is not None
               else:
                   assert fixture['total_analysis'] is None
-          assert set(predictions['market_tracking']) >= {'asian_handicap', 'total_goals'}
-          print(f"Daily fixtures: {len(predictions['fixtures'])}; Asian handicaps: {sum(bool(f.get('asian_handicap')) for f in predictions['fixtures'])}; totals: {sum(bool(f.get('total_market')) for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
+          assert set(predictions['market_tracking']) >= {'asian_handicap', 'total_goals', 'recommendation', 'integrated'}
+          for fixture in predictions['fixtures']:
+              assert fixture['featured_selection'] == fixture['integrated_selection']
+              if fixture.get('featured_prediction'):
+                  assert fixture['recommendation_selection'] is not None
+          print(f"Daily fixtures: {len(predictions['fixtures'])}; predictions: {sum(bool(f.get('featured_prediction')) for f in predictions['fixtures'])}; all recommendations: {sum(f.get('recommendation_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; featured: {sum(f.get('integrated_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           PY
       - name: Persist immutable prediction archive
         run: |

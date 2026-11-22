@@ -6,70 +6,70 @@
 <meta name="theme-color" content="#0b1f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="赛后预测准确率">
+<meta name="apple-mobile-web-app-title" content="赛后推荐准确率">
 <link rel="icon" href="data:,">
-<meta name="description" content="老杨足球实验室赛后综合候选准确率，支持半赢、半输与走地的等效判定">
-<title>赛后预测准确率 · 老杨足球实验室</title>
+<meta name="description" content="老杨足球实验室赛后所有推荐与精选推荐准确率，仅统计全赢、全输、赢一半、输一半">
+<title>赛后推荐准确率 · 老杨足球实验室</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#a43c32}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}select{font:inherit}.wrap{max-width:780px;margin:auto;padding:0 14px 36px}.hero{background:var(--dark);color:#fff;padding:22px 16px 28px;border-radius:0 0 22px 22px}.hero-inner{max-width:750px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:22px;margin:0}.live{font-size:11px;color:#c9eadb;white-space:nowrap}.hero p{color:#b9c9c1;font-size:13px;margin:8px 0 0}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.updated{font-size:10px;color:#8faea0}.nav{color:#d8f5e7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 3px 12px rgba(19,34,29,.025)}.setup{margin-top:-12px;position:relative}.step{font-size:10px;color:var(--green);font-weight:800;letter-spacing:1px}.section-title{font-size:17px;margin:3px 0 12px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}select{width:100%;border:1px solid #d6dfd9;background:#fff;color:var(--ink);border-radius:9px;padding:10px 9px;outline:none;font-size:13px}.hint{font-size:11px;color:var(--muted);margin:10px 0 0}.loading{text-align:center;padding:28px;color:var(--muted)}.error{display:none;background:#fff1ef;color:#9c352b;border:1px solid #f0ccc7;padding:12px;border-radius:12px;margin-top:14px;font-size:13px}.accuracy-box{text-align:center;background:var(--soft);border-radius:14px;padding:20px 12px}.accuracy-box strong{display:block;color:var(--green);font-size:46px;line-height:1.1;letter-spacing:-1px}.accuracy-box span{display:block;color:var(--muted);font-size:11px;margin-top:8px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);margin-top:12px;background:#f5f8f6;border-radius:11px;padding:10px 0}.metric{text-align:center;border-right:1px solid var(--line)}.metric:last-child{border-right:0}.metric b{display:block;font-size:19px}.metric span{font-size:9px;color:var(--muted)}.outcomes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}.outcome{border:1px solid var(--line);border-radius:10px;padding:10px 5px;text-align:center;background:#fafbfa}.outcome b{display:block;font-size:20px}.outcome span{font-size:11px;font-weight:700}.outcome small{display:block;font-size:9px;color:var(--muted);margin-top:3px}.outcome.good b{color:var(--green)}.outcome.bad b{color:var(--red)}.outcome.push b{color:var(--muted)}.formula{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}.formula b{color:var(--ink)}.empty{text-align:center;color:var(--muted);font-size:12px;background:#f5f6f5;border-radius:10px;padding:12px;margin-top:12px}.warning{border-left:2px solid var(--amber);padding-left:9px;color:#79511c;font-size:11px;margin-top:12px}.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:10px;padding-right:10px}.hero{padding-left:14px;padding-right:14px}.brand h1{font-size:20px}.live{font-size:10px}.card{padding:14px}.controls{gap:8px}select{font-size:12px}.accuracy-box strong{font-size:42px}.outcomes{gap:6px}.outcome{padding:9px 3px}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}select{font:inherit}.wrap{max-width:780px;margin:auto;padding:0 14px 36px}.hero{background:var(--dark);color:#fff;padding:22px 16px 28px;border-radius:0 0 22px 22px}.hero-inner{max-width:750px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:22px;margin:0}.live{font-size:11px;color:#c9eadb;white-space:nowrap}.hero p{color:#b9c9c1;font-size:13px;margin:8px 0 0}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.updated{font-size:10px;color:#8faea0}.nav{color:#d8f5e7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 3px 12px rgba(19,34,29,.025)}.setup{margin-top:-12px;position:relative}.step{font-size:10px;color:var(--green);font-weight:800;letter-spacing:1px}.section-title{font-size:17px;margin:3px 0 12px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}select{width:100%;border:1px solid #d6dfd9;background:#fff;color:var(--ink);border-radius:9px;padding:10px 9px;outline:none;font-size:13px}.hint{font-size:11px;color:var(--muted);margin:10px 0 0}.loading{text-align:center;padding:28px;color:var(--muted)}.error{display:none;background:#fff1ef;color:#9c352b;border:1px solid #f0ccc7;padding:12px;border-radius:12px;margin-top:14px;font-size:13px}.accuracy-box{text-align:center;background:var(--soft);border-radius:14px;padding:22px 12px}.accuracy-box strong{display:block;color:var(--green);font-size:48px;line-height:1.1;letter-spacing:-1px}.accuracy-box span{display:block;color:var(--muted);font-size:11px;margin-top:9px}.outcomes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.outcome{border:1px solid var(--line);border-radius:11px;padding:14px 6px;text-align:center;background:#fafbfa}.outcome b{display:block;font-size:24px}.outcome span{display:block;font-size:12px;font-weight:750;margin-top:2px}.outcome small{display:block;font-size:9px;color:var(--muted);margin-top:4px}.outcome.good b{color:var(--green)}.outcome.bad b{color:var(--red)}.formula{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}.formula b{color:var(--ink)}.empty{text-align:center;color:var(--muted);font-size:12px;background:#f5f6f5;border-radius:10px;padding:12px;margin-top:12px}.warning{border-left:2px solid var(--amber);padding-left:9px;color:#79511c;font-size:11px;margin-top:12px}.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:10px;padding-right:10px}.hero{padding-left:14px;padding-right:14px}.brand h1{font-size:20px}.live{font-size:10px}.card{padding:14px}.controls{gap:8px}select{font-size:12px}.accuracy-box strong{font-size:44px}.outcomes{gap:7px}.outcome{padding:12px 4px}}
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后预测准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>只统计综合最优候选的机构盘口结算结果，支持半赢、半输与走地。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><a class="nav" href="index.html">← 返回今日比赛</a></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后推荐准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>只比较所有推荐与精选推荐；仅四类有效盘口结果进入准确率。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><a class="nav" href="index.html">← 返回今日比赛</a></div></div></header>
 <main class="wrap">
 <section class="card setup">
-  <div class="step">01 / 统计范围</div><h2 class="section-title">选择联赛与预测模型</h2>
+  <div class="step">01 / 统计范围</div><h2 class="section-title">选择联赛与推荐范围</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="model">预测模型</label><select id="model"><option value="ALL">全部预测</option><option value="total_goals">大小球预测</option><option value="asian_handicap">让球预测</option></select></div>
+    <div class="field"><label for="model">推荐范围</label><select id="model"><option value="RECOMMENDED">所有推荐</option><option value="FEATURED">精选推荐</option></select></div>
   </div>
-  <p class="hint">统计对象仅为赛前已冻结、赛后已有真实结果的综合候选。</p>
+  <p class="hint">只统计开球前已冻结、赛后已有真实结果的推荐。</p>
   <div class="error" id="error"></div>
 </section>
 <div class="loading" id="loading">正在读取赛后真实结算…</div>
 <div id="content" class="hidden">
 <section class="card">
-  <div class="step">02 / 赛后准确率</div><h2 class="section-title" id="scope-title">全部预测</h2>
-  <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效赢盘 ÷（等效赢盘＋等效输盘）</span></div>
-  <div class="metrics"><div class="metric"><b id="candidate-count">0</b><span>已结算候选场数</span></div><div class="metric"><b id="decision-count">0.00</b><span>等效有效判定</span></div><div class="metric"><b id="win-equivalent">0.00</b><span>等效正确次数</span></div></div>
+  <div class="step">02 / 赛后准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 所有推荐</h2>
+  <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效正确 ÷ 四类结果的等效有效判定</span></div>
   <div class="outcomes">
     <div class="outcome good"><b id="full-win">0</b><span>全赢</span><small>计 1 次正确</small></div>
-    <div class="outcome good"><b id="half-win">0</b><span>赢一半</span><small>计 0.5 次正确</small></div>
     <div class="outcome bad"><b id="full-loss">0</b><span>全输</span><small>计 1 次错误</small></div>
+    <div class="outcome good"><b id="half-win">0</b><span>赢一半</span><small>计 0.5 次正确</small></div>
     <div class="outcome bad"><b id="half-loss">0</b><span>输一半</span><small>计 0.5 次错误</small></div>
-    <div class="outcome push"><b id="push">0</b><span>走地</span><small>不进入准确率分母</small></div>
-    <div class="outcome"><b id="win-loss">0</b><span>赢输各半</span><small>正确、错误各计 0.5</small></div>
   </div>
-  <div class="empty" id="empty">当前筛选暂无已结算的综合候选。</div>
-  <div class="formula"><b>准确率口径：</b>赢一半按 0.5 次等效正确，输一半按 0.5 次等效错误；走地以及半赢、半输中的走地部分均不计入分母。这里只展示预测准确率，不展示 ROI 或收益。</div>
-  <div class="warning">样本不足时不代表长期水平。准确率不包含赔率高低，也不能单独证明策略具有长期价值。</div>
+  <div class="empty" id="empty">当前筛选暂无符合口径的已结算推荐。</div>
+  <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走地、赢输各半及其他结果均不计入分子或分母，也不单独展示。</div>
+  <div class="warning">先积累所有推荐的完整样本，再比较精选推荐是否真正提高准确率。样本不足时不代表长期水平。</div>
 </section>
 </div>
 <footer class="footer">老杨足球实验室 · 预测赛前冻结 · 赛后只回写真实结果</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);let DATA=null;
+const VALID_RESULTS=new Set(['full_win','full_loss','half_win','half_loss']);
+const modelNames={RECOMMENDED:'所有推荐',FEATURED:'精选推荐'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
-const fixed=v=>Number(v||0).toFixed(2);
-const modelNames={ALL:'全部预测',total_goals:'大小球预测',asian_handicap:'让球预测'};
 function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}
-function settledRows(){return records().filter(r=>{
- if(!r.actual||r.integrated_selection?.status!=='candidate'||!r.market_settlement?.integrated)return false;
+function settledRows(){const featured=$('model').value==='FEATURED';return records().filter(r=>{
+ const selection=featured?r.integrated_selection:r.recommendation_selection;
+ const settlement=featured?r.market_settlement?.integrated:r.market_settlement?.recommendation;
+ if(!r.actual||selection?.status!=='candidate'||selection?.tracking_eligible===false||!settlement)return false;
  if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;
- if($('model').value!=='ALL'&&r.integrated_selection.market!==$('model').value)return false;
- return true;
-}).map(r=>r.market_settlement.integrated)}
+ return VALID_RESULTS.has(settlement.result);
+}).map(r=>featured?r.market_settlement.integrated:r.market_settlement.recommendation)}
 function calculateAccuracy(rows){
- const wins=rows.reduce((sum,r)=>sum+Number(r.win_eq||0),0),losses=rows.reduce((sum,r)=>sum+Number(r.loss_eq||0),0),decisions=wins+losses;
- const counts={full_win:0,half_win:0,full_loss:0,half_loss:0,push:0,win_loss:0};rows.forEach(r=>{if(r.result in counts)counts[r.result]++});
- return{n:rows.length,wins,losses,decisions,accuracy:decisions?wins/decisions:null,counts};
+ const valid=rows.filter(r=>VALID_RESULTS.has(r.result));
+ const wins=valid.reduce((sum,r)=>sum+(r.result==='full_win'?1:r.result==='half_win' ? .5 : 0),0);
+ const losses=valid.reduce((sum,r)=>sum+(r.result==='full_loss'?1:r.result==='half_loss' ? .5 : 0),0),decisions=wins+losses;
+ const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};valid.forEach(r=>counts[r.result]++);
+ return{n:valid.length,wins,losses,decisions,accuracy:decisions?wins/decisions:null,counts};
 }
 function render(){
  const stats=calculateAccuracy(settledRows()),c=stats.counts;
- $('accuracy').textContent=pct(stats.accuracy);$('candidate-count').textContent=stats.n;$('decision-count').textContent=fixed(stats.decisions);$('win-equivalent').textContent=fixed(stats.wins);
- ['full_win','half_win','full_loss','half_loss','push','win_loss'].forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
+ $('accuracy').textContent=pct(stats.accuracy);
+ ['full_win','full_loss','half_win','half_loss'].forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
  const league=$('league'),model=$('model'),leagueName=league.value==='ALL'?'全部联赛':league.options[league.selectedIndex].text;
  $('scope-title').textContent=`${leagueName} · ${modelNames[model.value]}`;$('empty').classList.toggle('hidden',stats.n>0);
 }

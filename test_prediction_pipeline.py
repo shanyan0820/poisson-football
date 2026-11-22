@@ -5,7 +5,8 @@ from unittest.mock import patch
 
 from prediction_pipeline import (
     ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, choose_integrated_selection,
-    compare_handicap, compare_total_market, find_result, freeze_integrated_selection, global_backtest,
+    choose_recommendation, compare_handicap, compare_total_market, find_result,
+    freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events,
     parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
     settle_margin, split_quarter_line, summarize_market_rows, update_prediction_archive,
@@ -161,6 +162,36 @@ class MarketModelTests(unittest.TestCase):
         self.assertEqual(total["ev_side"], "over")
         self.assertGreater(total["over_metrics"]["ev"], 0)
 
+    def test_all_recommendation_keeps_highest_ev_even_when_not_positive(self):
+        prediction = {"expected_goals": {"home": 1, "away": 1}}
+        handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 1.8, "bet365_away_odds": 1.8})
+        selected = choose_recommendation(handicap, None)
+        self.assertEqual(selected["status"], "candidate")
+        self.assertLess(selected["ev"], 0)
+        self.assertEqual(selected["rule_version"], "all-markets-highest-ev-v1")
+
+    def test_all_recommendation_uses_all_available_markets(self):
+        prediction = {"expected_goals": {"home": 2, "away": 1}}
+        handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6})
+        total = compare_total_market(prediction, {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5})
+        selected = choose_recommendation(handicap, total)
+        self.assertEqual(selected["ev"], max(handicap["home_metrics"]["ev"], handicap["away_metrics"]["ev"],
+                                            total["over_metrics"]["ev"], total["under_metrics"]["ev"]))
+        self.assertEqual(selected["candidate_count"], 4)
+        self.assertEqual(choose_recommendation(None, None)["status"], "skip")
+
+    def test_all_recommendation_does_not_backfill_pregame_tracking(self):
+        now = datetime(2026, 11, 22, 10, tzinfo=timezone.utc)
+        record = {"kickoff_utc": "2026-11-22T11:00:00+00:00", "status": "scheduled"}
+        first = freeze_recommendation_selection(record, {"status": "candidate", "ev": -.02}, now)
+        self.assertTrue(first["tracking_eligible"])
+        after = freeze_recommendation_selection(record, {"status": "candidate", "ev": .08}, now + timedelta(hours=2))
+        self.assertEqual(after["ev"], -.02)
+        late_record = {"kickoff_utc": "2026-11-22T11:00:00+00:00", "status": "awaiting_result"}
+        retrospective = freeze_recommendation_selection(late_record, {"status": "candidate", "ev": .08}, now + timedelta(hours=2))
+        self.assertFalse(retrospective["tracking_eligible"])
+        self.assertEqual(retrospective["freeze_status"], "retrospective")
+
     def test_integrated_selection_takes_highest_ev_among_aligned_candidates(self):
         prediction = {"expected_goals": {"home": 2, "away": 1}}
         handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6})
@@ -216,6 +247,10 @@ class MarketModelTests(unittest.TestCase):
         public = public_record(record)
         self.assertEqual(public["integrated_selection"]["status"], "candidate")
         self.assertIn("integrated", public["market_settlement"])
+        self.assertIn("recommendation", public["market_settlement"])
+        self.assertEqual(public["recommendation_selection"]["rule_version"], "all-markets-highest-ev-v1")
+        self.assertFalse(public["recommendation_selection"]["tracking_eligible"])
+        self.assertEqual(public["featured_selection"], public["integrated_selection"])
         self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
         self.assertEqual(public["market_settlement"]["total_goals"]["result"], "full_loss")
         tracking = build_market_tracking([public])
@@ -226,6 +261,7 @@ class MarketModelTests(unittest.TestCase):
         self.assertEqual((ou["n"], ou["effective_win_rate"]), (1, 0))
         self.assertAlmostEqual(ou["roi"], -1)
         self.assertEqual(tracking["integrated"]["overall"]["n"], 1)
+        self.assertEqual(tracking["recommendation"]["overall"]["n"], 1)
 
 
 class BacktestTests(unittest.TestCase):
