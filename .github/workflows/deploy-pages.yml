@@ -1,0 +1,55 @@
+name: Update data and deploy GitHub Pages
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 */6 * * *'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Fetch real results and generate league data
+        run: python generate_data.py
+      - name: Validate model inputs
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          data = json.loads(Path('data/leagues.json').read_text(encoding='utf-8'))
+          assert len(data['leagues']) == 5
+          for league in data['leagues']:
+              assert league['matches'] and len(league['teams']) >= 18
+              assert all(m['home_goals'] >= 0 and m['away_goals'] >= 0 for m in league['matches'])
+          print('All five league datasets passed validation.')
+          PY
+      - name: Prepare static site
+        run: |
+          mkdir -p _site/data
+          cp index.html _site/index.html
+          cp data/leagues.json _site/data/leagues.json
+          touch _site/.nojekyll
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

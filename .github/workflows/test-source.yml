@@ -1,4 +1,4 @@
-name: Test live football data source
+name: Test football CSV data source
 
 on:
   workflow_dispatch:
@@ -9,34 +9,24 @@ permissions:
 jobs:
   test-source:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-      - name: Install application dependencies
-        run: pip install -r requirements.txt
-      - name: Install Chromium
-        run: playwright install --with-deps chromium
-      - name: Fetch and parse real league pages
+      - name: Fetch and validate all real league CSV files
+        run: python generate_data.py
+      - name: Verify generated data
         run: |
           python - <<'PY'
-          import asyncio
-          from scraper import DQDScraper, parse_standings, parse_league_schedule
-
-          async def main():
-              scraper = DQDScraper()
-              await scraper.start()
-              try:
-                  standings_html = await scraper.standings_html(4)
-                  teams = parse_standings(standings_html)
-                  print(f'STANDINGS_OK teams={len(teams)} first={teams[0]["name"]}')
-                  schedule_html = await scraper.league_schedule_html(4)
-                  matches = parse_league_schedule(schedule_html, '英超')
-                  print(f'SCHEDULE_OK matches={len(matches)} latest={matches[-1]}')
-              finally:
-                  await scraper.close()
-
-          asyncio.run(main())
+          import json
+          from pathlib import Path
+          data = json.loads(Path('data/leagues.json').read_text(encoding='utf-8'))
+          assert len(data['leagues']) == 5
+          for league in data['leagues']:
+              assert len(league['matches']) > 0
+              assert len(league['teams']) >= 18
+              assert all(m['home_goals'] >= 0 and m['away_goals'] >= 0 for m in league['matches'])
+              print(f"VALID {league['name']} {len(league['matches'])} matches")
           PY

@@ -61,7 +61,7 @@ def check_cid(cid: int) -> str:
 
 @app.get("/")
 async def index():
-    return FileResponse(ROOT / "index.html")
+    return FileResponse(ROOT / "server.html")
 
 
 @app.get("/api/health")
