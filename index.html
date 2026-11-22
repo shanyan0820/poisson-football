@@ -23,7 +23,7 @@
   <div class="summary"><div class="stat"><strong id="total-count">—</strong><span>今日赛程</span></div><div class="stat"><strong id="locked-count">—</strong><span>赛前已锁定</span></div><div class="stat"><strong id="market-count">—</strong><span>机构亚盘</span></div><div class="stat"><strong id="ou-count">—</strong><span>大小球盘口</span></div></div>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="status">比赛范围</label><select id="status"><option value="locked">赛前已锁定</option><option value="scheduled">待赛／待赛果</option><option value="handicap">有亚盘理论EV方向</option><option value="total">有大小球理论EV方向</option><option value="integrated">综合最优候选</option><option value="finished">已核对赛果</option><option value="untracked">未锁定／不计成绩</option><option value="ALL">今日全部比赛</option></select></div>
+    <div class="field"><label for="status">比赛范围</label><select id="status"><option value="ALL">全部比赛</option><option value="total">大小球预测</option><option value="handicap">让球预测</option></select></div>
   </div>
   <p class="hint" id="model-note">列表采用当前滚动回测综合排名第一的模型。</p>
   <div class="error" id="error"></div>
@@ -76,11 +76,10 @@ function fixtureHtml(r){
 }
 function filteredFixtures(){return DATA.fixtures.filter(r=>{
  if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;
- if(status==='ALL')return true;if(status==='locked')return!!r.featured_prediction;
- if(status==='scheduled')return['scheduled','awaiting_result'].includes(r.status)&&!!r.featured_prediction;
- if(status==='handicap')return!!r.handicap_analysis?.ev_side;if(status==='total')return!!r.total_analysis?.ev_side;
- if(status==='integrated')return r.integrated_selection?.status==='candidate';
- if(status==='finished')returnisFinished(r);if(status==='untracked')return!r.featured_prediction;return true;
+ if(status==='ALL')return true;const selection=r.integrated_selection;
+ if(status==='total')return selection?.status==='candidate'&&selection.market==='total_goals';
+ if(status==='handicap')return selection?.status==='candidate'&&selection.market==='asian_handicap';
+ return false;
 })}
 function render(){const rows=filteredFixtures(),candidates=rows.filter(r=>r.integrated_selection?.status==='candidate').length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 综合候选 ${candidates} 场`}
 async function init(){try{

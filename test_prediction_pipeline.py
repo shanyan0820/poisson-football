@@ -8,7 +8,7 @@ from prediction_pipeline import (
     compare_handicap, compare_total_market, find_result, freeze_integrated_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events,
     parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
-    settle_margin, split_quarter_line, update_prediction_archive,
+    settle_margin, split_quarter_line, summarize_market_rows, update_prediction_archive,
 )
 
 
@@ -135,6 +135,18 @@ class MarketModelTests(unittest.TestCase):
         over = settle_margin(3, -2.5, 1.9)
         self.assertEqual(over["result"], "full_win")
         self.assertAlmostEqual(over["unit_profit"], .9)
+
+    def test_accuracy_uses_half_win_half_loss_and_excludes_push(self):
+        rows = [
+            settle_margin(1, 0, 1.9),
+            settle_margin(1, -.75, 2.0),
+            settle_margin(0, -.25, 2.0),
+            settle_margin(0, 0, 1.9),
+        ]
+        summary = summarize_market_rows(rows)
+        self.assertEqual(summary["n"], 4)
+        self.assertEqual((summary["full_win"], summary["half_win"], summary["half_loss"], summary["push"]), (1, 1, 1, 1))
+        self.assertAlmostEqual(summary["effective_win_rate"], .75)
 
     def test_positive_ev_direction_and_total_direction(self):
         prediction = {"expected_goals": {"home": 2, "away": 1}}
