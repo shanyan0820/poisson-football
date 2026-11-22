@@ -899,22 +899,39 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
     }
 
 
+def build_research_data(archive: dict, research: dict, featured_model_id: str, now: datetime) -> tuple[dict, dict]:
+    from research_model import build_research_report, update_research_archive
+
+    public_records = [public_record(record, featured_model_id, now) for record in archive["matches"].values()]
+    research = update_research_archive(research, public_records, now)
+    return research, build_research_report(research, now)
+
+
 def main() -> None:
     now = datetime.now(UTC)
     dataset_path = ROOT / "data" / "leagues.json"
     archive_path = ROOT / "data" / "prediction_archive.json"
     public_path = ROOT / "data" / "predictions.json"
+    research_path = ROOT / "data" / "research_archive.json"
+    research_report_path = ROOT / "data" / "research_report.json"
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     archive = json.loads(archive_path.read_text(encoding="utf-8")) if archive_path.exists() else {"version": 1, "matches": {}}
+    research = json.loads(research_path.read_text(encoding="utf-8")) if research_path.exists() else {"version": 1, "matches": {}}
     fixtures, coverage = load_daily_fixtures(dataset, now)
     archive = update_prediction_archive(archive, fixtures, dataset, now)
     public = build_public_dataset(dataset, archive, fixtures, coverage, now)
+    research, research_report = build_research_data(archive, research, public["featured_model_id"], now)
     archive_path.write_text(json.dumps(archive, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     public_path.write_text(json.dumps(public, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    research_path.write_text(json.dumps(research, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    research_report_path.write_text(json.dumps(research_report, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(f"DAILY_FIXTURES {len(fixtures)} LOCKED {sum(bool(r['predictions']) for r in archive['matches'].values())}")
     print(f"BACKTEST_MATCHES {public['backtest']['global'][0]['n']} BEST {public['backtest']['global'][0]['name']}")
+    print(f"RESEARCH_MATCHES {research_report['sample']['matches']} PREGAME {research_report['sample']['pregame_matches']} SETTLED {research_report['sample']['settled_pregame_matches']}")
     print(f"WROTE {archive_path} bytes={archive_path.stat().st_size}")
     print(f"WROTE {public_path} bytes={public_path.stat().st_size}")
+    print(f"WROTE {research_path} bytes={research_path.stat().st_size}")
+    print(f"WROTE {research_report_path} bytes={research_report_path.stat().st_size}")
 
 
 if __name__ == "__main__":

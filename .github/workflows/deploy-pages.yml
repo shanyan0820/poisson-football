@@ -29,7 +29,7 @@ jobs:
       - name: Fetch real results and generate league data
         run: python generate_data.py
       - name: Run model and prediction tests
-        run: python -m unittest test_generate_data test_prediction_pipeline -v
+        run: python -m unittest test_generate_data test_prediction_pipeline test_research_model -v
       - name: Freeze daily predictions and run rolling backtests
         run: python prediction_pipeline.py
       - name: Validate model inputs
@@ -63,13 +63,19 @@ jobs:
               assert fixture['featured_selection'] == fixture['integrated_selection']
               if fixture.get('featured_prediction'):
                   assert fixture['recommendation_selection'] is not None
+          research = json.loads(Path('data/research_archive.json').read_text(encoding='utf-8'))
+          report = json.loads(Path('data/research_report.json').read_text(encoding='utf-8'))
+          assert report['sample']['matches'] == len(research['matches'])
+          assert report['sample']['pregame_matches'] + report['sample']['retrospective_matches'] == len(research['matches'])
+          assert all('predictions' in match and 'relations' in match for match in research['matches'].values())
+          print(f"Research matches: {report['sample']['matches']}; pregame: {report['sample']['pregame_matches']}; settled: {report['sample']['settled_pregame_matches']}.")
           print(f"Daily fixtures: {len(predictions['fixtures'])}; predictions: {sum(bool(f.get('featured_prediction')) for f in predictions['fixtures'])}; all recommendations: {sum(f.get('recommendation_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; featured: {sum(f.get('integrated_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           PY
       - name: Persist immutable prediction archive
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/prediction_archive.json
+          git add data/prediction_archive.json data/research_archive.json data/research_report.json
           if git diff --cached --quiet; then
             printf 'Prediction archive is already up to date.\n'
           else
@@ -79,8 +85,8 @@ jobs:
       - name: Prepare static site
         run: |
           mkdir -p _site/data
-          cp index.html predictions.html _site/
-          cp data/leagues.json data/predictions.json _site/data/
+          cp index.html predictions.html research.html _site/
+          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
