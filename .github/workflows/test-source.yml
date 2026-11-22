@@ -1,0 +1,42 @@
+name: Test live football data source
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-source:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install application dependencies
+        run: pip install -r requirements.txt
+      - name: Install Chromium
+        run: playwright install --with-deps chromium
+      - name: Fetch and parse real league pages
+        run: |
+          python - <<'PY'
+          import asyncio
+          from scraper import DQDScraper, parse_standings, parse_league_schedule
+
+          async def main():
+              scraper = DQDScraper()
+              await scraper.start()
+              try:
+                  standings_html = await scraper.standings_html(4)
+                  teams = parse_standings(standings_html)
+                  print(f'STANDINGS_OK teams={len(teams)} first={teams[0]["name"]}')
+                  schedule_html = await scraper.league_schedule_html(4)
+                  matches = parse_league_schedule(schedule_html, '英超')
+                  print(f'SCHEDULE_OK matches={len(matches)} latest={matches[-1]}')
+              finally:
+                  await scraper.close()
+
+          asyncio.run(main())
+          PY
