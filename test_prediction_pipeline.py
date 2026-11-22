@@ -4,8 +4,9 @@ from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 from prediction_pipeline import (
-    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, compare_handicap,
-    compare_total_market, find_result, global_backtest, map_espn_team, outcome, parse_espn_events,
+    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, choose_integrated_selection,
+    compare_handicap, compare_total_market, find_result, freeze_integrated_selection, global_backtest,
+    map_espn_team, outcome, parse_espn_events,
     parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
     settle_margin, split_quarter_line, update_prediction_archive,
 )
@@ -148,6 +149,51 @@ class MarketModelTests(unittest.TestCase):
         self.assertEqual(total["ev_side"], "over")
         self.assertGreater(total["over_metrics"]["ev"], 0)
 
+    def test_integrated_selection_takes_highest_ev_among_aligned_candidates(self):
+        prediction = {"expected_goals": {"home": 2, "away": 1}}
+        handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6})
+        total = compare_total_market(prediction, {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5})
+        selected = choose_integrated_selection(handicap, total)
+        self.assertEqual(selected["status"], "candidate")
+        self.assertEqual(selected["candidate_count"], 2)
+        self.assertEqual(selected["ev"], max(handicap["home_metrics"]["ev"], total["over_metrics"]["ev"]))
+        self.assertEqual(selected["rule_version"], "gap-direction-ev-v1")
+
+    def test_extreme_handicap_gap_rejects_whole_match_even_with_total_value(self):
+        prediction = {"expected_goals": {"home": 3, "away": 0}}
+        handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6})
+        total = compare_total_market(prediction, {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5})
+        self.assertGreater(total["over_metrics"]["ev"], 0)
+        selected = choose_integrated_selection(handicap, total)
+        self.assertEqual(selected["status"], "skip")
+        self.assertEqual(selected["extreme_markets"], ["asian_handicap"])
+
+    def test_low_home_probability_with_deep_home_handicap_does_not_pick_away(self):
+        prediction = {"expected_goals": {"home": .8, "away": 1.4}}
+        handicap = compare_handicap(prediction, {"home_line": -1.5, "bet365_home_odds": 1.8, "bet365_away_odds": 2.2})
+        selected = choose_integrated_selection(handicap, None)
+        self.assertLess(handicap["edge"], -1)
+        self.assertEqual(selected["status"], "skip")
+        self.assertIsNone(selected["side"])
+
+    def test_too_small_gap_is_not_forced_into_a_candidate(self):
+        prediction = {"expected_goals": {"home": 1.05, "away": 1}}
+        handicap = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 3.0, "bet365_away_odds": 1.5})
+        selected = choose_integrated_selection(handicap, None)
+        self.assertLess(abs(handicap["edge"]), .15)
+        self.assertEqual(selected["status"], "skip")
+        self.assertIn("不足 0.15", selected["reason"])
+
+    def test_integrated_selection_freezes_at_kickoff(self):
+        now = datetime(2026, 11, 22, 10, tzinfo=timezone.utc)
+        record = {"kickoff_utc": "2026-11-22T11:00:00+00:00", "status": "scheduled"}
+        first = freeze_integrated_selection(record, {"status": "candidate", "ev": .08}, now)
+        self.assertEqual(first["ev"], .08)
+        updated = freeze_integrated_selection(record, {"status": "candidate", "ev": .10}, now)
+        self.assertEqual(updated["ev"], .10)
+        frozen = freeze_integrated_selection(record, {"status": "skip"}, now + timedelta(hours=2))
+        self.assertEqual(frozen["ev"], .10)
+
     def test_finished_record_automatically_builds_market_tracking(self):
         record = {
             "predictions": {"stable": {"expected_goals": {"home": 2, "away": 1}, "forecast": forecast()}},
@@ -156,6 +202,8 @@ class MarketModelTests(unittest.TestCase):
             "total_market": {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5},
         }
         public = public_record(record)
+        self.assertEqual(public["integrated_selection"]["status"], "candidate")
+        self.assertIn("integrated", public["market_settlement"])
         self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
         self.assertEqual(public["market_settlement"]["total_goals"]["result"], "full_loss")
         tracking = build_market_tracking([public])
@@ -165,6 +213,7 @@ class MarketModelTests(unittest.TestCase):
         self.assertAlmostEqual(ah["roi"], 1.2)
         self.assertEqual((ou["n"], ou["effective_win_rate"]), (1, 0))
         self.assertAlmostEqual(ou["roi"], -1)
+        self.assertEqual(tracking["integrated"]["overall"]["n"], 1)
 
 
 class BacktestTests(unittest.TestCase):

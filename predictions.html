@@ -44,10 +44,10 @@
   <p class="hint" id="evaluation-rule"></p>
 </section>
 <section class="card">
-  <div class="step">04 / 赛后盘口统计</div><h2 class="section-title">赛前理论EV方向的实际成绩</h2>
+  <div class="step">04 / 赛后盘口统计</div><h2 class="section-title">理论EV方向与综合候选的实际成绩</h2>
   <div id="market-tracked"></div>
   <p class="hint" id="market-method"></p>
-  <p class="hint">这里只统计上线后真正赛前保存、赛后已回写结果的理论 EV&gt;0 候选，与历史回测分开。样本不足时不选择阈值。</p>
+  <p class="hint">这里只统计上线后真正赛前保存、赛后已回写结果的方向。综合候选单独按 V1 分歧过滤规则结算；样本不足时不宣称阈值最优。</p>
 </section>
 <section class="card">
   <details><summary>赛程覆盖与评价口径</summary><div id="coverage"></div><p id="method-note"></p></details>
@@ -101,8 +101,8 @@ function bandTable(title,rows){const entries=Object.entries(rows||{});return`<di
 function marketCard(title,data){return`<div class="market-stat"><h3>${title}</h3>${marketSummary(data.overall)}<details><summary>查看阈值观察分档</summary>${bandTable('赛前理论 EV 分档',data.by_ev)}${bandTable('模型与机构绝对差值分档',data.by_gap)}</details></div>`}
 function renderTracked(){
  const tracking=DATA.market_tracking;
- $('market-tracked').innerHTML=tracking?`<div class="market-stats">${marketCard('亚盘预测方向',tracking.asian_handicap)}${marketCard('大小球预测方向',tracking.total_goals)}</div>`:'<div class="untracked">还没有盘口结算数据。</div>';
- $('market-method').textContent=tracking?tracking.selection+' '+tracking.metrics+' '+tracking.bands:'';
+ $('market-tracked').innerHTML=tracking?`<div class="market-stats">${marketCard('亚盘预测方向',tracking.asian_handicap)}${marketCard('大小球预测方向',tracking.total_goals)}${marketCard('综合最优候选 · 观察期V1',tracking.integrated)}</div>`:'<div class="untracked">还没有盘口结算数据。</div>';
+ $('market-method').textContent=tracking?tracking.selection+' '+tracking.integrated_rule+' '+tracking.metrics+' '+tracking.bands:'';
 }
 function render(){renderFixtures();renderRanking();renderTracked()}
 async function init(){try{
