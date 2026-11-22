@@ -2,7 +2,7 @@
 import unittest
 from datetime import datetime, timezone
 
-from generate_data import parse_matches, season_code, standings
+from generate_data import localize_matches, parse_matches, season_code, standings
 
 
 SAMPLE = """Div,Date,Time,HomeTeam,AwayTeam,FTHG,FTAG,FTR\r
@@ -30,6 +30,18 @@ class GenerateDataTests(unittest.TestCase):
         a = next(t for t in table if t["name"] == "A Team")
         self.assertEqual((a["played"], a["points"], a["gf"], a["ga"]), (3, 7, 5, 2))
         self.assertEqual(a["rank"], 1)
+
+    def test_team_names_are_translated_without_changing_results(self):
+        raw = [{"home": "Arsenal", "away": "Brighton", "home_goals": 2, "away_goals": 1}]
+        translated = localize_matches(raw)[0]
+        self.assertEqual((translated["home"], translated["away"]), ("阿森纳", "布莱顿"))
+        self.assertEqual((translated["home_source"], translated["away_source"]), ("Arsenal", "Brighton"))
+        self.assertEqual((translated["home_goals"], translated["away_goals"]), (2, 1))
+
+    def test_unknown_future_team_keeps_english_name(self):
+        translated = localize_matches([{"home": "New Club", "away": "Arsenal"}])[0]
+        self.assertEqual(translated["home"], "New Club")
+        self.assertEqual(translated["away"], "阿森纳")
 
     def test_wrong_league_is_rejected(self):
         with self.assertRaises(ValueError):
