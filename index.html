@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">每日赛程 · 盘口对比</span></div><p>队名旁为预期进球；下方依次是模型数据、机构盘口与推荐。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><a class="nav" href="predictions.html">赛后统计 →</a></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">每日赛程 · 盘口对比</span></div><p>队名旁为预期进球；下方依次是模型数据与机构盘口。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><a class="nav" href="predictions.html">赛后统计 →</a></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 今日总览</div><h2 class="section-title" id="date-title">正在读取当天赛程…</h2>
@@ -32,7 +32,7 @@
 <div id="content" class="hidden">
   <div class="section-head"><div><div class="step">02 / 自动计算</div><h2 class="section-title">今日比赛列表</h2></div><p class="hint" id="fixture-count"></p></div>
   <div id="fixtures"></div>
-  <details class="card method"><summary>计算口径与风险说明</summary><p><b>模型亚盘：</b>客队预期进球 − 主队预期进球；机构亚盘基准 = −主队让球数。大小球目前采用源站提供的 2.5 球盘口。</p><p><b>理论 EV：</b>等效赢盘概率 ×（Bet365 十进制赔率 − 1）− 等效输盘概率。四分之一盘按两笔半注计算，仅 EV&gt;0 时形成方向。</p><p><b>观察原则：</b>暂不设置最小 EV 或最大模型差值门槛；赛后自动结算，积累样本后再选择阈值。</p><div class="warning">理论 EV 是模型估计，不是收益保证。未纳入临场阵容、伤停、红牌、战意及采集后的盘口变化。</div></details>
+  <details class="card method"><summary>计算口径与风险说明</summary><p><b>模型亚盘：</b>客队预期进球 − 主队预期进球；机构亚盘基准 = −主队让球数。大小球目前采用源站提供的 2.5 球盘口。</p><p><b>理论 EV：</b>等效赢盘概率 ×（Bet365 十进制赔率 − 1）− 等效输盘概率。四分之一盘按两笔半注计算，仅 EV&gt;0 时形成方向。</p><p><b>观察原则：</b>首页暂停推荐，理论 EV 仅用于后台观察；赛后自动结算，积累真实样本后再评估是否恢复。</p><div class="warning">理论 EV 是模型估计，不是收益保证。未纳入临场阵容、伤停、红牌、战意及采集后的盘口变化。</div></details>
   <section class="source"><b>数据来源</b><p>赛果、主赛程与盘口：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；补充赛程：ESPN。预测开球前冻结，赛后只回写真实结果。</p></section>
 </div>
 <footer class="footer">老杨足球实验室 · 所有关键参数均可回溯</footer>
@@ -53,15 +53,12 @@ function isFinished(r){return r.status==='finished'||r.status==='finished_untrac
 function statusBadge(r){if(r.status==='finished')return'<span class="badge">已核对</span>';if(r.status==='scheduled')return'<span class="badge amber">待赛</span>';if(r.status==='awaiting_result')return'<span class="badge amber">待赛果</span>';return'<span class="badge gray">不计成绩</span>'}
 function settlementHtml(r){const s=r.market_settlement||{},ah=s.asian_handicap,ou=s.total_goals;if(!ah&&!ou)return'';return`<div class="settlement">${ah?`<span>亚盘：${resultName[ah.result]} · ${signed3(ah.unit_profit)} 研究单位</span>`:''}${ou?`<span>大小球：${resultName[ou.result]} · ${signed3(ou.unit_profit)} 研究单位</span>`:''}</div>`}
 function fixtureHtml(r){
- const p=r.featured_prediction,xg=p?.expected_goals,ah=r.asian_handicap,ou=r.total_market,a=r.handicap_analysis,t=r.total_analysis;
+ const p=r.featured_prediction,xg=p?.expected_goals,ah=r.asian_handicap,ou=r.total_market;
  const total=p?xg.home+xg.away:null,diff=p?xg.away-xg.home:null;
- const ahSide=a?.ev_side,ahTeam=ahSide==='home'?r.home:r.away,totalSide=t?.ev_side,totalLabel=totalSide==='over'?'大':'小';
- const ahPick=ahSide?`<span class="cell-value">${esc(ahTeam)} ${line(a.ev_line)}</span><span class="cell-ev">理论 EV ${evpct(a.ev_value)}</span>`:`<span class="cell-value">${!ah?'源站未提供':a?'暂无正向 EV':'赛前未锁定'}</span>`;
- const totalPick=totalSide?`<span class="cell-value">${totalLabel} ${num(t.ev_line)}</span><span class="cell-ev">理论 EV ${evpct(t.ev_value)}</span>`:`<span class="cell-value">${!ou?'源站未提供':t?'暂无正向 EV':'赛前未锁定'}</span>`;
  const untracked=p?'':`<div class="untracked">${esc(r.status_reason||'该场没有赛前预测档案。')}</div>`;
  const actual=r.actual?`<div class="actual">实际比分 <b>${r.actual.home_goals}:${r.actual.away_goals}</b>${settlementHtml(r)}</div>`:'';
  const freeze=p?`赛前锁定 ${esc(utcTime(r.created_at))} · 盘口为赛前最后快照`:'未纳入赛前冻结样本';
- return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="board-row team-row"><div class="board-cell team-cell"><span class="team-name">${esc(r.home)}</span><span class="team-xg">${p?num(xg.home):'—'}<small>预期进球数</small></span></div><div class="board-cell time-cell"><span class="cell-label">比赛时间</span><span class="time-value">${kickoffTime(r.kickoff_beijing)}</span></div><div class="board-cell team-cell away"><span class="team-xg">${p?num(xg.away):'—'}<small>预期进球数</small></span><span class="team-name">${esc(r.away)}</span></div></div><div class="board-row model-row"><div class="board-cell"><span class="cell-label">模型让球数</span><span class="cell-value">${p?signed(diff):'—'}</span><span class="cell-sub">客队 − 主队</span></div><div class="board-cell"><span class="cell-label">模型总进球数</span><span class="cell-value">${p?num(total):'—'}</span><span class="cell-sub">客队 ＋ 主队</span></div></div><div class="board-row institution-row"><div class="board-cell"><span class="cell-label">机构让球数</span><span class="cell-value">${ah?line(ah.home_line):'源站未提供'}</span></div><div class="board-cell"><span class="cell-label">机构总进球数</span><span class="cell-value">${ou?`${num(ou.line)} 球`:'源站未提供'}</span></div></div><div class="board-row recommend-row"><div class="board-cell ${ahSide?'':'neutral'}"><span class="cell-label">让球推荐</span>${ahPick}</div><div class="board-cell ${totalSide?'':'neutral'}"><span class="cell-label">大小球推荐</span>${totalPick}</div></div></div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
+ return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="board-row team-row"><div class="board-cell team-cell"><span class="team-name">${esc(r.home)}</span><span class="team-xg">${p?num(xg.home):'—'}<small>预期进球数</small></span></div><div class="board-cell time-cell"><span class="cell-label">比赛时间</span><span class="time-value">${kickoffTime(r.kickoff_beijing)}</span></div><div class="board-cell team-cell away"><span class="team-xg">${p?num(xg.away):'—'}<small>预期进球数</small></span><span class="team-name">${esc(r.away)}</span></div></div><div class="board-row model-row"><div class="board-cell"><span class="cell-label">模型让球数</span><span class="cell-value">${p?signed(diff):'—'}</span></div><div class="board-cell"><span class="cell-label">模型总进球数</span><span class="cell-value">${p?num(total):'—'}</span></div></div><div class="board-row institution-row"><div class="board-cell"><span class="cell-label">机构让球数</span><span class="cell-value">${ah?line(ah.home_line):'源站未提供'}</span></div><div class="board-cell"><span class="cell-label">机构总进球数</span><span class="cell-value">${ou?`${num(ou.line)} 球`:'源站未提供'}</span></div></div></div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
 }
 function filteredFixtures(){return DATA.fixtures.filter(r=>{
  if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;
