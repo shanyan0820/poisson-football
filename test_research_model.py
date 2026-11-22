@@ -52,6 +52,7 @@ class ResearchSnapshotTests(unittest.TestCase):
     def test_archive_freezes_pregame_inputs_and_only_adds_result(self):
         now = datetime(2026, 11, 22, 10, tzinfo=UTC)
         archive = update_research_archive({"version": 1, "matches": {}}, [public_fixture()], now)
+        self.assertEqual(archive["version"], 2)
         original = archive["matches"]["match-1"]["featured_prediction"]
         changed = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
         changed["featured_prediction"]["expected_goals"] = {"home": 9, "away": 9}

@@ -115,7 +115,7 @@ def settle_research_selections(snapshot: dict) -> dict:
 def update_research_archive(archive: dict, public_records: list[dict], now: datetime) -> dict:
     """开球前允许更新快照；开球后只回写赛果与结算，不改任何赛前输入。"""
     now = now.astimezone(UTC)
-    archive.setdefault("version", RESEARCH_VERSION)
+    archive["version"] = RESEARCH_VERSION
     archive.setdefault("matches", {})
     for public in public_records:
         key = public["key"]
