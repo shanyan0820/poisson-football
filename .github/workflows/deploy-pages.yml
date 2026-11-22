@@ -29,7 +29,7 @@ jobs:
       - name: Fetch real results and generate league data
         run: python generate_data.py
       - name: Run model and prediction tests
-        run: python -m unittest discover -p 'test_*.py' -v
+        run: python -m unittest test_generate_data test_prediction_pipeline -v
       - name: Freeze daily predictions and run rolling backtests
         run: python prediction_pipeline.py
       - name: Validate model inputs
