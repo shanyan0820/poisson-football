@@ -54,7 +54,12 @@ jobs:
                   assert fixture['handicap_analysis'] is not None
               else:
                   assert fixture['handicap_analysis'] is None
-          print(f"Daily fixtures: {len(predictions['fixtures'])}; Asian handicaps: {sum(bool(f.get('asian_handicap')) for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
+              if fixture.get('total_market') and fixture.get('featured_prediction'):
+                  assert fixture['total_analysis'] is not None
+              else:
+                  assert fixture['total_analysis'] is None
+          assert set(predictions['market_tracking']) >= {'asian_handicap', 'total_goals'}
+          print(f"Daily fixtures: {len(predictions['fixtures'])}; Asian handicaps: {sum(bool(f.get('asian_handicap')) for f in predictions['fixtures'])}; totals: {sum(bool(f.get('total_market')) for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           PY
       - name: Persist immutable prediction archive
         run: |

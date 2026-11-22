@@ -4,9 +4,10 @@ from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 from prediction_pipeline import (
-    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, compare_handicap, find_result, global_backtest,
-    map_espn_team, outcome, parse_espn_events, parse_main_fixtures,
-    predicted_outcome, rolling_backtest, score_prediction, update_prediction_archive,
+    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, compare_handicap,
+    compare_total_market, find_result, global_backtest, map_espn_team, outcome, parse_espn_events,
+    parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
+    settle_margin, split_quarter_line, update_prediction_archive,
 )
 
 
@@ -62,13 +63,17 @@ class FixtureParserTests(unittest.TestCase):
 
     def test_main_fixture_reads_real_asian_handicap_fields(self):
         league = sample_league()
-        text = ("Div,Date,Time,HomeTeam,AwayTeam,AHh,B365AHH,B365AHA,AvgAHH,AvgAHA\r\n"
-                "E0,22/11/2026,16:00,Alpha,Beta,-0.75,1.90,1.95,1.87,1.91\r\n")
+        text = ("Div,Date,Time,HomeTeam,AwayTeam,AHh,B365AHH,B365AHA,AvgAHH,AvgAHA,B365>2.5,B365<2.5,Avg>2.5,Avg<2.5\r\n"
+                "E0,22/11/2026,16:00,Alpha,Beta,-0.75,1.90,1.95,1.87,1.91,1.80,2.00,1.77,1.96\r\n")
         result = parse_main_fixtures(text, {"E0": league}, date(2026, 11, 23))
         market = result[0]["asian_handicap"]
         self.assertEqual(market["home_line"], -.75)
         self.assertEqual(market["bet365_home_odds"], 1.90)
         self.assertEqual(market["average_away_odds"], 1.91)
+        total = result[0]["total_market"]
+        self.assertEqual(total["line"], 2.5)
+        self.assertEqual(total["bet365_over_odds"], 1.80)
+        self.assertEqual(total["average_under_odds"], 1.96)
 
     def test_missing_handicap_stays_empty(self):
         league = sample_league()
@@ -112,6 +117,54 @@ class FixtureParserTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual((result[0]["home_source"], result[0]["away_source"]), ("Hammarby", "Sirius"))
         self.assertEqual(result[0]["source_event_id"], "evt1")
+
+
+class MarketModelTests(unittest.TestCase):
+    def test_quarter_line_split_and_settlement(self):
+        self.assertEqual(split_quarter_line(-.75), [-1, -.5])
+        self.assertEqual(split_quarter_line(.25), [0, .5])
+        self.assertEqual(split_quarter_line(.5), [.5])
+        half_win = settle_margin(1, -.75, 2.0)
+        self.assertEqual(half_win["result"], "half_win")
+        self.assertAlmostEqual(half_win["unit_profit"], .5)
+        self.assertAlmostEqual(half_win["push_eq"], .5)
+        half_loss = settle_margin(0, -.25, 2.0)
+        self.assertEqual(half_loss["result"], "half_loss")
+        self.assertAlmostEqual(half_loss["unit_profit"], -.5)
+        over = settle_margin(3, -2.5, 1.9)
+        self.assertEqual(over["result"], "full_win")
+        self.assertAlmostEqual(over["unit_profit"], .9)
+
+    def test_positive_ev_direction_and_total_direction(self):
+        prediction = {"expected_goals": {"home": 2, "away": 1}}
+        market = {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6}
+        analysis = compare_handicap(prediction, market)
+        self.assertEqual(analysis["ev_side"], "home")
+        self.assertGreater(analysis["home_metrics"]["ev"], 0)
+        no_ev = compare_handicap(prediction, {"home_line": 0, "bet365_home_odds": 1.01, "bet365_away_odds": 1.01})
+        self.assertIsNone(no_ev["ev_side"])
+        total = compare_total_market({"expected_goals": {"home": 2, "away": 2}},
+                                     {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5})
+        self.assertEqual(total["ev_side"], "over")
+        self.assertGreater(total["over_metrics"]["ev"], 0)
+
+    def test_finished_record_automatically_builds_market_tracking(self):
+        record = {
+            "predictions": {"stable": {"expected_goals": {"home": 2, "away": 1}, "forecast": forecast()}},
+            "actual": {"home_goals": 2, "away_goals": 0, "outcome": "H"},
+            "asian_handicap": {"home_line": 0, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
+            "total_market": {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5},
+        }
+        public = public_record(record)
+        self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
+        self.assertEqual(public["market_settlement"]["total_goals"]["result"], "full_loss")
+        tracking = build_market_tracking([public])
+        ah = tracking["asian_handicap"]["overall"]
+        ou = tracking["total_goals"]["overall"]
+        self.assertEqual((ah["n"], ah["effective_win_rate"]), (1, 1))
+        self.assertAlmostEqual(ah["roi"], 1.2)
+        self.assertEqual((ou["n"], ou["effective_win_rate"]), (1, 0))
+        self.assertAlmostEqual(ou["roi"], -1)
 
 
 class BacktestTests(unittest.TestCase):
@@ -184,11 +237,13 @@ class ArchiveTests(unittest.TestCase):
     def test_handicap_snapshot_updates_before_kickoff_without_changing_prediction(self):
         fixture = copy.deepcopy(self.fixture)
         fixture["asian_handicap"] = {"home_line": -.5, "bet365_home_odds": 1.9}
+        fixture["total_market"] = {"line": 2.5, "bet365_over_odds": 1.8, "bet365_under_odds": 2.0}
         archive = update_prediction_archive({"version": 1, "matches": {}}, [fixture], self.dataset, self.now)
         key = next(iter(archive["matches"]))
         original = copy.deepcopy(archive["matches"][key]["predictions"])
         changed = copy.deepcopy(fixture)
         changed["asian_handicap"] = {"home_line": -.75, "bet365_home_odds": 1.95}
+        changed["total_market"] = {"line": 2.5, "bet365_over_odds": 1.85, "bet365_under_odds": 1.95}
         archive = update_prediction_archive(archive, [changed], self.dataset, self.now + timedelta(hours=1))
         record = archive["matches"][key]
         self.assertEqual(record["predictions"], original)
@@ -196,6 +251,8 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(len(record["asian_handicap_history"]), 1)
         self.assertEqual(record["asian_handicap_history"][0]["home_line"], -.5)
         self.assertTrue(record["asian_handicap"]["captured_at"].endswith("+00:00"))
+        self.assertEqual(record["total_market"]["bet365_over_odds"], 1.85)
+        self.assertEqual(len(record["total_market_history"]), 1)
 
     def test_result_matching_allows_timezone_date_difference(self):
         fixture = copy.deepcopy(self.fixture)
