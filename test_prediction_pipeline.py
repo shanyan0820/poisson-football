@@ -4,7 +4,7 @@ from datetime import date, datetime, timedelta, timezone
 from unittest.mock import patch
 
 from prediction_pipeline import (
-    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, find_result, global_backtest,
+    ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, compare_handicap, find_result, global_backtest,
     map_espn_team, outcome, parse_espn_events, parse_main_fixtures,
     predicted_outcome, rolling_backtest, score_prediction, update_prediction_archive,
 )
@@ -59,6 +59,36 @@ class FixtureParserTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["home"], "Alpha")
         self.assertTrue(result[0]["kickoff_beijing"].startswith("2026-11-23T00:00"))
+
+    def test_main_fixture_reads_real_asian_handicap_fields(self):
+        league = sample_league()
+        text = ("Div,Date,Time,HomeTeam,AwayTeam,AHh,B365AHH,B365AHA,AvgAHH,AvgAHA\r\n"
+                "E0,22/11/2026,16:00,Alpha,Beta,-0.75,1.90,1.95,1.87,1.91\r\n")
+        result = parse_main_fixtures(text, {"E0": league}, date(2026, 11, 23))
+        market = result[0]["asian_handicap"]
+        self.assertEqual(market["home_line"], -.75)
+        self.assertEqual(market["bet365_home_odds"], 1.90)
+        self.assertEqual(market["average_away_odds"], 1.91)
+
+    def test_missing_handicap_stays_empty(self):
+        league = sample_league()
+        text = "Div,Date,Time,HomeTeam,AwayTeam\r\nE0,22/11/2026,16:00,Alpha,Beta\r\n"
+        result = parse_main_fixtures(text, {"E0": league}, date(2026, 11, 23))
+        self.assertIsNone(result[0]["asian_handicap"])
+
+    def test_handicap_comparison_has_neutral_zone_and_correct_sides(self):
+        prediction = {"expected_goals": {"home": 1.8, "away": 1.0}}
+        market = {"home_line": -.5}
+        home = compare_handicap(prediction, market)
+        self.assertEqual(home["side"], "home")
+        self.assertEqual(home["line"], -.5)
+        self.assertAlmostEqual(home["edge"], .3)
+        away = compare_handicap({"expected_goals": {"home": 1.0, "away": 1.8}}, market)
+        self.assertEqual(away["side"], "away")
+        self.assertEqual(away["line"], .5)
+        neutral = compare_handicap({"expected_goals": {"home": 1.45, "away": 1.0}}, market)
+        self.assertEqual(neutral["side"], "neutral")
+        self.assertIsNone(compare_handicap(prediction, None))
 
     def test_espn_alias_and_direct_mapping(self):
         names = ["Hammarby", "Malmo FF"]
@@ -150,6 +180,22 @@ class ArchiveTests(unittest.TestCase):
         archive = update_prediction_archive(archive, [self.fixture], self.dataset, self.now + timedelta(days=2))
         self.assertEqual(archive["matches"][key]["status"], "awaiting_result")
         self.assertEqual(archive["matches"][key]["predictions"], original)
+
+    def test_handicap_snapshot_updates_before_kickoff_without_changing_prediction(self):
+        fixture = copy.deepcopy(self.fixture)
+        fixture["asian_handicap"] = {"home_line": -.5, "bet365_home_odds": 1.9}
+        archive = update_prediction_archive({"version": 1, "matches": {}}, [fixture], self.dataset, self.now)
+        key = next(iter(archive["matches"]))
+        original = copy.deepcopy(archive["matches"][key]["predictions"])
+        changed = copy.deepcopy(fixture)
+        changed["asian_handicap"] = {"home_line": -.75, "bet365_home_odds": 1.95}
+        archive = update_prediction_archive(archive, [changed], self.dataset, self.now + timedelta(hours=1))
+        record = archive["matches"][key]
+        self.assertEqual(record["predictions"], original)
+        self.assertEqual(record["asian_handicap"]["home_line"], -.75)
+        self.assertEqual(len(record["asian_handicap_history"]), 1)
+        self.assertEqual(record["asian_handicap_history"][0]["home_line"], -.5)
+        self.assertTrue(record["asian_handicap"]["captured_at"].endswith("+00:00"))
 
     def test_result_matching_allows_timezone_date_difference(self):
         fixture = copy.deepcopy(self.fixture)

@@ -48,7 +48,13 @@ jobs:
           assert len(predictions['backtest']['global']) == 8
           assert len(predictions['coverage']) == len(LEAGUES)
           assert all(m['n'] > 0 for m in predictions['backtest']['global'])
-          print(f"Daily fixtures: {len(predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
+          assert predictions['featured_model_id'] == predictions['backtest']['global'][0]['model_id']
+          for fixture in predictions['fixtures']:
+              if fixture.get('asian_handicap') and fixture.get('featured_prediction'):
+                  assert fixture['handicap_analysis'] is not None
+              else:
+                  assert fixture['handicap_analysis'] is None
+          print(f"Daily fixtures: {len(predictions['fixtures'])}; Asian handicaps: {sum(bool(f.get('asian_handicap')) for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           PY
       - name: Persist immutable prediction archive
         run: |

@@ -37,7 +37,7 @@ async def lifespan(_: FastAPI):
         await scraper.close()
 
 
-app = FastAPI(title="泊松足球实验室", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="老杨足球实验室", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[],

@@ -22,8 +22,9 @@ UTC = timezone.utc
 BEIJING = ZoneInfo("Asia/Shanghai")
 LONDON = ZoneInfo("Europe/London")
 FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
-USER_AGENT = "poisson-football-lab/1.0 (+https://github.com/shanyan0820/poisson-football)"
+USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
+HANDICAP_EDGE_THRESHOLD = 0.15
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -244,6 +245,71 @@ def base_fixture(league: dict, home_source: str, away_source: str, kickoff: date
     }
 
 
+def parse_asian_handicap(row: dict) -> dict | None:
+    """读取源站赛前亚盘；AHh 为主队让球数，主队让球为负、受让为正。"""
+    try:
+        home_line = float(row.get("AHh", "").strip())
+    except (TypeError, ValueError):
+        return None
+
+    def number(field: str) -> float | None:
+        try:
+            return float(row.get(field, "").strip())
+        except (TypeError, ValueError):
+            return None
+
+    return {
+        "home_line": home_line,
+        "bet365_home_odds": number("B365AHH"),
+        "bet365_away_odds": number("B365AHA"),
+        "average_home_odds": number("AvgAHH"),
+        "average_away_odds": number("AvgAHA"),
+        "source": "football-data fixtures.csv",
+        "line_convention": "AHh 为主队让球数：负数表示主队让球，正数表示主队受让。",
+    }
+
+
+def compare_handicap(prediction: dict | None, market: dict | None,
+                     threshold: float = HANDICAP_EDGE_THRESHOLD) -> dict | None:
+    """对比模型预期净胜球与盘口基准；只输出模型倾向，不计算投注收益。"""
+    if not prediction or not market or market.get("home_line") is None:
+        return None
+    expected = prediction["expected_goals"]
+    model_difference = expected["home"] - expected["away"]
+    market_baseline = -market["home_line"]
+    edge = model_difference - market_baseline
+    if edge >= threshold:
+        side, line = "home", market["home_line"]
+    elif edge <= -threshold:
+        side, line = "away", -market["home_line"]
+    else:
+        side, line = "neutral", None
+    return {
+        "model_goal_difference": model_difference,
+        "market_goal_baseline": market_baseline,
+        "edge": edge,
+        "threshold": threshold,
+        "side": side,
+        "line": line,
+        "method": "模型净胜球差 = λ主 − λ客；盘口基准 = −AHh；差值 = 模型净胜球差 − 盘口基准。",
+    }
+
+
+def update_handicap_snapshot(record: dict, market: dict | None, now: datetime) -> None:
+    """开球前保存盘口变化；已开球的旧记录只补首个快照，不回填采集时间。"""
+    if not market:
+        return
+    current = record.get("asian_handicap")
+    kickoff = datetime.fromisoformat(record["kickoff_utc"])
+    if current and kickoff <= now:
+        return
+    if current and all(current.get(k) == v for k, v in market.items()):
+        return
+    if current:
+        record.setdefault("asian_handicap_history", []).append(current)
+    record["asian_handicap"] = {**market, "captured_at": now.astimezone(UTC).isoformat(timespec="seconds")}
+
+
 def parse_main_fixtures(csv_text: str, leagues: dict, target_date: date) -> list[dict]:
     rows = csv.DictReader(io.StringIO(csv_text))
     required = {"Div", "Date", "Time", "HomeTeam", "AwayTeam"}
@@ -264,7 +330,9 @@ def parse_main_fixtures(csv_text: str, leagues: dict, target_date: date) -> list
         home, away = row["HomeTeam"].strip(), row["AwayTeam"].strip()
         if not home or not away or home == away:
             continue
-        fixtures.append(base_fixture(leagues[league_id], home, away, kickoff, "football-data fixtures.csv"))
+        fixture = base_fixture(leagues[league_id], home, away, kickoff, "football-data fixtures.csv")
+        fixture["asian_handicap"] = parse_asian_handicap(row)
+        fixtures.append(fixture)
     return fixtures
 
 
@@ -378,6 +446,7 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
         if record is None:
             record = {**fixture, "key": key, "created_at": now.isoformat(timespec="seconds"),
                       "predictions": {}, "status": "untracked", "actual": None}
+            record.pop("asian_handicap", None)
             archive["matches"][key] = record
             if fixture.get("mapping_error"):
                 record["status_reason"] = fixture["mapping_error"]
@@ -399,6 +468,7 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
             # 预测、created_at 与 key 保持不变；允许源站修正开球时间。
             for field in ["kickoff_utc", "kickoff_beijing", "source", "source_event_id"]:
                 record[field] = fixture[field]
+        update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
         result = find_result(fixture, leagues[fixture["league_id"]])
         if result:
             record["actual"] = {"date": result["date"], "home_goals": result["home_goals"],
@@ -422,10 +492,15 @@ def tracked_summary(archive: dict) -> list[dict]:
     return rank_metrics([finish_metric(model_id, metric) for model_id, metric in metrics.items()])
 
 
-def public_record(record: dict) -> dict:
+def public_record(record: dict, featured_model_id: str = "stable") -> dict:
     fields = ["key", "league_id", "league_name", "home", "away", "home_source", "away_source",
-              "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "actual", "predictions"]
+              "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "actual", "predictions",
+              "asian_handicap"]
     result = {k: record.get(k) for k in fields}
+    featured = record.get("predictions", {}).get(featured_model_id)
+    result["featured_model_id"] = featured_model_id
+    result["featured_prediction"] = featured
+    result["handicap_analysis"] = compare_handicap(featured, record.get("asian_handicap"))
     if record.get("status_reason"):
         result["status_reason"] = record["status_reason"]
     return result
@@ -433,10 +508,12 @@ def public_record(record: dict) -> dict:
 
 def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], coverage: list[dict], now: datetime) -> dict:
     by_league = {l["id"]: rolling_backtest(l) for l in dataset["leagues"]}
+    global_report = global_backtest(by_league)
+    featured_model_id = next((m["model_id"] for m in global_report if m["n"]), "stable")
     today_keys = {fixture_key(f) for f in fixtures}
-    today = [public_record(record) for key, record in archive["matches"].items() if key in today_keys]
+    today = [public_record(record, featured_model_id) for key, record in archive["matches"].items() if key in today_keys]
     today.sort(key=lambda r: (r["kickoff_utc"], r["league_id"], r["home"]))
-    finished = [public_record(r) for r in archive["matches"].values() if r.get("actual")]
+    finished = [public_record(r, featured_model_id) for r in archive["matches"].values() if r.get("actual")]
     finished.sort(key=lambda r: r["kickoff_utc"], reverse=True)
     return {
         "generated_at": now.astimezone(UTC).isoformat(timespec="seconds"),
@@ -446,9 +523,11 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "每日预测在开球前写入 prediction_archive.json；赛后只回写结果，不改预测。",
+            "handicap": "盘口来自 football-data fixtures.csv 的赛前 AHh 与赔率字段；差值不足 0.15 球时显示方向不明，不输出投注金额或收益承诺。",
         },
+        "featured_model_id": featured_model_id,
         "models": MODEL_CONFIGS, "coverage": sorted(coverage, key=lambda c: c["league_id"]),
-        "backtest": {"global": global_backtest(by_league), "by_league": by_league},
+        "backtest": {"global": global_report, "by_league": by_league},
         "tracked": tracked_summary(archive), "fixtures": today, "history": finished[:60],
     }
 
