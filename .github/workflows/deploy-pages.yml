@@ -51,11 +51,11 @@ jobs:
                   assert fixture['handicap_analysis'] is not None
               else:
                   assert fixture['handicap_analysis'] is None
-              if fixture.get('total_market') and fixture.get('featured_prediction'):
-                  assert fixture['total_analysis'] is not None
-              else:
-                  assert fixture['total_analysis'] is None
-          assert set(predictions['market_tracking']) >= {'asian_handicap', 'total_goals', 'recommendation', 'integrated'}
+              assert 'total_market' not in fixture and 'total_analysis' not in fixture
+              assert fixture.get('recommendation_selection', {}).get('market') in (None, 'asian_handicap')
+              if fixture.get('ranking', {}).get('rank_ratio') is not None:
+                  assert 0 <= fixture['ranking']['rank_ratio'] <= 1
+          assert set(predictions['market_tracking']) >= {'asian_handicap', 'recommendation', 'integrated'}
           for fixture in predictions['fixtures']:
               assert fixture['featured_selection'] == fixture['integrated_selection']
               if fixture.get('featured_prediction'):

@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="赛后推荐准确率">
 <link rel="icon" href="data:,">
-<meta name="description" content="老杨足球实验室赛后所有推荐与精选推荐准确率，仅统计全赢、全输、赢一半、输一半">
+<meta name="description" content="老杨足球实验室赛后预测推荐与精选预测准确率，仅统计全赢、全输、赢一半、输一半">
 <title>赛后推荐准确率 · 老杨足球实验室</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#a43c32}
@@ -16,13 +16,13 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后推荐准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>只比较所有推荐与精选推荐；仅四类有效盘口结果进入准确率。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后推荐准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>只比较预测推荐与精选预测；仅四类有效盘口结果进入准确率。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 统计范围</div><h2 class="section-title">选择联赛与推荐范围</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="model">推荐范围</label><select id="model"><option value="RECOMMENDED">所有推荐</option><option value="FEATURED">精选推荐</option></select></div>
+    <div class="field"><label for="model">推荐范围</label><select id="model"><option value="RECOMMENDED">预测推荐</option><option value="FEATURED">精选预测</option></select></div>
   </div>
   <p class="hint">只统计开球前已冻结、赛后已有真实结果的推荐。</p>
   <div class="error" id="error"></div>
@@ -30,7 +30,7 @@
 <div class="loading" id="loading">正在读取赛后真实结算…</div>
 <div id="content" class="hidden">
 <section class="card">
-  <div class="step">02 / 赛后准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 所有推荐</h2>
+  <div class="step">02 / 赛后准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 预测推荐</h2>
   <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效正确 ÷ 四类结果的等效有效判定</span></div>
   <div class="outcomes">
     <div class="outcome good"><b id="full-win">0</b><span>全赢</span><small>计 1 次正确</small></div>
@@ -40,7 +40,7 @@
   </div>
   <div class="empty" id="empty">当前筛选暂无符合口径的已结算推荐。</div>
   <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走地、赢输各半及其他结果均不计入分子或分母，也不单独展示。</div>
-  <div class="warning">先积累所有推荐的完整样本，再比较精选推荐是否真正提高准确率。样本不足时不代表长期水平。</div>
+  <div class="warning">先积累预测推荐的完整样本，再比较精选预测是否真正提高准确率。样本不足时不代表长期水平。</div>
 </section>
 </div>
 <footer class="footer">老杨足球实验室 · 预测赛前冻结 · 赛后只回写真实结果</footer>
@@ -48,7 +48,7 @@
 <script>
 const $=id=>document.getElementById(id);let DATA=null;
 const VALID_RESULTS=new Set(['full_win','full_loss','half_win','half_loss']);
-const modelNames={RECOMMENDED:'所有推荐',FEATURED:'精选推荐'};
+const modelNames={RECOMMENDED:'预测推荐',FEATURED:'精选预测'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
 function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}

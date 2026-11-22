@@ -14,7 +14,7 @@ from datetime import date, datetime, time as dt_time, timedelta, timezone
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
-from generate_data import TEAM_ZH, fetch_csv
+from generate_data import TEAM_ZH, fetch_csv, standings
 from model import Match, analyze, _poisson_matrix
 
 ROOT = Path(__file__).resolve().parent
@@ -25,10 +25,10 @@ FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
 USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
 HANDICAP_EDGE_THRESHOLD = 0.15
-INTEGRATED_MIN_GAP = 0.15
-INTEGRATED_MAX_GAP = 1.00
-INTEGRATED_RULE_VERSION = "gap-direction-ev-v1"
-RECOMMENDATION_RULE_VERSION = "all-markets-highest-ev-v1"
+INTEGRATED_RULE_VERSION = "handicap-gap-rank-featured-v1"
+RECOMMENDATION_RULE_VERSION = "handicap-gap-rank-v1"
+RANK_CLOSE_MAX = 0.20
+RANK_MODERATE_MAX = 0.40
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -152,7 +152,7 @@ def compact_prediction(result: dict) -> dict:
     return {
         "expected_goals": result["expected_goals"],
         "predicted": predicted_outcome(forecast),
-        "forecast": {k: forecast[k] for k in ["home_win", "draw", "away_win", "over15", "over25", "over35", "btts"]},
+        "forecast": {k: forecast[k] for k in ["home_win", "draw", "away_win"]},
         "top_scores": forecast["top_scores"][:3],
     }
 
@@ -252,6 +252,30 @@ def base_fixture(league: dict, home_source: str, away_source: str, kickoff: date
     }
 
 
+def ranking_snapshot(fixture: dict, league: dict) -> dict:
+    """只使用开球日期之前的真实赛果重建积分榜，避免赛后排名泄漏。"""
+    kickoff_date = datetime.fromisoformat(fixture["kickoff_beijing"]).date().isoformat()
+    prior = [{"home": m["home_source"], "away": m["away_source"],
+              "home_goals": m["home_goals"], "away_goals": m["away_goals"]}
+             for m in league["matches"] if m["date"] < kickoff_date]
+    table = standings(prior)
+    ranks = {team["id"]: team for team in table}
+    home, away = ranks.get(fixture["home_source"]), ranks.get(fixture["away_source"])
+    team_count = max(len(table), len(league.get("teams", [])))
+    base = {"ranking_basis": "仅使用开球日期前的已结束比赛重建积分榜",
+            "ranking_as_of": max((m["date"] for m in league["matches"] if m["date"] < kickoff_date), default=None),
+            "league_team_count": team_count}
+    if not home or not away or not team_count:
+        return {**base, "home_rank": None, "away_rank": None, "rank_difference": None,
+                "rank_ratio": None, "rank_category": "unknown"}
+    difference = abs(home["rank"] - away["rank"])
+    ratio = difference / team_count
+    category = "close" if ratio <= RANK_CLOSE_MAX + 1e-12 else "moderate" if ratio <= RANK_MODERATE_MAX + 1e-12 else "large"
+    return {**base, "home_rank": home["rank"], "away_rank": away["rank"],
+            "home_points": home["points"], "away_points": away["points"],
+            "rank_difference": difference, "rank_ratio": ratio, "rank_category": category}
+
+
 def parse_asian_handicap(row: dict) -> dict | None:
     """读取源站赛前亚盘；AHh 为主队让球数，主队让球为负、受让为正。"""
     try:
@@ -276,24 +300,6 @@ def parse_asian_handicap(row: dict) -> dict | None:
     }
 
 
-def parse_total_market(row: dict) -> dict | None:
-    """football-data 赛前大小球固定为 2.5 球；没有赔率时保持为空。"""
-    def number(field: str) -> float | None:
-        try:
-            return float(row.get(field, "").strip())
-        except (TypeError, ValueError):
-            return None
-    market = {
-        "line": 2.5,
-        "bet365_over_odds": number("B365>2.5"),
-        "bet365_under_odds": number("B365<2.5"),
-        "average_over_odds": number("Avg>2.5"),
-        "average_under_odds": number("Avg<2.5"),
-        "source": "football-data fixtures.csv",
-    }
-    return market if any(v is not None for k, v in market.items() if k.endswith("_odds")) else None
-
-
 def split_quarter_line(line: float) -> list[float]:
     """±0.25/±0.75 拆成两笔半注，其余盘口不拆分。"""
     doubled = line * 2
@@ -314,10 +320,6 @@ def normalized_margins(prediction: dict, kind: str) -> list[tuple[float, float]]
                 margin = home_goals - away_goals
             elif kind == "away":
                 margin = away_goals - home_goals
-            elif kind == "over":
-                margin = home_goals + away_goals
-            elif kind == "under":
-                margin = -(home_goals + away_goals)
             else:
                 raise ValueError(f"未知盘口方向：{kind}")
             margins.append((margin, probability / total))
@@ -375,112 +377,73 @@ def compare_handicap(prediction: dict | None, market: dict | None,
     }
 
 
-def compare_total_market(prediction: dict | None, market: dict | None) -> dict | None:
-    if not prediction or not market or market.get("line") is None:
-        return None
-    expected = prediction["expected_goals"]
-    model_total = expected["home"] + expected["away"]
-    over = market_metrics(normalized_margins(prediction, "over"), -market["line"], market.get("bet365_over_odds"))
-    under = market_metrics(normalized_margins(prediction, "under"), market["line"], market.get("bet365_under_odds"))
-    ev_side, _, ev_value = choose_positive_ev([("over", market["line"], over), ("under", market["line"], under)])
-    return {
-        "model_total": model_total, "market_line": market["line"], "edge": model_total - market["line"],
-        "over_metrics": over, "under_metrics": under,
-        "ev_side": ev_side, "ev_line": market["line"] if ev_side else None, "ev_value": ev_value,
-        "selection_rule": "Bet365 理论 EV>0 才形成候选；两侧均为正时取较高值，暂不设总进球差值排除阈值。",
-    }
+def handicap_rule_direction(handicap: dict | None) -> dict:
+    """用户指定的三档让球规则；差值 = 模型让球数 − 机构 AHh。"""
+    if not handicap:
+        return {"status": "skip", "reason": "缺少赛前冻结预测或机构让球盘口，本场不推荐。"}
+    model_line = -handicap["model_goal_difference"]
+    institution_line = handicap["market_line"]
+    signed_gap = model_line - institution_line
+    gap = abs(signed_gap)
+    base = {"model_handicap": model_line, "institution_handicap": institution_line,
+            "signed_gap": signed_gap, "gap": gap}
+    if gap <= .25 + 1e-9:
+        if abs(model_line) <= 1e-9:
+            return {**base, "status": "skip", "reason": "盘口差不超过 0.25 球，但模型让球数为 0，规则不指定方向。"}
+        return {**base, "status": "candidate", "rule_number": 1,
+                "side": "home" if model_line < 0 else "away",
+                "reason": "盘口差≤0.25球：模型让球为负推荐主队，为正推荐客队。"}
+    if gap <= .50 + 1e-9:
+        return {**base, "status": "candidate", "rule_number": 2,
+                "side": "away" if model_line > institution_line else "home",
+                "reason": "盘口差在0.25–0.50球：模型让球大于机构推荐客队，小于机构推荐主队。"}
+    if abs(institution_line) <= 1e-9:
+        return {**base, "status": "skip", "reason": "盘口差超过 0.50 球，但机构让球数为 0，规则不指定方向。"}
+    return {**base, "status": "candidate", "rule_number": 3,
+            "side": "home" if institution_line < 0 else "away",
+            "reason": "盘口差>0.50球：机构让球为负推荐主队，为正推荐客队。"}
 
 
-def choose_recommendation(handicap: dict | None, total: dict | None) -> dict:
-    """所有推荐：只要有冻结预测、机构盘口和 Bet365 赔率，就保留一个最高 EV 方向。"""
-    analyses = {"asian_handicap": handicap, "total_goals": total}
-    base = {
-        "rule_version": RECOMMENDATION_RULE_VERSION, "status": "skip", "market": None,
-        "side": None, "line": None, "odds": None, "ev": None, "gap": None,
-        "signed_gap": None, "candidate_count": 0,
-    }
-    candidates = []
-    for market, analysis in analyses.items():
-        if not analysis:
-            continue
-        sides = ("home", "away") if market == "asian_handicap" else ("over", "under")
-        for side in sides:
-            metrics = analysis[f"{side}_metrics"]
-            ev = metrics.get("ev")
-            if ev is None or metrics.get("odds") is None:
-                continue
-            if market == "asian_handicap":
-                line = analysis["market_line"] if side == "home" else -analysis["market_line"]
-            else:
-                line = analysis["market_line"]
-            candidates.append({
-                "rule_version": RECOMMENDATION_RULE_VERSION, "status": "candidate",
-                "market": market, "side": side, "line": line, "odds": metrics["odds"],
-                "ev": ev, "gap": abs(analysis["edge"]), "signed_gap": analysis["edge"],
-                "win_probability": metrics["win_eq"], "loss_probability": metrics["loss_eq"],
-                "push_probability": metrics["push_eq"],
-                "reason": "有机构盘口与 Bet365 赔率即纳入；不设正 EV 或差值门槛，所有可用方向中取理论 EV 最高者，用于积累完整观察样本。",
-            })
-    if not candidates:
-        return {**base, "reason": "缺少赛前冻结预测、机构盘口或可用 Bet365 赔率，本场不推荐。"}
-    selected = max(candidates, key=lambda item: (item["ev"], -item["gap"]))
-    selected["candidate_count"] = len(candidates)
-    return selected
-
-
-def choose_integrated_selection(handicap: dict | None, total: dict | None) -> dict:
-    """精选推荐：整场排除极端分歧，再选择同向且正 EV 的最高价值方向。"""
-    analyses = {"asian_handicap": handicap, "total_goals": total}
-    available = [analysis for analysis in analyses.values() if analysis]
-    base = {
-        "rule_version": INTEGRATED_RULE_VERSION, "min_gap": INTEGRATED_MIN_GAP,
-        "max_gap": INTEGRATED_MAX_GAP, "status": "skip", "market": None,
-        "side": None, "line": None, "odds": None, "ev": None, "gap": None,
-        "signed_gap": None, "candidate_count": 0,
-    }
-    if not available:
-        return {**base, "reason": "源站未提供可比较的机构盘口，本场放弃。"}
-    extreme = [name for name, analysis in analyses.items()
-               if analysis and abs(analysis["edge"]) > INTEGRATED_MAX_GAP]
-    if extreme:
-        labels = "、".join("亚盘" if name == "asian_handicap" else "大小球" for name in extreme)
-        return {**base, "reason": f"{labels}模型与机构差值超过 1.00 球，可能存在模型外信息，整场放弃。",
-                "extreme_markets": extreme}
-    candidates = []
-    for market, analysis in analyses.items():
-        if not analysis:
-            continue
-        gap = abs(analysis["edge"])
-        if gap < INTEGRATED_MIN_GAP:
-            continue
-        if market == "asian_handicap":
-            side = "home" if analysis["edge"] > 0 else "away"
-            line = analysis["market_line"] if side == "home" else -analysis["market_line"]
-        else:
-            side = "over" if analysis["edge"] > 0 else "under"
-            line = analysis["market_line"]
-        metrics = analysis[f"{side}_metrics"]
-        ev = metrics.get("ev")
-        if ev is None or ev <= 0:
-            continue
-        candidates.append({
-            "rule_version": INTEGRATED_RULE_VERSION, "min_gap": INTEGRATED_MIN_GAP,
-            "max_gap": INTEGRATED_MAX_GAP, "status": "candidate", "market": market,
-            "side": side, "line": line, "odds": metrics["odds"], "ev": ev,
-            "gap": gap, "signed_gap": analysis["edge"],
+def choose_recommendation(handicap: dict | None, ranking: dict | None = None) -> dict:
+    """让球专属推荐：只由三档盘口差决定方向，EV 仅作展示与结算参考。"""
+    direction = handicap_rule_direction(handicap)
+    base = {"rule_version": RECOMMENDATION_RULE_VERSION, "status": "skip",
+            "market": "asian_handicap", "side": None, "line": None, "odds": None,
+            "ev": None, "gap": direction.get("gap"), "signed_gap": direction.get("signed_gap"),
+            "candidate_count": 0}
+    if direction["status"] != "candidate":
+        return {**base, **direction}
+    side = direction["side"]
+    metrics = handicap[f"{side}_metrics"]
+    if metrics.get("odds") is None:
+        return {**base, **direction, "status": "skip", "side": side,
+                "reason": "已符合让球方向规则，但缺少 Bet365 赔率，本场不形成可结算推荐。"}
+    line = handicap["market_line"] if side == "home" else -handicap["market_line"]
+    return {**base, **direction, "line": line, "odds": metrics["odds"], "ev": metrics.get("ev"),
             "win_probability": metrics["win_eq"], "loss_probability": metrics["loss_eq"],
-            "push_probability": metrics["push_eq"],
-            "reason": "方向与模型分歧一致，差值在 0.15–1.00 球且 Bet365 理论 EV>0；合格方向中取 EV 最高。",
-        })
-    if not candidates:
-        if all(abs(analysis["edge"]) < INTEGRATED_MIN_GAP for analysis in available):
-            reason = "模型与机构差值均不足 0.15 球，缺少有效分歧，本场放弃。"
-        else:
-            reason = "差值合格的方向没有正向 Bet365 理论 EV，或赔率缺失，本场放弃。"
-        return {**base, "reason": reason}
-    selected = max(candidates, key=lambda item: (item["ev"], -item["gap"]))
-    selected["candidate_count"] = len(candidates)
-    return selected
+            "push_probability": metrics["push_eq"], "candidate_count": 1,
+            "rank_category": (ranking or {}).get("rank_category")}
+
+
+def choose_integrated_selection(handicap: dict | None, ranking: dict | None = None) -> dict:
+    """精选与基础推荐同方向，只增加用户指定的排名差条件。"""
+    recommendation = choose_recommendation(handicap, ranking)
+    base = {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
+            "status": "skip", "candidate_count": 0}
+    if recommendation["status"] != "candidate":
+        return base
+    required = {1: "close", 2: "large", 3: "moderate"}[recommendation["rule_number"]]
+    labels = {"close": "接近（≤20%）", "moderate": "中等（20%–40%）", "large": "较大（>40%）"}
+    actual = (ranking or {}).get("rank_category")
+    if not ranking or actual == "unknown":
+        return {**base, "required_rank_category": required,
+                "reason": "已有让球推荐，但缺少开球前联赛排名，不能升级为精选预测。"}
+    if actual != required:
+        return {**base, "required_rank_category": required,
+                "reason": f"规则{recommendation['rule_number']}精选要求排名差{labels[required]}；当前为{labels.get(actual, '未知')}。"}
+    return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
+            "required_rank_category": required, "featured": True,
+            "reason": recommendation["reason"] + f" 排名差{labels[required]}，升级为精选预测。"}
 
 
 def settle_margin(margin: float, line: float, odds: float) -> dict:
@@ -550,7 +513,6 @@ def parse_main_fixtures(csv_text: str, leagues: dict, target_date: date) -> list
             continue
         fixture = base_fixture(leagues[league_id], home, away, kickoff, "football-data fixtures.csv")
         fixture["asian_handicap"] = parse_asian_handicap(row)
-        fixture["total_market"] = parse_total_market(row)
         fixtures.append(fixture)
     return fixtures
 
@@ -659,7 +621,18 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
     archive.setdefault("version", 1)
     archive.setdefault("matches", {})
     leagues = {l["id"]: l for l in dataset["leagues"]}
+    for saved in archive["matches"].values():
+        saved.pop("total_market", None)
+        saved.pop("total_market_history", None)
+        for prediction in saved.get("predictions", {}).values():
+            if prediction.get("forecast"):
+                prediction["forecast"] = {k: v for k, v in prediction["forecast"].items() if k in {"home_win", "draw", "away_win"}}
+        for field in ("recommendation_selection", "integrated_selection"):
+            if saved.get(field, {}).get("market") == "total_goals":
+                saved.pop(field, None)
     for fixture in fixtures:
+        league = leagues[fixture["league_id"]]
+        fixture = {**fixture, "ranking": ranking_snapshot(fixture, league)}
         key = fixture_key(fixture)
         record = archive["matches"].get(key)
         if record is None:
@@ -688,9 +661,9 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
             # 预测、created_at 与 key 保持不变；允许源站修正开球时间。
             for field in ["kickoff_utc", "kickoff_beijing", "source", "source_event_id"]:
                 record[field] = fixture[field]
+        record["ranking"] = fixture["ranking"]
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
-        update_market_snapshot(record, fixture.get("total_market"), now, "total_market")
-        result = find_result(fixture, leagues[fixture["league_id"]])
+        result = find_result(fixture, league)
         if result:
             record["actual"] = {"date": result["date"], "home_goals": result["home_goals"],
                                 "away_goals": result["away_goals"],
@@ -737,10 +710,10 @@ def gap_band(gap: float) -> str:
     return "≥1.00"
 
 
-def settle_record_markets(record: dict, handicap: dict | None, total: dict | None,
+def settle_record_markets(record: dict, handicap: dict | None,
                           integrated: dict | None = None,
                           recommendation: dict | None = None) -> dict:
-    """结算理论 EV 方向、所有推荐与精选推荐；原始终端与分档一并保留。"""
+    """只结算让球理论 EV 方向、预测推荐与精选预测。"""
     actual = record.get("actual")
     if not actual:
         return {}
@@ -755,25 +728,12 @@ def settle_record_markets(record: dict, handicap: dict | None, total: dict | Non
                      "model_gap": handicap["edge"], "abs_gap": abs(handicap["edge"]),
                      "ev_band": ev_band(handicap["ev_value"]), "gap_band": gap_band(abs(handicap["edge"]))})
         settlements["asian_handicap"] = item
-    if total and total.get("ev_side"):
-        side = total["ev_side"]
-        goals = actual["home_goals"] + actual["away_goals"]
-        margin, line = (goals, -total["market_line"]) if side == "over" else (-goals, total["market_line"])
-        item = settle_margin(margin, line, total[f"{side}_metrics"]["odds"])
-        item.update({"side": side, "line": total["market_line"], "pregame_ev": total["ev_value"],
-                     "model_gap": total["edge"], "abs_gap": abs(total["edge"]),
-                     "ev_band": ev_band(total["ev_value"]), "gap_band": gap_band(abs(total["edge"]))})
-        settlements["total_goals"] = item
     def settle_selection(selection: dict) -> dict:
         side = selection["side"]
-        if selection["market"] == "asian_handicap":
-            margin = actual["home_goals"] - actual["away_goals"]
-            if side == "away":
-                margin = -margin
-            line = selection["line"]
-        else:
-            goals = actual["home_goals"] + actual["away_goals"]
-            margin, line = (goals, -selection["line"]) if side == "over" else (-goals, selection["line"])
+        margin = actual["home_goals"] - actual["away_goals"]
+        if side == "away":
+            margin = -margin
+        line = selection["line"]
         item = settle_margin(margin, line, selection["odds"])
         item.update({"market": selection["market"], "side": side, "line": selection["line"],
                      "pregame_ev": selection["ev"], "model_gap": selection["signed_gap"],
@@ -803,13 +763,13 @@ def summarize_market_rows(rows: list[dict]) -> dict:
 
 def build_market_tracking(finished: list[dict]) -> dict:
     result = {
-        "selection": "所有推荐在每个有冻结预测和 Bet365 盘口的方向中取最高理论 EV，不要求 EV>0；精选推荐另按 gap-direction-ev-v1 规则结算。",
+        "selection": "预测推荐按三档模型与机构让球差决定方向；精选预测在同方向上增加联赛排名差条件。",
         "metrics": "等效胜率只计全赢、全输、赢一半、输一半；走地与赢输各半不进入推荐准确率。",
         "bands": "EV 与模型机构差值分档仅用于积累观察样本，不代表已确定最优阈值。",
-        "recommendation_rule": "所有可用亚盘和大小球方向取最高理论EV，允许EV≤0；无机构盘口或赔率时不推荐。",
-        "integrated_rule": "任一市场差值>1.00球整场放弃；合格方向须与分歧同向、差值≥0.15球且Bet365理论EV>0，取最高EV。",
+        "recommendation_rule": "差值≤0.25球看模型让球符号；0.25–0.50球比较模型与机构大小；>0.50球看机构让球符号。",
+        "integrated_rule": "规则1要求排名差≤联赛队数20%；规则2要求>40%；规则3要求20%–40%。精选与预测推荐同方向。",
     }
-    for key in ["asian_handicap", "total_goals", "recommendation", "integrated"]:
+    for key in ["asian_handicap", "recommendation", "integrated"]:
         rows = [r["market_settlement"][key] for r in finished
                 if r.get("market_settlement", {}).get(key)]
         by_ev, by_gap = {}, {}
@@ -829,7 +789,7 @@ def freeze_selection(record: dict, field: str, derived: dict, now: datetime) -> 
     locked = bool(record.get("actual")) or record.get("status") == "awaiting_result" or (
         kickoff and datetime.fromisoformat(kickoff) <= now)
     if locked:
-        if existing:
+        if existing and existing.get("rule_version") == derived.get("rule_version"):
             return existing
         retrospective = {**derived, "tracking_eligible": False, "freeze_status": "retrospective"}
         record[field] = retrospective
@@ -850,23 +810,21 @@ def freeze_recommendation_selection(record: dict, derived: dict, now: datetime) 
 def public_record(record: dict, featured_model_id: str = "stable", now: datetime | None = None) -> dict:
     fields = ["key", "league_id", "league_name", "home", "away", "home_source", "away_source",
               "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "actual", "predictions",
-              "asian_handicap", "total_market"]
+              "asian_handicap", "ranking"]
     result = {k: record.get(k) for k in fields}
     featured = record.get("predictions", {}).get(featured_model_id)
     handicap = compare_handicap(featured, record.get("asian_handicap"))
-    total = compare_total_market(featured, record.get("total_market"))
     result["featured_model_id"] = featured_model_id
     result["featured_prediction"] = featured
     result["handicap_analysis"] = handicap
-    result["total_analysis"] = total
-    derived_recommendation = choose_recommendation(handicap, total)
+    derived_recommendation = choose_recommendation(handicap, record.get("ranking"))
     recommendation = freeze_recommendation_selection(record, derived_recommendation, now or datetime.now(UTC))
     result["recommendation_selection"] = recommendation
-    derived_selection = choose_integrated_selection(handicap, total)
+    derived_selection = choose_integrated_selection(handicap, record.get("ranking"))
     selection = freeze_integrated_selection(record, derived_selection, now or datetime.now(UTC))
     result["integrated_selection"] = selection
     result["featured_selection"] = selection
-    result["market_settlement"] = settle_record_markets(record, handicap, total, selection, recommendation)
+    result["market_settlement"] = settle_record_markets(record, handicap, selection, recommendation)
     if record.get("status_reason"):
         result["status_reason"] = record["status_reason"]
     return result
@@ -889,7 +847,7 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "每日预测在开球前写入 prediction_archive.json；赛后只回写结果，不改预测。",
-            "handicap": "盘口与大小球来自 football-data fixtures.csv 的赛前字段；理论 EV 使用冻结 λ 的归一化比分矩阵和 Bet365 赔率。所有推荐取可用方向最高 EV，不设正 EV 门槛；精选推荐沿用 gap-direction-ev-v1。两级推荐均在开球前冻结，规则上线前已开场的比赛不回填成绩。",
+            "handicap": "只研究让球盘。差值=模型让球数−机构AHh，按0.25和0.50球分档决定方向；精选增加排名差占联赛队数比例条件。理论EV仅作展示，不作为入选门槛。推荐在开球前冻结，规则上线前已开场的比赛不回填成绩。",
         },
         "featured_model_id": featured_model_id,
         "models": MODEL_CONFIGS, "coverage": sorted(coverage, key=lambda c: c["league_id"]),
