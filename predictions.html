@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0b1f1a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="每日预测回测">
+<meta name="description" content="每日赛程批量预测、赛前冻结、赛后核对与无未来数据泄漏的滚动回测">
+<title>每日预测与模型回测 · 泊松足球实验室</title>
+<style>
+:root{--bg:#f3f5f2;--ink:#13221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--green2:#19a974;--line:#dfe6e1;--dark:#0b1f1a;--amber:#a66309;--red:#a43c32}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.5}select,button{font:inherit}.wrap{max-width:900px;margin:auto;padding:0 16px 48px}.hero{background:var(--dark);color:#fff;padding:28px 20px 36px;border-radius:0 0 28px 28px}.hero-inner{max-width:900px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:23px;margin:0}.live{font-size:12px;color:#bcebd6;border:1px solid #315e4d;padding:4px 9px;border-radius:99px;white-space:nowrap}.hero p{color:#b9c9c1;font-size:14px;margin:14px 0 0}.updated{font-size:11px;color:#88aa9b;margin-top:9px}.nav{display:inline-block;margin-top:12px;color:#d8f5e7;font-size:13px;font-weight:700;text-decoration:none;border-bottom:1px solid #58a789;padding-bottom:2px}.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;margin-top:16px;box-shadow:0 5px 18px rgba(19,34,29,.035)}.setup{margin-top:-19px;position:relative}.step{font-size:12px;color:var(--green);font-weight:700;letter-spacing:1px}.section-title{font-size:18px;margin:4px 0 14px}.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.stat{background:#f3f8f5;border-radius:12px;padding:12px;text-align:center}.stat strong{display:block;font-size:24px;color:var(--green)}.stat span{font-size:11px;color:var(--muted)}.controls{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:15px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}select{width:100%;border:1px solid #cfdad3;background:#f9fbfa;color:var(--ink);border-radius:12px;padding:12px 10px;outline:none}.hint{font-size:12px;color:var(--muted);margin:10px 0 0}.error{display:none;background:#fff1ef;color:#9c352b;border:1px solid #f0ccc7;padding:12px;border-radius:12px;margin-top:14px;font-size:14px}.loading{text-align:center;padding:24px;color:var(--muted)}.section-head{display:flex;align-items:end;justify-content:space-between;gap:12px}.section-head .hint{margin:0;text-align:right}.fixture{padding:16px 0;border-top:1px solid var(--line)}.fixture:first-child{border-top:0;padding-top:2px}.fixture:last-child{padding-bottom:0}.fixture-top{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;color:var(--muted)}.badge{display:inline-block;padding:3px 8px;border-radius:99px;background:#eaf5ef;color:var(--green);font-weight:700;white-space:nowrap}.badge.gray{background:#eef1ef;color:var(--muted)}.badge.amber{background:#fff3df;color:#8c5b13}.teams{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;margin:12px 0;font-size:17px;font-weight:750}.teams span:last-child{text-align:right}.vs{font-size:11px;color:var(--muted);font-weight:500}.prediction{background:#f5f8f6;border-radius:13px;padding:12px}.pick{display:flex;justify-content:space-between;gap:12px;align-items:center;margin-bottom:10px}.pick strong{color:var(--green);font-size:16px}.pick span{font-size:12px;color:var(--muted)}.probs{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.prob{background:#fff;border:1px solid var(--line);border-radius:10px;padding:8px;text-align:center}.prob b{display:block;font-size:16px}.prob span{font-size:11px;color:var(--muted)}.prob.best{border-color:#77bda0;background:#edf8f2}.details{font-size:12px;color:var(--muted);margin-top:10px}.actual{margin-top:10px;padding:10px;border-radius:10px;background:#edf5f0;font-size:13px}.actual.miss{background:#fff1ef}.actual b.hit{color:var(--green)}.actual b.miss{color:var(--red)}.untracked{padding:11px;background:#f5f6f5;border-radius:10px;color:var(--muted);font-size:12px}.table-wrap{overflow-x:auto}table{width:100%;border-collapse:collapse;font-size:13px;min-width:610px}th,td{text-align:right;padding:11px 8px;border-bottom:1px solid #edf0ed;white-space:nowrap}th{font-size:11px;color:var(--muted);font-weight:600}th:nth-child(2),td:nth-child(2){text-align:left}tr:last-child td{border-bottom:0}tr.leader{background:#edf8f2}.model-name{font-weight:700}.rank{font-weight:800;color:var(--green)}.model-note{padding:11px;background:#f3f8f5;border-radius:11px;font-size:12px;color:var(--muted);margin-bottom:12px}.warning{border-left:3px solid var(--amber);padding-left:10px;color:#79511c;font-size:12px;margin-top:12px}details{font-size:12px;color:var(--muted)}summary{cursor:pointer;color:var(--ink);font-weight:700;margin-bottom:8px}.coverage-row{padding:6px 0;border-bottom:1px dashed var(--line)}.footer{text-align:center;color:var(--muted);font-size:11px;margin-top:22px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:12px;padding-right:12px}.card{padding:15px}.brand h1{font-size:20px}.controls{grid-template-columns:1fr}.teams{font-size:15px}.section-head{display:block}.section-head .hint{text-align:left;margin-top:4px}.summary{gap:6px}.stat{padding:10px 5px}.stat strong{font-size:21px}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>每日预测与模型回测</h1><span class="live">赛前锁定 · 赛后核对</span></div><p>按北京时间汇总当天赛程。8 种模型同场比较，以 Log Loss、Brier 和胜平负命中率寻找长期更可靠的方法。</p><div class="updated" id="updated">正在检查数据版本…</div><a class="nav" href="index.html">← 返回单场泊松计算</a></div></header>
+<main class="wrap">
+<section class="card setup">
+  <div class="step">01 / 今日总览</div><h2 class="section-title" id="date-title">读取赛程中…</h2>
+  <div class="summary"><div class="stat"><strong id="total-count">—</strong><span>今日赛程</span></div><div class="stat"><strong id="locked-count">—</strong><span>赛前已锁定</span></div><div class="stat"><strong id="finished-count">—</strong><span>已核对赛果</span></div></div>
+  <div class="controls">
+    <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
+    <div class="field"><label for="model">预测模型</label><select id="model"></select></div>
+    <div class="field"><label for="view">比赛范围</label><select id="view"><option value="today">今日全部比赛</option><option value="history">最近已结束的锁定预测</option></select></div>
+    <div class="field"><label for="status">状态筛选</label><select id="status"><option value="ALL">全部状态</option><option value="scheduled">已锁定待赛／待赛果</option><option value="finished">已核对赛果</option><option value="untracked">未锁定／不计成绩</option></select></div>
+  </div>
+  <p class="hint">模型排名看“综合概率质量”，不是只看谁暂时猜中得多。</p>
+  <div class="error" id="error"></div>
+</section>
+<div class="loading" id="loading">正在读取赛前预测与真实回测…</div>
+<div id="content" class="hidden">
+<section class="card">
+  <div class="section-head"><div><div class="step">02 / 批量预测</div><h2 class="section-title" id="fixture-title">今日全部比赛</h2></div><p class="hint" id="fixture-count"></p></div>
+  <div class="model-note" id="selected-model-note"></div>
+  <div id="fixtures"></div>
+</section>
+<section class="card">
+  <div class="step">03 / 模型优化</div><h2 class="section-title">当前赛季滚动回测排行</h2>
+  <p class="hint" id="ranking-scope"></p>
+  <div class="table-wrap"><table><thead><tr><th>名次</th><th>模型</th><th>样本</th><th>命中率</th><th>Brier ↓</th><th>Log Loss ↓</th></tr></thead><tbody id="ranking"></tbody></table></div>
+  <p class="hint" id="evaluation-rule"></p>
+</section>
+<section class="card">
+  <div class="step">04 / 真实跟踪</div><h2 class="section-title">赛前锁定档案的实际成绩</h2>
+  <div id="tracked"></div>
+  <p class="hint">这里只统计上线后真正赛前保存、赛后已回写结果的比赛，与上方历史回测分开，避免混淆。</p>
+</section>
+<section class="card">
+  <details><summary>赛程覆盖与评价口径</summary><div id="coverage"></div><p id="method-note"></p></details>
+  <div class="warning">“当前最优”只代表现有赛季样本中的相对表现，不保证未来继续领先。未纳入阵容、伤停、红牌和战意；结果是数学概率，不是确定赛果或投注建议。</div>
+</section>
+</div>
+<footer class="footer">预测一旦赛前锁定便不覆盖 · 赛后只回写真实结果</footer>
+</main>
+<script>
+const $=id=>document.getElementById(id);let DATA=null;
+const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%',fixed=v=>v==null?'—':Number(v).toFixed(4);
+const outcomeName={H:'主胜',D:'平局',A:'客胜'};
+function modelConfig(id){return DATA.models.find(m=>m.id===id)}
+function kickoffTime(iso){return iso.slice(5,10).replace('-','/')+' '+iso.slice(11,16)}
+function isFinished(r){return r.status==='finished'||r.status==='finished_untracked'}
+function statusBadge(r){if(r.status==='finished')return'<span class="badge">已核对</span>';if(r.status==='scheduled')return'<span class="badge amber">待赛</span>';if(r.status==='awaiting_result')return'<span class="badge amber">待赛果</span>';return'<span class="badge gray">不计成绩</span>'}
+function predictionHtml(r,p){
+ const f=p.forecast,probs=[['H','主胜',f.home_win],['D','平局',f.draw],['A','客胜',f.away_win]];
+ let html=`<div class="prediction"><div class="pick"><strong>预测：${outcomeName[p.predicted]} ${pct(f[{H:'home_win',D:'draw',A:'away_win'}[p.predicted]])}</strong><span>λ ${Number(p.expected_goals.home).toFixed(2)} : ${Number(p.expected_goals.away).toFixed(2)}</span></div><div class="probs">${probs.map(x=>`<div class="prob ${x[0]===p.predicted?'best':''}"><b>${pct(x[2])}</b><span>${x[1]}</span></div>`).join('')}</div><div class="details">最可能比分：${p.top_scores.map(s=>`${s.home}:${s.away}（${pct(s.probability)}）`).join(' · ')}<br>赛前锁定：${esc(r.created_at.replace('T',' ').replace('+00:00',' UTC'))}</div></div>`;
+ if(r.actual){const hit=r.actual.outcome===p.predicted;html+=`<div class="actual ${hit?'':'miss'}">实际比分 <b>${r.actual.home_goals}:${r.actual.away_goals}</b>（${outcomeName[r.actual.outcome]}） · <b class="${hit?'hit':'miss'}">${hit?'预测命中':'预测未中'}</b></div>`}
+ return html;
+}
+function fixtureHtml(r){
+ const p=r.predictions?.[$('model').value];
+ return `<article class="fixture"><div class="fixture-top"><span>${esc(r.league_name)} · ${kickoffTime(r.kickoff_beijing)}</span>${statusBadge(r)}</div><div class="teams"><span>${esc(r.home)}</span><span class="vs">VS</span><span>${esc(r.away)}</span></div>${p?predictionHtml(r,p):`<div class="untracked">${esc(r.status_reason||'该场没有赛前预测档案。')}${r.actual?`<br>实际比分：${r.actual.home_goals}:${r.actual.away_goals}（${outcomeName[r.actual.outcome]}）`:''}</div>`}</article>`;
+}
+function filteredFixtures(){
+ const source=$('view').value==='today'?DATA.fixtures:DATA.history;
+ return source.filter(r=>{
+  if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;
+  const status=$('status').value;
+  if(status==='ALL')return true;
+  if(status==='untracked')return !r.predictions?.[$('model').value];
+  if(status==='finished')return isFinished(r);
+  return ['scheduled','awaiting_result'].includes(r.status);
+ });
+}
+function renderFixtures(){
+ const rows=filteredFixtures();$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<div class="untracked">当前筛选条件下没有比赛。</div>';
+ $('fixture-title').textContent=$('view').value==='today'?'今日全部比赛':'最近已结束的锁定预测';$('fixture-count').textContent=`显示 ${rows.length} 场`;
+ const config=modelConfig($('model').value);$('selected-model-note').textContent=`当前模型：${config.name}。${config.description}`;
+}
+function renderRanking(){
+ const all=$('league').value==='ALL',report=all?DATA.backtest.global:DATA.backtest.by_league[$('league').value]?.models||[];
+ $('ranking-scope').textContent=all?'全部30个联赛汇总；各联赛球队与场次数量不同。':`当前联赛独立回测；至少需要30场联赛历史后开始逐场预测。`;
+ $('ranking').innerHTML=report.map((m,i)=>`<tr class="${i===0&&m.n?'leader':''}"><td class="rank">${m.n?i+1:'—'}</td><td class="model-name">${esc(m.name)}${i===0&&m.n?' · 当前最优':''}</td><td>${m.n}</td><td>${pct(m.accuracy)}</td><td>${fixed(m.brier)}</td><td>${fixed(m.log_loss)}</td></tr>`).join('');
+}
+function renderTracked(){
+ const rows=DATA.tracked.filter(m=>m.n>0);
+ $('tracked').innerHTML=rows.length?`<div class="table-wrap"><table><thead><tr><th>名次</th><th>模型</th><th>样本</th><th>命中率</th><th>Brier ↓</th><th>Log Loss ↓</th></tr></thead><tbody>${rows.map((m,i)=>`<tr><td class="rank">${i+1}</td><td class="model-name">${esc(m.name)}</td><td>${m.n}</td><td>${pct(m.accuracy)}</td><td>${fixed(m.brier)}</td><td>${fixed(m.log_loss)}</td></tr>`).join('')}</tbody></table></div>`:'<div class="untracked">还没有已结束的赛前锁定样本。比赛结束并回写真实比分后，这里会自动统计。</div>';
+}
+function render(){renderFixtures();renderRanking();renderTracked()}
+async function init(){try{
+ const response=await fetch(`data/predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
+ const ids=[...new Set(DATA.coverage.map(c=>c.league_id))],names={};Object.values(DATA.backtest.by_league).forEach(r=>names[r.league_id]=r.league_name);[...DATA.fixtures,...DATA.history].forEach(r=>names[r.league_id]=r.league_name);
+ $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id]||id)}</option>`).join('');
+ const best=DATA.backtest.global.find(m=>m.n>0)?.model_id||'current';$('model').innerHTML=DATA.models.map(m=>`<option value="${esc(m.id)}" ${m.id===best?'selected':''}>${esc(m.name)}</option>`).join('');
+ $('date-title').textContent=`${DATA.target_date} · 北京时间`;$('total-count').textContent=DATA.fixtures.length;$('locked-count').textContent=DATA.fixtures.filter(r=>Object.keys(r.predictions||{}).length).length;$('finished-count').textContent=DATA.fixtures.filter(r=>r.actual).length;
+ $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('evaluation-rule').textContent=DATA.evaluation.rule+' '+DATA.evaluation.backtest;
+ $('coverage').innerHTML=DATA.coverage.map(c=>`<div class="coverage-row">${esc(names[c.league_id]||c.league_id)}：${c.status==='supported'?'支持每日赛程 · '+esc(c.source):c.status==='unavailable'?'暂不支持每日赛程 · '+esc(c.reason):'本次读取失败 · '+esc(c.reason)}</div>`).join('');
+ $('method-note').textContent=DATA.evaluation.brier+' '+DATA.evaluation.freeze;
+ $('content').classList.remove('hidden');render();
+ }catch(e){$('error').textContent='预测数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
+['league','view','status'].forEach(id=>$(id).addEventListener('change',render));$('model').addEventListener('change',renderFixtures);init();
+</script>
+</body>
+</html>

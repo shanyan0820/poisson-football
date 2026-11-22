@@ -12,7 +12,11 @@
 - 输出预期进球、胜平负、大小球、双方进球、零封和最可能比分。
 - 页面展示每层样本量、收缩后的进失球、联赛基准和 λ 代入过程。
 - GitHub Actions 每 6 小时更新并重新发布；数据源失败时工作流失败，不编造或用空数据替代。
-- 17 项解析、中文译名、数据生成与模型单元测试；浏览器 JavaScript 与 Python 模型另做实数据一致性核验。
+- 每日赛程批量预测：主赛程文件与 ESPN 每日接口合计覆盖 29 个联赛，统一转换为北京时间；波超因暂无可用赛程接口只做历史回测。
+- 8 种模型同场比较：联赛均值基准、当前 50/40/10、稳健主客场、近期状态增强、近 5 场状态、2/10 场先验及 Dixon–Coles 低比分修正。
+- 赛前预测写入 `data/prediction_archive.json` 后不再覆盖，赛后只回写真实比分；首次读取时已开赛的比赛不补造预测、不计成绩。
+- 每场历史回测只使用该场之前的赛果，展示胜平负命中率、三分类 Brier 和 Log Loss；先比 Log Loss，再比 Brier，命中率辅助。
+- 29 项解析、中文译名、数据生成、预测冻结与模型单元测试；浏览器 JavaScript 与 Python 模型另做实数据一致性核验。
 
 ## 模型
 
@@ -25,16 +29,29 @@
 
 每个比分 P(h,a) 使用两个独立泊松概率的乘积。比分矩阵动态扩展，页面显示实际概率覆盖率。
 
+## 每日预测、赛后核对与最优模型
+
+`predictions.html` 读取 `data/predictions.json`，提供当天全部赛程、8 模型预测、实际比分、命中状态和模型排行榜。`prediction_pipeline.py` 负责：
+
+1. 读取主赛程 `fixtures.csv` 与 ESPN `scoreboard`，按北京时间筛选当天比赛。
+2. 开球前将各模型预测冻结到 `data/prediction_archive.json`；档案已存在时不覆盖预测或锁定时间。
+3. 赛果到达后按联赛、主客队和临近日期回写实际比分。
+4. 对当前赛季逐场滚动回测，预测第 i 场只传入 `rows[:i]`，每联赛先积累至少 30 场。
+5. 统计命中率、三分类 Brier 和 Log Loss，分别输出全联赛与各联赛排行，并单独统计上线后的真实赛前档案成绩。
+
+“当前最优”是现有样本下的相对结果，不是未来保证；历史回测与真实赛前跟踪分开显示。
+
 ## 静态页面与自动更新
 
-`index.html` 是 GitHub Pages 入口，读取同站 `data/leagues.json`。`generate_data.py` 仅使用 Python 标准库下载、校验并生成真实联赛数据。
+`index.html` 是单场计算入口，读取同站 `data/leagues.json`；`predictions.html` 是每日预测与回测入口。`generate_data.py` 和 `prediction_pipeline.py` 仅使用 Python 标准库下载、校验并生成真实数据。
 
 ```bash
 python3 generate_data.py
+python3 prediction_pipeline.py
 python3 -m unittest discover -p 'test_*.py' -v
 ```
 
-`.github/workflows/deploy-pages.yml` 每 6 小时及手动触发时重新抓数、校验并部署 Pages。仓库 Pages 的 Source 必须选 **GitHub Actions**。
+`.github/workflows/deploy-pages.yml` 每 6 小时及手动触发时重新抓数、运行测试、冻结赛前预测、回写赛果并部署 Pages；仅将预测档案提交回仓库，发布工作流不因普通 push 自动运行。仓库 Pages 的 Source 必须选 **GitHub Actions**。
 
 ## 旧 FastAPI 原型
 
@@ -48,7 +65,8 @@ uvicorn app:app --host 0.0.0.0 --port 8000
 
 ## 数据来源与已核验限制
 
-- 当前公开版数据源：https://www.football-data.co.uk/ 。主联赛赛季 CSV 路径形如 `mmz4281/2627/E0.csv`，全场进球使用 `FTHG` / `FTAG`；扩展联赛使用 `new/SWE.csv` 等文件，按 `Season` 和 `Country` 严格过滤，全场进球使用 `HG` / `AG`。未来比赛、空比分、历史赛季及国家不匹配的文件不会纳入。
+- 当前公开版赛果数据源：https://www.football-data.co.uk/ 。主联赛赛季 CSV 路径形如 `mmz4281/2627/E0.csv`，全场进球使用 `FTHG` / `FTAG`；扩展联赛使用 `new/SWE.csv` 等文件，按 `Season` 和 `Country` 严格过滤，全场进球使用 `HG` / `AG`。未来比赛、空比分、历史赛季及国家不匹配的文件不会纳入赛果。
+- 每日赛程来自 `https://www.football-data.co.uk/fixtures.csv` 和 ESPN 公共 `scoreboard`。主赛程时间按源站英国时间解析，ESPN 使用 UTC，页面统一转北京时间。波超 `pol.1` 当前返回 HTTP 400，故仅波超没有每日预测，仍有历史回测；其他源读取失败会在页面标为失败，不伪造空赛程。
 - 用户本轮另要求的韩国K1、保超、捷甲、克甲、斯洛伐克超、哥伦甲、沙特联、摩洛哥超暂未接入：当前数据源没有对应的可靠文件。实测 `KOR.csv` 实际为挪威数据、`COL.csv` 实际为波兰数据，已明确禁止用其冒充。
 - 2026-11-22：当前云主机与 GitHub Actions 请求懂球帝公开页均返回 HTTP 567，因此公开版改用可读取的真实 CSV，不宣称仍在自动抓取懂球帝。
 - 雷速官网在当前环境返回 HTTP 405；球探/新球体育候选页面连接超时，未接入。

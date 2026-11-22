@@ -57,31 +57,34 @@ def _rate(rows: list[Match], team: str, side: str | None) -> dict:
             "ga_raw": ga / n if n else 0.0}
 
 
-def _shrink(value: float, n: int, baseline: float) -> float:
-    """小样本向联赛均值收缩；5 场先验强度是待回测参数，不是固定真理。"""
-    return (n * value + PRIOR_MATCHES * baseline) / (n + PRIOR_MATCHES)
+def _shrink(value: float, n: int, baseline: float, prior_matches: float = PRIOR_MATCHES) -> float:
+    """小样本向联赛均值收缩；先验强度由回测比较，不作为固定真理。"""
+    return (n * value + prior_matches * baseline) / (n + prior_matches)
 
 
 def _layer(rows: list[Match], team: str, side: str | None,
-           gf_base: float, ga_base: float, weight: float) -> dict:
+           gf_base: float, ga_base: float, weight: float,
+           prior_matches: float = PRIOR_MATCHES) -> dict:
     stat = _rate(rows, team, side)
     n = stat["n"]
-    stat["gf_adjusted"] = _shrink(stat["gf_raw"], n, gf_base) if n else gf_base
-    stat["ga_adjusted"] = _shrink(stat["ga_raw"], n, ga_base) if n else ga_base
+    stat["gf_adjusted"] = _shrink(stat["gf_raw"], n, gf_base, prior_matches) if n else gf_base
+    stat["ga_adjusted"] = _shrink(stat["ga_raw"], n, ga_base, prior_matches) if n else ga_base
     stat["weight"] = weight
     return stat
 
 
 def team_profile(league_matches: list[Match], team: str, side: str,
-                 baselines: dict) -> dict:
+                 baselines: dict, weights: dict | None = None,
+                 prior_matches: float = PRIOR_MATCHES, recent_matches: int = 3) -> dict:
     """side 为本场角色：主队只取历史主场，客队只取历史客场。"""
+    weights = weights or WEIGHTS
     venue_side = "home" if side == "home" else "away"
     if venue_side == "home":
         venue_rows = [m for m in league_matches if m.home == team]
     else:
         venue_rows = [m for m in league_matches if m.away == team]
     all_rows = [m for m in league_matches if m.home == team or m.away == team]
-    recent_rows = all_rows[-3:]
+    recent_rows = all_rows[-recent_matches:]
     if not all_rows:
         raise ValueError(f"没有读取到 {team} 的所选联赛比赛。")
 
@@ -91,26 +94,41 @@ def team_profile(league_matches: list[Match], team: str, side: str,
         venue_gf_base, venue_ga_base = baselines["mu_away"], baselines["mu_home"]
     overall = baselines["mu_team"]
     layers = {
-        "venue": _layer(venue_rows, team, None, venue_gf_base, venue_ga_base, WEIGHTS["venue"]),
-        "all": _layer(all_rows, team, None, overall, overall, WEIGHTS["all"]),
-        "recent": _layer(recent_rows, team, None, overall, overall, WEIGHTS["recent"]),
+        "venue": _layer(venue_rows, team, None, venue_gf_base, venue_ga_base, weights["venue"], prior_matches),
+        "all": _layer(all_rows, team, None, overall, overall, weights["all"], prior_matches),
+        "recent": _layer(recent_rows, team, None, overall, overall, weights["recent"], prior_matches),
     }
     gf = sum(v["gf_adjusted"] * v["weight"] for v in layers.values())
     ga = sum(v["ga_adjusted"] * v["weight"] for v in layers.values())
     return {"name": team, "side": side, "gf": gf, "ga": ga, "layers": layers}
 
 
-def _poisson_matrix(lambda_home: float, lambda_away: float) -> tuple[list[list[float]], int]:
+def _poisson_matrix(lambda_home: float, lambda_away: float,
+                    dixon_coles_rho: float | None = None) -> tuple[list[list[float]], int]:
     max_goals = max(10, int(max(lambda_home, lambda_away) + 6 * sqrt(max(lambda_home, lambda_away)) + 4))
     hp = [exp(-lambda_home) * lambda_home ** i / factorial(i) for i in range(max_goals + 1)]
     ap = [exp(-lambda_away) * lambda_away ** i / factorial(i) for i in range(max_goals + 1)]
-    return [[h * a for a in ap] for h in hp], max_goals
+    matrix = [[h * a for a in ap] for h in hp]
+    if dixon_coles_rho is not None:
+        rho = dixon_coles_rho
+        adjustments = {
+            (0, 0): 1 - lambda_home * lambda_away * rho,
+            (0, 1): 1 + lambda_home * rho,
+            (1, 0): 1 + lambda_away * rho,
+            (1, 1): 1 - rho,
+        }
+        for (h, a), factor in adjustments.items():
+            if factor < 0:
+                raise ValueError("Dixon-Coles 参数导致负概率")
+            matrix[h][a] *= factor
+    return matrix, max_goals
 
 
-def poisson_forecast(lambda_home: float, lambda_away: float) -> dict:
+def poisson_forecast(lambda_home: float, lambda_away: float,
+                     dixon_coles_rho: float | None = None) -> dict:
     if not (0.05 <= lambda_home <= 8 and 0.05 <= lambda_away <= 8):
         raise ValueError("预期进球超出合理计算区间，请检查源数据或样本。")
-    matrix, max_goals = _poisson_matrix(lambda_home, lambda_away)
+    matrix, max_goals = _poisson_matrix(lambda_home, lambda_away, dixon_coles_rho)
     home_win = draw = away_win = over15 = over25 = over35 = btts = 0.0
     scores = []
     for h, row in enumerate(matrix):
@@ -146,18 +164,28 @@ def poisson_forecast(lambda_home: float, lambda_away: float) -> dict:
     }
 
 
-def analyze(league_matches: list[Match], home: str, away: str) -> dict:
+def analyze(league_matches: list[Match], home: str, away: str,
+            weights: dict | None = None, prior_matches: float = PRIOR_MATCHES,
+            recent_matches: int = 3, dixon_coles_rho: float | None = None,
+            baseline_only: bool = False) -> dict:
+    weights = weights or WEIGHTS
     baselines = league_baselines(league_matches)
-    home_profile = team_profile(league_matches, home, "home", baselines)
-    away_profile = team_profile(league_matches, away, "away", baselines)
-    lambda_home = home_profile["gf"] * away_profile["ga"] / baselines["mu_home"]
-    lambda_away = away_profile["gf"] * home_profile["ga"] / baselines["mu_away"]
+    if baseline_only:
+        lambda_home, lambda_away = baselines["mu_home"], baselines["mu_away"]
+        home_profile = away_profile = None
+    else:
+        home_profile = team_profile(league_matches, home, "home", baselines, weights, prior_matches, recent_matches)
+        away_profile = team_profile(league_matches, away, "away", baselines, weights, prior_matches, recent_matches)
+        lambda_home = home_profile["gf"] * away_profile["ga"] / baselines["mu_home"]
+        lambda_away = away_profile["gf"] * home_profile["ga"] / baselines["mu_away"]
     return {
         "expected_goals": {"home": lambda_home, "away": lambda_away},
         "baselines": baselines,
         "home_profile": home_profile,
         "away_profile": away_profile,
-        "forecast": poisson_forecast(lambda_home, lambda_away),
-        "parameters": {"weights": WEIGHTS, "prior_matches": PRIOR_MATCHES,
+        "forecast": poisson_forecast(lambda_home, lambda_away, dixon_coles_rho),
+        "parameters": {"weights": weights, "prior_matches": prior_matches,
+                       "recent_matches": recent_matches, "dixon_coles_rho": dixon_coles_rho,
+                       "baseline_only": baseline_only,
                        "model": "独立泊松；三层数据先分别收缩，再加权"},
     }

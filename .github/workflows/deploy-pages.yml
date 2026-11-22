@@ -6,7 +6,7 @@ on:
     - cron: '23 */6 * * *'
 
 permissions:
-  contents: read
+  contents: write
   pages: write
   id-token: write
 
@@ -28,6 +28,10 @@ jobs:
           python-version: '3.11'
       - name: Fetch real results and generate league data
         run: python generate_data.py
+      - name: Run model and prediction tests
+        run: python -m unittest discover -p 'test_*.py' -v
+      - name: Freeze daily predictions and run rolling backtests
+        run: python prediction_pipeline.py
       - name: Validate model inputs
         run: |
           python - <<'PY'
@@ -40,12 +44,28 @@ jobs:
               assert league['matches'] and len(league['teams']) >= 12
               assert all(m['home_goals'] >= 0 and m['away_goals'] >= 0 for m in league['matches'])
           print(f"All {len(data['leagues'])} league datasets passed validation.")
+          predictions = json.loads(Path('data/predictions.json').read_text(encoding='utf-8'))
+          assert len(predictions['backtest']['global']) == 8
+          assert len(predictions['coverage']) == len(LEAGUES)
+          assert all(m['n'] > 0 for m in predictions['backtest']['global'])
+          print(f"Daily fixtures: {len(predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           PY
+      - name: Persist immutable prediction archive
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/prediction_archive.json
+          if git diff --cached --quiet; then
+            printf 'Prediction archive is already up to date.\n'
+          else
+            git commit -m 'Update daily prediction archive'
+            git push
+          fi
       - name: Prepare static site
         run: |
           mkdir -p _site/data
-          cp index.html _site/index.html
-          cp data/leagues.json _site/data/leagues.json
+          cp index.html predictions.html _site/
+          cp data/leagues.json data/predictions.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
