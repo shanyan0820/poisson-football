@@ -3,7 +3,11 @@ name: Update data and deploy GitHub Pages
 on:
   workflow_dispatch:
   schedule:
-    - cron: '23 */6 * * *'
+    # UTC 04:00 = 北京时间12:00：结算旧周期并生成新周期。
+    - cron: '0 4 * * *'
+    # UTC 12:00 / 18:00 = 北京时间20:00 / 次日02:00：只同步赛果。
+    - cron: '0 12 * * *'
+    - cron: '0 18 * * *'
 
 permissions:
   contents: write
@@ -27,8 +31,16 @@ jobs:
         run: python generate_data.py
       - name: Run model and prediction tests
         run: python -m unittest test_generate_data test_prediction_pipeline test_research_model -v
-      - name: Freeze daily predictions and run rolling backtests
-        run: python prediction_pipeline.py
+      - name: Select full prediction or result-only mode
+        id: mode
+        run: |
+          if [[ "${{ github.event.schedule }}" == "0 12 * * *" || "${{ github.event.schedule }}" == "0 18 * * *" ]]; then
+            echo "args=--settle-only" >> "$GITHUB_OUTPUT"
+          else
+            echo "args=" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Freeze noon predictions or synchronize results
+        run: python prediction_pipeline.py ${{ steps.mode.outputs.args }}
       - name: Validate model inputs
         run: |
           python - <<'PY'
@@ -44,6 +56,11 @@ jobs:
           predictions = json.loads(Path('data/predictions.json').read_text(encoding='utf-8'))
           assert len(predictions['backtest']['global']) == 8
           assert len(predictions['coverage']) == len(LEAGUES)
+          from datetime import datetime
+          window_start = datetime.fromisoformat(predictions['window_start'])
+          window_end = datetime.fromisoformat(predictions['window_end'])
+          assert (window_end - window_start).total_seconds() == 86400
+          assert window_start.hour == 12 and window_end.hour == 12
           assert all(m['n'] > 0 for m in predictions['backtest']['global'])
           assert predictions['featured_model_id'] == predictions['backtest']['global'][0]['model_id']
           for fixture in predictions['fixtures']:
@@ -53,8 +70,17 @@ jobs:
                   assert fixture['handicap_analysis'] is None
               assert 'total_market' not in fixture and 'total_analysis' not in fixture
               assert fixture.get('recommendation_selection', {}).get('market') in (None, 'asian_handicap')
-              if fixture.get('ranking', {}).get('rank_ratio') is not None:
-                  assert 0 <= fixture['ranking']['rank_ratio'] <= 1
+              ranking = fixture.get('ranking', {})
+              if ranking.get('rank_ratio') is not None:
+                  assert 0 <= ranking['rank_ratio'] <= 1
+                  expected = ((ranking['home_rank'] - ranking['away_rank']) /
+                              (ranking['league_team_count'] - 1) * 2)
+                  assert abs(ranking['ranking_handicap'] - expected) < 1e-9
+              featured = fixture.get('integrated_selection', {})
+              if featured.get('status') == 'candidate':
+                  assert featured['direction_confirmed'] is True
+                  assert featured['model_rank_gap'] <= .5 + 1e-9
+                  assert (featured['side'] == 'home' and featured['ranking_handicap'] < 0) or (featured['side'] == 'away' and featured['ranking_handicap'] > 0)
           assert set(predictions['market_tracking']) >= {'asian_handicap', 'recommendation', 'integrated'}
           for fixture in predictions['fixtures']:
               assert fixture['featured_selection'] == fixture['integrated_selection']
@@ -62,6 +88,7 @@ jobs:
                   assert fixture['recommendation_selection'] is not None
           research = json.loads(Path('data/research_archive.json').read_text(encoding='utf-8'))
           report = json.loads(Path('data/research_report.json').read_text(encoding='utf-8'))
+          assert research['version'] == 3 and research['method']['version'] == 'handicap-research-v3'
           assert report['sample']['matches'] == len(research['matches'])
           assert report['sample']['pregame_matches'] + report['sample']['retrospective_matches'] == len(research['matches'])
           assert all('predictions' in match and 'relations' in match for match in research['matches'].values())
@@ -72,7 +99,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/prediction_archive.json data/research_archive.json data/research_report.json
+          git add data/predictions.json data/prediction_archive.json data/research_archive.json data/research_report.json
           if git diff --cached --quiet; then
             printf 'Prediction archive is already up to date.\n'
           else

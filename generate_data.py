@@ -302,12 +302,18 @@ def extra_season(config: dict, now: datetime) -> str:
     return f"{start}/{start + 1}"
 
 
-def fetch_csv(url: str) -> str:
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=45) as response:
-        if response.status != 200:
-            raise RuntimeError(f"数据源返回 HTTP {response.status}: {url}")
-        return response.read().decode("utf-8-sig")
+def fetch_csv(url: str, attempts: int = 2) -> str:
+    error = None
+    for attempt in range(attempts):
+        try:
+            request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+            with urllib.request.urlopen(request, timeout=45) as response:
+                if response.status != 200:
+                    raise RuntimeError(f"数据源返回 HTTP {response.status}: {url}")
+                return response.read().decode("utf-8-sig")
+        except Exception as exc:
+            error = exc
+    raise RuntimeError(f"数据源连续 {attempts} 次读取失败：{error}")
 
 
 def parse_matches(csv_text: str, league_id: str) -> list[dict]:

@@ -1,11 +1,11 @@
-"""研究模型 V1：完整保存赛前输入、全部盘口方向与赛后分层证据。"""
+"""研究模型 V3：冻结三盘对比、排名让球与赛后分层证据。"""
 from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
 
 UTC = timezone.utc
-RESEARCH_VERSION = 2
+RESEARCH_VERSION = 3
 MIN_GROUP_SAMPLE = 30
 MIN_VALIDATION_SAMPLE = 10
 VALID_RESULTS = {"full_win", "full_loss", "half_win", "half_loss"}
@@ -107,22 +107,22 @@ def settle_research_selections(snapshot: dict) -> dict:
             "pregame_ev": selection["ev"], "model_gap": selection["signed_gap"], "abs_gap": selection["gap"],
             "gap_band": gap_band(selection["gap"]), "ev_band": ev_band(selection["ev"]),
             "relation": snapshot["relations"][market], "rule_version": selection["rule_version"],
+            "ranking_handicap": selection.get("ranking_handicap"),
+            "model_rank_gap": selection.get("model_rank_gap"),
         })
         result[name] = item
     return result
 
 
 def update_research_archive(archive: dict, public_records: list[dict], now: datetime) -> dict:
-    """开球前允许更新快照；开球后只回写赛果与结算，不改任何赛前输入。"""
+    """同版本研究快照首次生成即冻结；赛后只回写真实结果与结算。"""
     now = now.astimezone(UTC)
     archive["version"] = RESEARCH_VERSION
     archive.setdefault("matches", {})
     for public in public_records:
         key = public["key"]
-        kickoff = datetime.fromisoformat(public["kickoff_utc"])
-        locked = bool(public.get("actual")) or public.get("status") == "awaiting_result" or kickoff <= now
         existing = archive["matches"].get(key)
-        if existing is None or (not locked and existing.get("tracking_eligible")) or existing.get("research_version") != RESEARCH_VERSION:
+        if existing is None or existing.get("research_version") != RESEARCH_VERSION:
             created_at = existing.get("research_created_at") if existing else None
             snapshot = make_research_snapshot(public, now)
             if created_at:
@@ -135,8 +135,8 @@ def update_research_archive(archive: dict, public_records: list[dict], now: date
         archive["matches"][key] = existing
     archive["generated_at"] = now.isoformat(timespec="seconds")
     archive["method"] = {
-        "version": "handicap-research-v2",
-        "freeze": "开球前冻结八个模型、选用模型、排名、让球盘口、两侧概率和EV；开球后只回写真实赛果及结算。",
+        "version": "handicap-research-v3",
+        "freeze": "北京时间每日12:00首次生成即冻结八个模型、选用模型、排名让球、机构盘口、两侧概率、EV和推荐；日间只回写真实赛果及结算。",
         "sample": "tracking_eligible=true 为正式赛前样本；retrospective 仅回查，不进入前瞻性论证。",
         "relations": "让球：模型净胜球与−AHh同号为aligned、异号为opposed；只研究让球盘。",
     }
@@ -237,7 +237,8 @@ def build_research_report(archive: dict, now: datetime) -> dict:
         },
         "methodology": {
             "handicap": "模型让球数=λ客−λ主；差值=模型让球数−机构AHh；按0.25与0.50球三档规则形成预测推荐。",
-            "ranking": "排名仅使用开球日期前真实赛果；排名差占联赛队数≤20%为接近，20%–40%为中等，>40%为较大。",
+            "ranking": "排名让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；精选要求与推荐同向且模型排名差≤0.50球。",
+            "schedule": "北京时间每日12:00生成并冻结新周期；20:00和次日02:00仅同步赛果。",
             "accuracy": "仅全赢、全输、赢一半、输一半进入等效准确率；走地和赢输各半排除。",
             "roi": "ROI=每方向均一研究单位的总盈亏/全部已结算方向数，走地与其他结果仍计入收益样本。",
             "optimization": "每组至少30场且后30%验证段至少10场；训练段与验证段ROI均需>0，验证准确率不得低于训练段5个百分点以上。",

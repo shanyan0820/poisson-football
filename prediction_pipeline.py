@@ -1,6 +1,7 @@
 """每日赛前预测、赛后核对与无未来数据泄漏的滚动回测。"""
 from __future__ import annotations
 
+import argparse
 import csv
 import hashlib
 import io
@@ -25,10 +26,10 @@ FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
 USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
 HANDICAP_EDGE_THRESHOLD = 0.15
-INTEGRATED_RULE_VERSION = "handicap-gap-rank-featured-v1"
-RECOMMENDATION_RULE_VERSION = "handicap-gap-rank-v1"
-RANK_CLOSE_MAX = 0.20
-RANK_MODERATE_MAX = 0.40
+INTEGRATED_RULE_VERSION = "three-handicap-rank-linear-featured-v2"
+RECOMMENDATION_RULE_VERSION = "three-handicap-rank-linear-v2"
+RANKING_HANDICAP_MAX = 2.0
+RANKING_MODEL_MAX_GAP = 0.5
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -253,7 +254,7 @@ def base_fixture(league: dict, home_source: str, away_source: str, kickoff: date
 
 
 def ranking_snapshot(fixture: dict, league: dict) -> dict:
-    """只使用开球日期之前的真实赛果重建积分榜，避免赛后排名泄漏。"""
+    """只用开球日期前赛果重建排名，并按线性规则换算为让球数。"""
     kickoff_date = datetime.fromisoformat(fixture["kickoff_beijing"]).date().isoformat()
     prior = [{"home": m["home_source"], "away": m["away_source"],
               "home_goals": m["home_goals"], "away_goals": m["away_goals"]}
@@ -264,16 +265,21 @@ def ranking_snapshot(fixture: dict, league: dict) -> dict:
     team_count = max(len(table), len(league.get("teams", [])))
     base = {"ranking_basis": "仅使用开球日期前的已结束比赛重建积分榜",
             "ranking_as_of": max((m["date"] for m in league["matches"] if m["date"] < kickoff_date), default=None),
-            "league_team_count": team_count}
-    if not home or not away or not team_count:
+            "league_team_count": team_count,
+            "ranking_handicap_method": "线性版：((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队让球，正数客队让球",
+            "ranking_handicap_max": RANKING_HANDICAP_MAX}
+    if not home or not away or team_count <= 1:
         return {**base, "home_rank": None, "away_rank": None, "rank_difference": None,
-                "rank_ratio": None, "rank_category": "unknown"}
+                "rank_ratio": None, "rank_category": "unknown", "ranking_handicap": None}
     difference = abs(home["rank"] - away["rank"])
     ratio = difference / team_count
-    category = "close" if ratio <= RANK_CLOSE_MAX + 1e-12 else "moderate" if ratio <= RANK_MODERATE_MAX + 1e-12 else "large"
+    signed_difference = home["rank"] - away["rank"]
+    ranking_handicap = signed_difference / (team_count - 1) * RANKING_HANDICAP_MAX
     return {**base, "home_rank": home["rank"], "away_rank": away["rank"],
             "home_points": home["points"], "away_points": away["points"],
-            "rank_difference": difference, "rank_ratio": ratio, "rank_category": category}
+            "rank_difference": difference, "rank_ratio": ratio,
+            "signed_rank_difference": signed_difference,
+            "ranking_handicap": ranking_handicap}
 
 
 def parse_asian_handicap(row: dict) -> dict | None:
@@ -405,11 +411,16 @@ def handicap_rule_direction(handicap: dict | None) -> dict:
 
 
 def choose_recommendation(handicap: dict | None, ranking: dict | None = None) -> dict:
-    """让球专属推荐：只由三档盘口差决定方向，EV 仅作展示与结算参考。"""
+    """基础方向仍由三档盘口差决定，同时保存排名让球及两模型差值。"""
     direction = handicap_rule_direction(handicap)
+    ranking_handicap = (ranking or {}).get("ranking_handicap")
+    model_handicap = direction.get("model_handicap")
+    model_rank_gap = (abs(model_handicap - ranking_handicap)
+                      if model_handicap is not None and ranking_handicap is not None else None)
     base = {"rule_version": RECOMMENDATION_RULE_VERSION, "status": "skip",
             "market": "asian_handicap", "side": None, "line": None, "odds": None,
             "ev": None, "gap": direction.get("gap"), "signed_gap": direction.get("signed_gap"),
+            "ranking_handicap": ranking_handicap, "model_rank_gap": model_rank_gap,
             "candidate_count": 0}
     if direction["status"] != "candidate":
         return {**base, **direction}
@@ -421,29 +432,33 @@ def choose_recommendation(handicap: dict | None, ranking: dict | None = None) ->
     line = handicap["market_line"] if side == "home" else -handicap["market_line"]
     return {**base, **direction, "line": line, "odds": metrics["odds"], "ev": metrics.get("ev"),
             "win_probability": metrics["win_eq"], "loss_probability": metrics["loss_eq"],
-            "push_probability": metrics["push_eq"], "candidate_count": 1,
-            "rank_category": (ranking or {}).get("rank_category")}
+            "push_probability": metrics["push_eq"], "candidate_count": 1}
 
 
 def choose_integrated_selection(handicap: dict | None, ranking: dict | None = None) -> dict:
-    """精选与基础推荐同方向，只增加用户指定的排名差条件。"""
+    """精选：基础方向、排名让球同向，且模型与排名让球差不超过0.5球。"""
     recommendation = choose_recommendation(handicap, ranking)
     base = {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
-            "status": "skip", "candidate_count": 0}
+            "status": "skip", "candidate_count": 0, "featured": False}
     if recommendation["status"] != "candidate":
         return base
-    required = {1: "close", 2: "large", 3: "moderate"}[recommendation["rule_number"]]
-    labels = {"close": "接近（≤20%）", "moderate": "中等（20%–40%）", "large": "较大（>40%）"}
-    actual = (ranking or {}).get("rank_category")
-    if not ranking or actual == "unknown":
-        return {**base, "required_rank_category": required,
-                "reason": "已有让球推荐，但缺少开球前联赛排名，不能升级为精选预测。"}
-    if actual != required:
-        return {**base, "required_rank_category": required,
-                "reason": f"规则{recommendation['rule_number']}精选要求排名差{labels[required]}；当前为{labels.get(actual, '未知')}。"}
+    ranking_handicap = recommendation.get("ranking_handicap")
+    if ranking_handicap is None:
+        return {**base, "reason": "已有让球推荐，但缺少开球前排名让球，不能升级为精选预测。"}
+    side = recommendation["side"]
+    direction_confirmed = ((side == "home" and ranking_handicap < 0) or
+                           (side == "away" and ranking_handicap > 0))
+    if not direction_confirmed:
+        return {**base, "direction_confirmed": False,
+                "reason": "排名让球与推荐方向不一致或排名让球为0，不升级为精选预测。"}
+    model_rank_gap = recommendation["model_rank_gap"]
+    if model_rank_gap > RANKING_MODEL_MAX_GAP + 1e-9:
+        return {**base, "direction_confirmed": True,
+                "reason": f"排名让球与推荐方向一致，但模型与排名让球差为{model_rank_gap:.2f}球，超过0.50球，不升级为精选预测。"}
     return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
-            "required_rank_category": required, "featured": True,
-            "reason": recommendation["reason"] + f" 排名差{labels[required]}，升级为精选预测。"}
+            "direction_confirmed": True, "featured": True,
+            "reason": recommendation["reason"] +
+                      f" 排名让球同向，且模型与排名让球差{model_rank_gap:.2f}球≤0.50球，升级为精选预测。"}
 
 
 def settle_margin(margin: float, line: float, odds: float) -> dict:
@@ -491,7 +506,36 @@ def update_handicap_snapshot(record: dict, market: dict | None, now: datetime) -
     update_market_snapshot(record, market, now, "asian_handicap")
 
 
-def parse_main_fixtures(csv_text: str, leagues: dict, target_date: date) -> list[dict]:
+def prediction_window(now: datetime) -> tuple[datetime, datetime]:
+    """当前预测周期：北京时间12:00（含）至次日12:00（不含）。"""
+    local = now.astimezone(BEIJING)
+    start_date = local.date() if local.hour >= 12 else local.date() - timedelta(days=1)
+    start = datetime.combine(start_date, dt_time(hour=12), BEIJING)
+    return start, start + timedelta(days=1)
+
+
+def in_fixture_window(kickoff: datetime, start: datetime | date, end: datetime | None = None) -> bool:
+    local = kickoff.astimezone(BEIJING)
+    if end is None:
+        return local.date() == start
+    return start <= local < end
+
+
+def archived_window_fixtures(archive: dict, now: datetime) -> list[dict]:
+    """赛果同步模式只读取当前周期已冻结比赛，不抓取或新增预测。"""
+    start, end = prediction_window(now)
+    fixtures = []
+    for record in archive.get("matches", {}).values():
+        kickoff = datetime.fromisoformat(record["kickoff_beijing"])
+        if in_fixture_window(kickoff, start, end):
+            fixtures.append({**record,
+                             "prediction_window_start": start.isoformat(timespec="seconds"),
+                             "prediction_window_end": end.isoformat(timespec="seconds")})
+    return sorted(fixtures, key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"]))
+
+
+def parse_main_fixtures(csv_text: str, leagues: dict, window_start: datetime | date,
+                        window_end: datetime | None = None) -> list[dict]:
     rows = csv.DictReader(io.StringIO(csv_text))
     required = {"Div", "Date", "Time", "HomeTeam", "AwayTeam"}
     if not rows.fieldnames or not required.issubset(rows.fieldnames):
@@ -506,7 +550,7 @@ def parse_main_fixtures(csv_text: str, leagues: dict, target_date: date) -> list
         except ValueError:
             continue
         kickoff = naive.replace(tzinfo=LONDON).astimezone(UTC)
-        if kickoff.astimezone(BEIJING).date() != target_date:
+        if not in_fixture_window(kickoff, window_start, window_end):
             continue
         home, away = row["HomeTeam"].strip(), row["AwayTeam"].strip()
         if not home or not away or home == away:
@@ -538,7 +582,8 @@ def espn_scoreboard_url(slug: str, day: date) -> str:
     return f"https://site.api.espn.com/apis/site/v2/sports/soccer/{slug}/scoreboard?{query}"
 
 
-def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str], target_date: date) -> list[dict]:
+def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str],
+                      window_start: datetime | date, window_end: datetime | None = None) -> list[dict]:
     fixtures, seen = [], set()
     for payload in payloads:
         for event in payload.get("events", []):
@@ -547,7 +592,7 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
                 continue
             try:
                 kickoff = datetime.fromisoformat(event["date"].replace("Z", "+00:00")).astimezone(UTC)
-                if kickoff.astimezone(BEIJING).date() != target_date:
+                if not in_fixture_window(kickoff, window_start, window_end):
                     continue
                 competition = event["competitions"][0]
                 competitors = competition["competitors"]
@@ -573,30 +618,33 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
 
 def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[dict]]:
     leagues = {l["id"]: l for l in dataset["leagues"]}
-    target_date = now.astimezone(BEIJING).date()
+    window_start, window_end = prediction_window(now)
     fixtures, coverage = [], []
     try:
         text = fetch_csv(FIXTURES_URL)
-        fixtures.extend(parse_main_fixtures(text, leagues, target_date))
+        fixtures.extend(parse_main_fixtures(text, leagues, window_start, window_end))
         for league_id in sorted(MAIN_FIXTURE_LEAGUES):
             coverage.append({"league_id": league_id, "status": "supported", "source": "football-data fixtures.csv"})
     except Exception as exc:
         for league_id in sorted(MAIN_FIXTURE_LEAGUES):
             coverage.append({"league_id": league_id, "status": "error", "reason": str(exc)})
-    start_utc = datetime.combine(target_date, dt_time.min, BEIJING).astimezone(UTC)
-    end_utc = datetime.combine(target_date + timedelta(days=1), dt_time.min, BEIJING).astimezone(UTC)
+    start_utc = window_start.astimezone(UTC)
+    end_utc = window_end.astimezone(UTC)
     days = sorted({start_utc.date(), end_utc.date()})
     for league_id, slug in ESPN_LEAGUES.items():
         league = leagues[league_id]
         try:
             payloads = [fetch_json(espn_scoreboard_url(slug, day)) for day in days]
             source_names = sorted({m[k] for m in league["matches"] for k in ["home_source", "away_source"]})
-            fixtures.extend(parse_espn_events(payloads, league, source_names, target_date))
+            fixtures.extend(parse_espn_events(payloads, league, source_names, window_start, window_end))
             coverage.append({"league_id": league_id, "status": "supported", "source": "ESPN scoreboard"})
         except Exception as exc:
             coverage.append({"league_id": league_id, "status": "error", "reason": str(exc)})
     coverage.append({"league_id": "POL", "status": "unavailable", "reason": "football-data 未提供未赛赛程，ESPN pol.1 当前返回 HTTP 400；回测仍正常。"})
-    unique = {fixture_key(f): f for f in fixtures}
+    unique = {fixture_key(f): {**f,
+                              "prediction_window_start": window_start.isoformat(timespec="seconds"),
+                              "prediction_window_end": window_end.isoformat(timespec="seconds")}
+              for f in fixtures}
     return sorted(unique.values(), key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"])), coverage
 
 
@@ -630,7 +678,12 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
         for field in ("recommendation_selection", "integrated_selection"):
             if saved.get(field, {}).get("market") == "total_goals":
                 saved.pop(field, None)
-    for fixture in fixtures:
+    # 每次运行先带上所有已开赛但未结算的旧记录；中午生成新周期前自然完成上一周期结算。
+    by_key = {fixture_key(fixture): fixture for fixture in fixtures}
+    for key, saved in archive["matches"].items():
+        if key not in by_key and not saved.get("actual") and datetime.fromisoformat(saved["kickoff_utc"]) <= now:
+            by_key[key] = saved
+    for fixture in by_key.values():
         league = leagues[fixture["league_id"]]
         fixture = {**fixture, "ranking": ranking_snapshot(fixture, league)}
         key = fixture_key(fixture)
@@ -659,8 +712,10 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
                     record["status_reason"] = "历史样本不足，未生成预测。"
         else:
             # 预测、created_at 与 key 保持不变；允许源站修正开球时间。
-            for field in ["kickoff_utc", "kickoff_beijing", "source", "source_event_id"]:
-                record[field] = fixture[field]
+            for field in ["kickoff_utc", "kickoff_beijing", "source", "source_event_id",
+                          "prediction_window_start", "prediction_window_end"]:
+                if fixture.get(field) is not None:
+                    record[field] = fixture[field]
         record["ranking"] = fixture["ranking"]
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
         result = find_result(fixture, league)
@@ -739,6 +794,8 @@ def settle_record_markets(record: dict, handicap: dict | None,
                      "pregame_ev": selection["ev"], "model_gap": selection["signed_gap"],
                      "abs_gap": selection["gap"], "ev_band": ev_band(selection["ev"]),
                      "gap_band": gap_band(selection["gap"]), "rule_version": selection["rule_version"],
+                     "league_id": record.get("league_id"), "league_name": record.get("league_name"),
+                     "kickoff_utc": record.get("kickoff_utc"), "key": record.get("key"),
                      "tracking_eligible": selection.get("tracking_eligible", True)})
         return item
 
@@ -763,38 +820,46 @@ def summarize_market_rows(rows: list[dict]) -> dict:
 
 def build_market_tracking(finished: list[dict]) -> dict:
     result = {
-        "selection": "预测推荐按三档模型与机构让球差决定方向；精选预测在同方向上增加联赛排名差条件。",
-        "metrics": "等效胜率只计全赢、全输、赢一半、输一半；走地与赢输各半不进入推荐准确率。",
-        "bands": "EV 与模型机构差值分档仅用于积累观察样本，不代表已确定最优阈值。",
+        "selection": "预测推荐按三档模型与机构让球差决定方向；精选预测加入排名让球同向和模型排名差≤0.50球两项印证。",
+        "metrics": "累计统计完整正式赛前样本；等效胜率只计全赢、全输、赢一半、输一半。",
+        "bands": "EV、模型机构差值及模型排名差值仅用于积累观察样本，不代表已确定最优阈值。",
         "recommendation_rule": "差值≤0.25球看模型让球符号；0.25–0.50球比较模型与机构大小；>0.50球看机构让球符号。",
-        "integrated_rule": "规则1要求排名差≤联赛队数20%；规则2要求>40%；规则3要求20%–40%。精选与预测推荐同方向。",
+        "ranking_handicap_rule": "排名让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队让球，正数客队让球。",
+        "integrated_rule": "排名让球与推荐方向同向，且模型让球与排名让球差值≤0.50球，才升级为精选预测。",
+        "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；20:00和次日02:00只同步赛果。",
     }
     for key in ["asian_handicap", "recommendation", "integrated"]:
         rows = [r["market_settlement"][key] for r in finished
-                if r.get("market_settlement", {}).get(key)]
-        by_ev, by_gap = {}, {}
+                if r.get("market_settlement", {}).get(key)
+                and (key == "asian_handicap" or r["market_settlement"][key].get("tracking_eligible", True))]
+        by_ev, by_gap, by_league = {}, {}, {}
         for row in rows:
             by_ev.setdefault(row["ev_band"], []).append(row)
             by_gap.setdefault(row["gap_band"], []).append(row)
+            if row.get("league_id"):
+                by_league.setdefault(row["league_id"], []).append(row)
         result[key] = {"overall": summarize_market_rows(rows),
                        "by_ev": {band: summarize_market_rows(items) for band, items in sorted(by_ev.items())},
-                       "by_gap": {band: summarize_market_rows(items) for band, items in sorted(by_gap.items())}}
+                       "by_gap": {band: summarize_market_rows(items) for band, items in sorted(by_gap.items())},
+                       "by_league": {league_id: {"overall": summarize_market_rows(items)}
+                                     for league_id, items in sorted(by_league.items())}}
     return result
 
 
 def freeze_selection(record: dict, field: str, derived: dict, now: datetime) -> dict:
-    """赛前更新并冻结；新规则上线前已开场的比赛只回溯展示，不进入成绩。"""
+    """同版本首次生成后立即冻结；日间赛果同步不得改写推荐。"""
     existing = record.get(field)
+    if existing and existing.get("rule_version") == derived.get("rule_version"):
+        return existing
     kickoff = record.get("kickoff_utc")
     locked = bool(record.get("actual")) or record.get("status") == "awaiting_result" or (
         kickoff and datetime.fromisoformat(kickoff) <= now)
     if locked:
-        if existing and existing.get("rule_version") == derived.get("rule_version"):
-            return existing
         retrospective = {**derived, "tracking_eligible": False, "freeze_status": "retrospective"}
         record[field] = retrospective
         return retrospective
-    selection = {**derived, "tracking_eligible": True, "freeze_status": "pregame"}
+    selection = {**derived, "tracking_eligible": True, "freeze_status": "pregame",
+                 "frozen_at": now.astimezone(UTC).isoformat(timespec="seconds")}
     record[field] = selection
     return selection
 
@@ -810,7 +875,7 @@ def freeze_recommendation_selection(record: dict, derived: dict, now: datetime) 
 def public_record(record: dict, featured_model_id: str = "stable", now: datetime | None = None) -> dict:
     fields = ["key", "league_id", "league_name", "home", "away", "home_source", "away_source",
               "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "actual", "predictions",
-              "asian_handicap", "ranking"]
+              "asian_handicap", "ranking", "prediction_window_start", "prediction_window_end"]
     result = {k: record.get(k) for k in fields}
     featured = record.get("predictions", {}).get(featured_model_id)
     handicap = compare_handicap(featured, record.get("asian_handicap"))
@@ -830,7 +895,9 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     return result
 
 
-def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], coverage: list[dict], now: datetime) -> dict:
+def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], coverage: list[dict], now: datetime,
+                         run_mode: str = "full") -> dict:
+    window_start, window_end = prediction_window(now)
     by_league = {l["id"]: rolling_backtest(l) for l in dataset["leagues"]}
     global_report = global_backtest(by_league)
     featured_model_id = next((m["model_id"] for m in global_report if m["n"]), "stable")
@@ -839,15 +906,22 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
     today.sort(key=lambda r: (r["kickoff_utc"], r["league_id"], r["home"]))
     finished = [public_record(r, featured_model_id, now) for r in archive["matches"].values() if r.get("actual")]
     finished.sort(key=lambda r: r["kickoff_utc"], reverse=True)
+    league_names = {record["league_id"]: record["league_name"] for record in archive["matches"].values()}
+    stat_leagues = [{"league_id": league_id, "league_name": league_names[league_id]}
+                    for league_id in sorted(league_names, key=lambda item: league_names[item])]
     return {
         "generated_at": now.astimezone(UTC).isoformat(timespec="seconds"),
-        "timezone": "Asia/Shanghai", "target_date": now.astimezone(BEIJING).date().isoformat(),
+        "timezone": "Asia/Shanghai", "target_date": window_start.date().isoformat(),
+        "window_start": window_start.isoformat(timespec="seconds"),
+        "window_end": window_end.isoformat(timespec="seconds"),
+        "run_mode": run_mode, "stat_leagues": stat_leagues,
         "evaluation": {
             "rule": "先比较 Log Loss，再比较三分类 Brier；两者越低越好，胜平负命中率辅助。",
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
-            "freeze": "每日预测在开球前写入 prediction_archive.json；赛后只回写结果，不改预测。",
-            "handicap": "只研究让球盘。差值=模型让球数−机构AHh，按0.25和0.50球分档决定方向；精选增加排名差占联赛队数比例条件。理论EV仅作展示，不作为入选门槛。推荐在开球前冻结，规则上线前已开场的比赛不回填成绩。",
+            "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
+            "handicap": "只研究让球盘。基础方向按模型与机构盘口差三档规则；排名让球按线性公式、最大系数2球换算。精选要求排名让球同向且模型与排名让球差≤0.50球。理论EV仅作展示。",
+            "ranking_handicap": "排名让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数表示主队让球，正数表示客队让球。",
         },
         "featured_model_id": featured_model_id,
         "models": MODEL_CONFIGS, "coverage": sorted(coverage, key=lambda c: c["league_id"]),
@@ -866,6 +940,10 @@ def build_research_data(archive: dict, research: dict, featured_model_id: str, n
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(description="生成12小时制预测窗口或仅同步已冻结比赛的赛果")
+    parser.add_argument("--settle-only", action="store_true",
+                        help="只读取当前周期已冻结比赛并同步赛果，不抓取或新增预测")
+    args = parser.parse_args()
     now = datetime.now(UTC)
     dataset_path = ROOT / "data" / "leagues.json"
     archive_path = ROOT / "data" / "prediction_archive.json"
@@ -874,15 +952,23 @@ def main() -> None:
     research_report_path = ROOT / "data" / "research_report.json"
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     archive = json.loads(archive_path.read_text(encoding="utf-8")) if archive_path.exists() else {"version": 1, "matches": {}}
-    research = json.loads(research_path.read_text(encoding="utf-8")) if research_path.exists() else {"version": 1, "matches": {}}
-    fixtures, coverage = load_daily_fixtures(dataset, now)
+    research = json.loads(research_path.read_text(encoding="utf-8")) if research_path.exists() else {"version": 3, "matches": {}}
+    if args.settle_only:
+        previous = json.loads(public_path.read_text(encoding="utf-8")) if public_path.exists() else {}
+        fixtures = archived_window_fixtures(archive, now)
+        coverage = previous.get("coverage", [])
+        run_mode = "settle_only"
+    else:
+        fixtures, coverage = load_daily_fixtures(dataset, now)
+        run_mode = "full"
     archive = update_prediction_archive(archive, fixtures, dataset, now)
-    public = build_public_dataset(dataset, archive, fixtures, coverage, now)
+    public = build_public_dataset(dataset, archive, fixtures, coverage, now, run_mode)
     research, research_report = build_research_data(archive, research, public["featured_model_id"], now)
     archive_path.write_text(json.dumps(archive, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     public_path.write_text(json.dumps(public, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     research_path.write_text(json.dumps(research, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     research_report_path.write_text(json.dumps(research_report, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    print(f"RUN_MODE {run_mode} WINDOW {public['window_start']} -> {public['window_end']}")
     print(f"DAILY_FIXTURES {len(fixtures)} LOCKED {sum(bool(r['predictions']) for r in archive['matches'].values())}")
     print(f"BACKTEST_MATCHES {public['backtest']['global'][0]['n']} BEST {public['backtest']['global'][0]['name']}")
     print(f"RESEARCH_MATCHES {research_report['sample']['matches']} PREGAME {research_report['sample']['pregame_matches']} SETTLED {research_report['sample']['settled_pregame_matches']}")

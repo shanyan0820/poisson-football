@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后推荐准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>只比较预测推荐与精选预测；仅四类有效盘口结果进入准确率。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后推荐准确率</h1><span class="live">赛前冻结 · 赛后核对</span></div><p>累计全部正式赛前样本；仅四类有效盘口结果进入准确率。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 统计范围</div><h2 class="section-title">选择联赛与推荐范围</h2>
@@ -24,7 +24,7 @@
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
     <div class="field"><label for="model">推荐范围</label><select id="model"><option value="RECOMMENDED">预测推荐</option><option value="FEATURED">精选预测</option></select></div>
   </div>
-  <p class="hint">只统计开球前已冻结、赛后已有真实结果的推荐。</p>
+  <p class="hint">每日12点先结算旧样本；日间同步赛果，统计完整累计档案而非最近60场。</p>
   <div class="error" id="error"></div>
 </section>
 <div class="loading" id="loading">正在读取赛后真实结算…</div>
@@ -47,27 +47,20 @@
 </main>
 <script>
 const $=id=>document.getElementById(id);let DATA=null;
-const VALID_RESULTS=new Set(['full_win','full_loss','half_win','half_loss']);
 const modelNames={RECOMMENDED:'预测推荐',FEATURED:'精选预测'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
 function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}
-function settledRows(){const featured=$('model').value==='FEATURED';return records().filter(r=>{
- const selection=featured?r.integrated_selection:r.recommendation_selection;
- const settlement=featured?r.market_settlement?.integrated:r.market_settlement?.recommendation;
- if(!r.actual||selection?.status!=='candidate'||selection?.tracking_eligible===false||!settlement)return false;
- if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;
- return VALID_RESULTS.has(settlement.result);
-}).map(r=>featured?r.market_settlement.integrated:r.market_settlement.recommendation)}
-function calculateAccuracy(rows){
- const valid=rows.filter(r=>VALID_RESULTS.has(r.result));
- const wins=valid.reduce((sum,r)=>sum+(r.result==='full_win'?1:r.result==='half_win' ? .5 : 0),0);
- const losses=valid.reduce((sum,r)=>sum+(r.result==='full_loss'?1:r.result==='half_loss' ? .5 : 0),0),decisions=wins+losses;
- const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};valid.forEach(r=>counts[r.result]++);
- return{n:valid.length,wins,losses,decisions,accuracy:decisions?wins/decisions:null,counts};
+function currentStats(){
+ const featured=$('model').value==='FEATURED',key=featured?'integrated':'recommendation',league=$('league').value;
+ const market=DATA.market_tracking?.[key],summary=league==='ALL'?market?.overall:market?.by_league?.[league]?.overall;
+ const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};
+ if(summary)Object.keys(counts).forEach(k=>counts[k]=summary[k]||0);
+ const n=Object.values(counts).reduce((a,b)=>a+b,0);
+ return{n,accuracy:summary?.effective_win_rate??null,counts};
 }
 function render(){
- const stats=calculateAccuracy(settledRows()),c=stats.counts;
+ const stats=currentStats(),c=stats.counts;
  $('accuracy').textContent=pct(stats.accuracy);
  ['full_win','full_loss','half_win','half_loss'].forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
  const league=$('league'),model=$('model'),leagueName=league.value==='ALL'?'全部联赛':league.options[league.selectedIndex].text;
@@ -75,7 +68,7 @@ function render(){
 }
 async function init(){try{
  const response=await fetch(`data/predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
- const names={};records().forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
+ const names={};if(DATA.stat_leagues)DATA.stat_leagues.forEach(r=>names[r.league_id]=r.league_name);else records().forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();
  }catch(e){$('error').textContent='赛后数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
