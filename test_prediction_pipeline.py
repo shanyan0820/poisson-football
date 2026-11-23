@@ -6,11 +6,11 @@ from unittest.mock import patch
 
 from prediction_pipeline import (
     ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, choose_integrated_selection,
-    choose_recommendation, compare_handicap, find_result, strength_band,
+    american_to_decimal, choose_recommendation, compare_handicap, find_result, fit_poisson_to_1x2, strength_band,
     freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
-    parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
-    settle_margin, split_quarter_line, summarize_market_rows, update_prediction_archive,
+    parse_main_fixtures, parse_espn_opening_1x2, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
+    settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
 )
 
 
@@ -52,6 +52,51 @@ class PredictionMetricTests(unittest.TestCase):
     def test_extreme_probability_is_bounded_for_logloss(self):
         score = score_prediction(forecast(1, 0, 0), "A")
         self.assertLess(score["log_loss"], 40)
+
+
+class EquivalentHandicapTests(unittest.TestCase):
+    def test_opening_odds_and_american_conversion(self):
+        row = {"B365H": "2.10", "B365D": "3.40", "B365A": "3.60", "B365CH": "9.99"}
+        odds = parse_opening_1x2(row)
+        self.assertEqual((odds["home"], odds["draw"], odds["away"]), (2.10, 3.40, 3.60))
+        self.assertEqual(american_to_decimal("+110"), 2.10)
+        self.assertEqual(american_to_decimal("-200"), 1.50)
+        competition = {"odds": [{"provider": {"name": "DraftKings"}, "moneyline": {
+            side: {"open": {"odds": opening}, "close": {"odds": closing}}
+            for side, opening, closing in (("home", "+110", "+150"), ("draw", "+210", "+250"), ("away", "+275", "+300"))
+        }}]}
+        espn = parse_espn_opening_1x2(competition)
+        self.assertAlmostEqual(espn["home"], 2.10)
+        self.assertAlmostEqual(espn["draw"], 3.10)
+        self.assertAlmostEqual(espn["away"], 3.75)
+        self.assertIsNone(parse_espn_opening_1x2({"odds": [None]}))
+
+    def test_poisson_fit_has_correct_sign_and_no_invented_asian_odds(self):
+        balanced = fit_poisson_to_1x2({"home": 2.0, "draw": 2.0, "away": 2.0, "source": "test"})
+        self.assertEqual(balanced["home_line"], 0)
+        favorite = fit_poisson_to_1x2({"home": 1.50, "draw": 4.20, "away": 6.50, "source": "test"})
+        self.assertLess(favorite["home_line"], 0)
+        self.assertIsNone(favorite["bet365_home_odds"])
+        self.assertIsNone(favorite["bet365_away_odds"])
+        self.assertLess(favorite["estimation"]["rmse"], .05)
+        self.assertAlmostEqual(sum(favorite["estimation"]["normalized_probabilities"].values()), 1)
+
+    def test_real_handicap_replaces_simulated_and_started_match_is_not_backfilled(self):
+        now = datetime(2026, 11, 22, 10, tzinfo=timezone.utc)
+        record = {"kickoff_utc": "2026-11-22T12:00:00+00:00",
+                  "opening_1x2": {"home": 1.5, "draw": 4.2, "away": 6.5, "source": "test"}}
+        update_handicap_snapshot(record, None, now)
+        self.assertEqual(record["handicap_source"], "simulated")
+        self.assertLess(record["asian_handicap"]["home_line"], 0)
+        real = {"home_line": -.75, "bet365_home_odds": 1.9, "source": "football-data fixtures.csv"}
+        update_handicap_snapshot(record, real, now)
+        self.assertEqual(record["handicap_source"], "real")
+        self.assertEqual(record["asian_handicap"]["home_line"], -.75)
+        self.assertEqual(record["asian_handicap_history"][0]["source"], "等效换算｜test")
+        started = {"kickoff_utc": "2026-11-22T09:00:00+00:00", "opening_1x2": record["opening_1x2"]}
+        update_handicap_snapshot(started, None, now)
+        self.assertEqual(started["handicap_source"], "unavailable")
+        self.assertIsNone(started.get("asian_handicap"))
 
 
 class FixtureParserTests(unittest.TestCase):
@@ -302,6 +347,9 @@ class MarketModelTests(unittest.TestCase):
         with_rules = build_market_tracking([public])
         self.assertEqual(with_rules["rules"]["A2"]["overall"]["n"], 1)
         self.assertEqual(with_rules["rules"]["A2"]["overall"]["effective_win_rate"], 1)
+        self.assertEqual(with_rules["rules"]["A2"]["by_source"]["real"]["n"], 1)
+        self.assertEqual(with_rules["rules"]["A2"]["by_source"]["simulated"]["n"], 0)
+        self.assertEqual(with_rules["recommendation"]["by_league"]["TEST"]["by_source"]["real"]["n"], 1)
         self.assertEqual(len(with_rules["rule_definitions"]), 13)
 
 
@@ -447,6 +495,10 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("consensus-summary", research)
         self.assertIn("A1—E2 独立赛后表现", predictions)
         self.assertIn("rule_candidates", predictions)
+        self.assertIn("handicap-source", predictions)
+        self.assertIn("by_source", predictions)
+        self.assertIn("by_source", research)
+        self.assertIn("handicap-source-method", research)
         self.assertNotIn("精选A", predictions)
 
 

@@ -310,6 +310,107 @@ def parse_asian_handicap(row: dict) -> dict | None:
     }
 
 
+def parse_opening_1x2(row: dict) -> dict | None:
+    """只读取 football-data 的 B365 初始胜平负，不使用 C 系列收盘赔率。"""
+    try:
+        odds = {key: float(str(row.get(field, "")).strip())
+                for key, field in (("home", "B365H"), ("draw", "B365D"), ("away", "B365A"))}
+    except (TypeError, ValueError):
+        return None
+    if any(value <= 1 for value in odds.values()):
+        return None
+    return {**odds, "source": "football-data B365H/B365D/B365A 初盘", "provider": "Bet365"}
+
+
+def american_to_decimal(value: str | float | int) -> float:
+    number = float(str(value).strip().replace("+", ""))
+    if number == 0:
+        raise ValueError("美式赔率不能为0")
+    decimal = 1 + number / 100 if number > 0 else 1 + 100 / abs(number)
+    if decimal <= 1:
+        raise ValueError("无效赔率")
+    return decimal
+
+
+def parse_espn_opening_1x2(competition: dict) -> dict | None:
+    """读取 ESPN 所载 DraftKings moneyline.open；没有开盘价时不拿收盘价冒充。"""
+    for offer in competition.get("odds") or []:
+        moneyline = (offer or {}).get("moneyline") or {}
+        try:
+            odds = {side: american_to_decimal(moneyline[side]["open"]["odds"])
+                    for side in ("home", "draw", "away")}
+        except (KeyError, TypeError, ValueError):
+            continue
+        provider = (offer.get("provider") or {}).get("name") or "ESPN provider"
+        return {**odds, "source": f"ESPN {provider} moneyline.open 初盘", "provider": provider}
+    return None
+
+
+def _independent_poisson_outcomes(lambda_home: float, lambda_away: float) -> tuple[float, float, float]:
+    matrix, _ = _poisson_matrix(lambda_home, lambda_away)
+    home = draw = away = coverage = 0.0
+    for h, row in enumerate(matrix):
+        for a, probability in enumerate(row):
+            coverage += probability
+            if h > a:
+                home += probability
+            elif h == a:
+                draw += probability
+            else:
+                away += probability
+    return home / coverage, draw / coverage, away / coverage
+
+
+def fit_poisson_to_1x2(odds: dict) -> dict:
+    """去水后用两个 λ 最小二乘拟合三项概率；保存拟合误差，不宣称完全等同真实盘口。"""
+    inverse = {side: 1 / float(odds[side]) for side in ("home", "draw", "away")}
+    overround = sum(inverse.values())
+    target = {side: value / overround for side, value in inverse.items()}
+
+    def error(lambda_home: float, lambda_away: float) -> float:
+        fitted = _independent_poisson_outcomes(lambda_home, lambda_away)
+        return sum((value - target[side]) ** 2 for side, value in zip(("home", "draw", "away"), fitted))
+
+    best = (math.inf, 1.3, 1.1)
+    for home_step in range(1, 21):
+        lambda_home = home_step * .25
+        for away_step in range(1, 21):
+            lambda_away = away_step * .25
+            candidate = (error(lambda_home, lambda_away), lambda_home, lambda_away)
+            if candidate < best:
+                best = candidate
+    for step in (.1, .04, .015, .005):
+        _, center_home, center_away = best
+        for h_offset in range(-2, 3):
+            lambda_home = min(6.0, max(.05, center_home + h_offset * step))
+            for a_offset in range(-2, 3):
+                lambda_away = min(6.0, max(.05, center_away + a_offset * step))
+                candidate = (error(lambda_home, lambda_away), lambda_home, lambda_away)
+                if candidate < best:
+                    best = candidate
+    squared_error, lambda_home, lambda_away = best
+    expected_difference = lambda_home - lambda_away
+    home_line = -round(expected_difference * 4) / 4
+    home_line = max(-4.0, min(4.0, home_line))
+    if abs(home_line) < 1e-9:
+        home_line = 0.0
+    return {
+        "home_line": home_line,
+        "bet365_home_odds": None, "bet365_away_odds": None,
+        "average_home_odds": None, "average_away_odds": None,
+        "source": f"等效换算｜{odds['source']}",
+        "line_convention": "AHh 为主队让球数：负数表示主队让球，正数表示主队受让。",
+        "estimation": {
+            "method": "初盘欧赔去水 + 独立泊松最小二乘拟合；AHh=-round((λ主-λ客)×4)/4，限制在±4球。",
+            "lambda_home": lambda_home, "lambda_away": lambda_away,
+            "expected_goal_difference": expected_difference,
+            "normalized_probabilities": target, "overround": overround,
+            "rmse": math.sqrt(squared_error / 3),
+            "odds_note": "没有真实亚盘赔率，bet365_home_odds/bet365_away_odds保持为空，不构造赔率或收益。",
+        },
+    }
+
+
 def split_quarter_line(line: float) -> list[float]:
     """±0.25/±0.75 拆成两笔半注，其余盘口不拆分。"""
     doubled = line * 2
@@ -463,7 +564,23 @@ def update_market_snapshot(record: dict, market: dict | None, now: datetime, fie
 
 
 def update_handicap_snapshot(record: dict, market: dict | None, now: datetime) -> None:
-    update_market_snapshot(record, market, now, "asian_handicap")
+    """真实 AHh 优先；仅在缺失且未开赛时用初盘欧赔换算，赛后不回填等效盘口。"""
+    if market:
+        update_market_snapshot(record, market, now, "asian_handicap")
+    current = record.get("asian_handicap")
+    if not current and not market:
+        kickoff = datetime.fromisoformat(record["kickoff_utc"])
+        opening = record.get("opening_1x2")
+        if opening and kickoff > now:
+            current = fit_poisson_to_1x2(opening)
+            update_market_snapshot(record, current, now, "asian_handicap")
+            current = record.get("asian_handicap")
+    if not current:
+        record["handicap_source"] = "unavailable"
+    elif str(current.get("source", "")).startswith("等效换算"):
+        record["handicap_source"] = "simulated"
+    else:
+        record["handicap_source"] = "real"
 
 
 def prediction_window(now: datetime) -> tuple[datetime, datetime]:
@@ -517,6 +634,7 @@ def parse_main_fixtures(csv_text: str, leagues: dict, window_start: datetime | d
             continue
         fixture = base_fixture(leagues[league_id], home, away, kickoff, "football-data fixtures.csv")
         fixture["asian_handicap"] = parse_asian_handicap(row)
+        fixture["opening_1x2"] = parse_opening_1x2(row)
         fixtures.append(fixture)
     return fixtures
 
@@ -568,6 +686,7 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
             except ValueError as exc:
                 home, away, error = home_raw, away_raw, str(exc)
             item = base_fixture(league, home, away, kickoff, "ESPN scoreboard", event_id)
+            item["opening_1x2"] = parse_espn_opening_1x2(competition)
             item["espn_home"] = home_raw
             item["espn_away"] = away_raw
             if error:
@@ -677,6 +796,8 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
                 if fixture.get(field) is not None:
                     record[field] = fixture[field]
         record["ranking"] = fixture["ranking"]
+        if fixture.get("opening_1x2") and not record.get("opening_1x2") and datetime.fromisoformat(record["kickoff_utc"]) > now:
+            record["opening_1x2"] = fixture["opening_1x2"]
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
         result = find_result(fixture, league)
         if result:
@@ -741,7 +862,8 @@ def settle_record_markets(record: dict, handicap: dict | None,
         item = settle_margin(margin, handicap["ev_line"], handicap[f"{side}_metrics"]["odds"])
         item.update({"side": side, "line": handicap["ev_line"], "pregame_ev": handicap["ev_value"],
                      "model_gap": handicap["edge"], "abs_gap": abs(handicap["edge"]),
-                     "ev_band": ev_band(handicap["ev_value"]), "gap_band": gap_band(abs(handicap["edge"]))})
+                     "ev_band": ev_band(handicap["ev_value"]), "gap_band": gap_band(abs(handicap["edge"])),
+                     "handicap_source": record.get("handicap_source") or "real"})
         settlements["asian_handicap"] = item
     def settle_selection(selection: dict) -> dict | None:
         side = selection.get("side")
@@ -758,7 +880,8 @@ def settle_record_markets(record: dict, handicap: dict | None,
                      "gap_band": gap_band(selection["gap"]), "rule_version": selection["rule_version"],
                      "league_id": record.get("league_id"), "league_name": record.get("league_name"),
                      "kickoff_utc": record.get("kickoff_utc"), "key": record.get("key"),
-                     "tracking_eligible": selection.get("tracking_eligible", True)})
+                     "tracking_eligible": selection.get("tracking_eligible", True),
+                     "handicap_source": record.get("handicap_source") or "real"})
         return item
 
     if integrated and integrated.get("status") == "candidate":
@@ -823,9 +946,13 @@ def build_market_tracking(finished: list[dict]) -> dict:
             if row.get("league_id"):
                 by_league.setdefault(row["league_id"], []).append(row)
         result[key] = {"overall": summarize_market_rows(rows),
+                       "by_source": {source: summarize_market_rows([row for row in rows if row.get("handicap_source", "real") == source])
+                                     for source in ("real", "simulated")},
                        "by_ev": {band: summarize_market_rows(items) for band, items in sorted(by_ev.items())},
                        "by_gap": {band: summarize_market_rows(items) for band, items in sorted(by_gap.items())},
-                       "by_league": {league_id: {"overall": summarize_market_rows(items)}
+                       "by_league": {league_id: {"overall": summarize_market_rows(items),
+                                                 "by_source": {source: summarize_market_rows([row for row in items if row.get("handicap_source", "real") == source])
+                                                               for source in ("real", "simulated")}}
                                      for league_id, items in sorted(by_league.items())}}
     result["rule_definitions"] = RULE_DEFINITIONS
     result["rules"] = {}
@@ -839,7 +966,11 @@ def build_market_tracking(finished: list[dict]) -> dict:
                 by_league.setdefault(row["league_id"], []).append(row)
         result["rules"][rule_id] = {
             "overall": summarize_market_rows(rows),
-            "by_league": {league_id: {"overall": summarize_market_rows(items)}
+            "by_source": {source: summarize_market_rows([row for row in rows if row.get("handicap_source", "real") == source])
+                          for source in ("real", "simulated")},
+            "by_league": {league_id: {"overall": summarize_market_rows(items),
+                                      "by_source": {source: summarize_market_rows([row for row in items if row.get("handicap_source", "real") == source])
+                                                    for source in ("real", "simulated")}}
                           for league_id, items in sorted(by_league.items())},
         }
     return result
@@ -874,8 +1005,9 @@ def freeze_recommendation_selection(record: dict, derived: dict, now: datetime) 
 def public_record(record: dict, featured_model_id: str = "stable", now: datetime | None = None) -> dict:
     fields = ["key", "league_id", "league_name", "home", "away", "home_source", "away_source",
               "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "actual", "predictions",
-              "asian_handicap", "ranking", "prediction_window_start", "prediction_window_end"]
+              "asian_handicap", "handicap_source", "opening_1x2", "ranking", "prediction_window_start", "prediction_window_end"]
     result = {k: record.get(k) for k in fields}
+    result["handicap_source"] = record.get("handicap_source") or ("real" if record.get("asian_handicap") else "unavailable")
     featured = record.get("predictions", {}).get(featured_model_id)
     handicap = compare_handicap(featured, record.get("asian_handicap"))
     result["featured_model_id"] = featured_model_id
@@ -925,7 +1057,7 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "V5并行测试A1—E2全部规则；市场盘口、模型盘口、机构盘口分别保存，E类极端分歧仅研究。每条规则独立统计，验证达标后才进入精选。",
+            "handicap": "V5并行测试A1—E2全部规则；市场盘口、模型盘口、机构盘口分别保存，E类极端分歧仅研究。机构盘口优先真实AHh初盘，缺失时由初盘欧赔换算等效值并标记simulated；无真实亚盘赔率则不构造收益。",
             "market_handicap": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数表示主队强，正数表示客队强。",
         },
         "featured_model_id": featured_model_id,

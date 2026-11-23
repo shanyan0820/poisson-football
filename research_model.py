@@ -36,10 +36,11 @@ def make_research_snapshot(public: dict, now: datetime) -> dict:
     fields = [
         "key", "league_id", "league_name", "home", "away", "home_source", "away_source",
         "kickoff_utc", "kickoff_beijing", "source", "created_at", "status", "status_reason",
-        "predictions", "featured_model_id", "featured_prediction", "asian_handicap", "ranking",
+        "predictions", "featured_model_id", "featured_prediction", "asian_handicap", "handicap_source", "opening_1x2", "ranking",
         "handicap_analysis", "recommendation_selection", "featured_selection", "rule_evaluations", "actual",
     ]
     snapshot = {field: deepcopy(public.get(field)) for field in fields}
+    snapshot["handicap_source"] = public.get("handicap_source") or ("real" if public.get("asian_handicap") else "unavailable")
     snapshot.update({
         "research_version": RESEARCH_VERSION,
         "research_created_at": now.astimezone(UTC).isoformat(timespec="seconds"),
@@ -169,6 +170,19 @@ def update_research_archive(archive: dict, public_records: list[dict], now: date
             if created_at:
                 snapshot["research_created_at"] = created_at
             existing = snapshot
+        else:
+            existing_source = existing.get("handicap_source") or ("real" if existing.get("asian_handicap") else "unavailable")
+            public_source = public.get("handicap_source") or ("real" if public.get("asian_handicap") else "unavailable")
+            can_supplement = bool(existing.get("tracking_eligible")) and not existing.get("actual")
+            upgrade = can_supplement and ((existing_source == "unavailable" and public_source != "unavailable")
+                                          or (existing_source == "simulated" and public_source == "real"))
+            if upgrade:
+                created_at = existing.get("research_created_at")
+                existing = make_research_snapshot(public, now)
+                if created_at:
+                    existing["research_created_at"] = created_at
+            else:
+                existing["handicap_source"] = existing_source
         if public.get("actual"):
             existing["actual"] = deepcopy(public["actual"])
             existing["direction_settlements"] = settle_research_directions(existing)
@@ -181,6 +195,7 @@ def update_research_archive(archive: dict, public_records: list[dict], now: date
         "freeze": "北京时间每日12:00冻结八个模型、市场/模型/机构盘口及A1—E2全部规则触发方向；日间只回写真实赛果与各规则独立结算。",
         "sample": "tracking_eligible=true 为正式赛前样本；retrospective 仅回查，不进入前瞻性论证。",
         "relations": "让球：模型净胜球与−AHh同号为aligned、异号为opposed；只研究让球盘。",
+        "handicap_source": "real为真实初盘；simulated为初盘欧赔换算等效盘口；unavailable为缺少可用盘口。等效盘口不虚构亚盘赔率。",
     }
     return archive
 
@@ -193,7 +208,8 @@ def direction_rows(archive: dict, eligible_only: bool = True) -> list[dict]:
         for market, directions in match.get("direction_settlements", {}).items():
             for side, settlement in directions.items():
                 rows.append({**settlement, "key": match["key"], "league_id": match["league_id"],
-                             "league_name": match["league_name"], "kickoff_utc": match["kickoff_utc"]})
+                             "league_name": match["league_name"], "kickoff_utc": match["kickoff_utc"],
+                             "handicap_source": match.get("handicap_source") or "real"})
     return rows
 
 
@@ -204,7 +220,8 @@ def selection_rows(archive: dict, eligible_only: bool = True) -> dict[str, list[
             continue
         for name, settlement in match.get("selection_settlements", {}).items():
             result[name].append({**settlement, "key": match["key"], "league_id": match["league_id"],
-                                 "league_name": match["league_name"], "kickoff_utc": match["kickoff_utc"]})
+                                 "league_name": match["league_name"], "kickoff_utc": match["kickoff_utc"],
+                                 "handicap_source": match.get("handicap_source") or "real"})
     return result
 
 
@@ -216,7 +233,8 @@ def rule_rows(archive: dict, eligible_only: bool = True) -> list[dict]:
         for rule_id, settlement in (match.get("rule_settlements") or {}).items():
             rows.append({**settlement, "rule_id": rule_id, "key": match["key"],
                          "league_id": match["league_id"], "league_name": match["league_name"],
-                         "kickoff_utc": match["kickoff_utc"]})
+                         "kickoff_utc": match["kickoff_utc"],
+                         "handicap_source": match.get("handicap_source") or "real"})
     return rows
 
 
@@ -306,7 +324,7 @@ def build_research_report(archive: dict, now: datetime) -> dict:
         market_rows = [row for row in rows if row["market"] == market]
         market_report = {"overall": summarize_with_time_validation(market_rows)}
         for dimension, field in (("by_relation", "relation"), ("by_gap", "gap_band"),
-                                 ("by_ev", "ev_band"), ("by_side", "side")):
+                                 ("by_ev", "ev_band"), ("by_side", "side"), ("by_source", "handicap_source")):
             values = sorted({row[field] for row in market_rows})
             market_report[dimension] = {}
             for value in values:
@@ -344,9 +362,12 @@ def build_research_report(archive: dict, now: datetime) -> dict:
             "settled_pregame_matches": sum(bool(match.get("tracking_eligible")) and bool(match.get("actual")) for match in matches),
             "settled_direction_rows": len(rows),
             "settled_rule_rows": len(all_rule_rows),
+            "real_handicap_matches": sum(match.get("handicap_source", "real") == "real" for match in matches),
+            "simulated_handicap_matches": sum(match.get("handicap_source") == "simulated" for match in matches),
         },
         "methodology": {
             "handicap": "市场盘口、模型盘口=λ客−λ主、机构盘口=AHh；负数主队强，正数客队强。A1—E2全部规则逐场并行评估、独立结算。",
+            "handicap_source": "real=真实初盘；simulated=初盘欧赔去水后以独立泊松拟合并映射的等效盘口。等效盘口没有真实亚盘赔率，不构造赔率或收益，可按来源分层回查。",
             "ranking": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；市场偏差=市场−模型，机构偏差=机构−模型。",
             "consensus": "首页按B/C/D/A优先级选择可结算方向；E1/E2极端分歧只进入研究，不直接驱动首页推荐。",
             "schedule": "北京时间每日12:00生成并冻结新周期；20:00和次日02:00仅同步赛果。",

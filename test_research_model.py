@@ -135,6 +135,11 @@ class ResearchSettlementTests(unittest.TestCase):
         report = build_research_report(archive, datetime(2026, 11, 22, 10, tzinfo=UTC))
         self.assertEqual(len(report["rule_groups"]), 13)
         self.assertEqual(report["sample"]["settled_rule_rows"], 2)
+        self.assertEqual(report["sample"]["real_handicap_matches"], 1)
+        self.assertEqual(report["sample"]["simulated_handicap_matches"], 0)
+        self.assertIn("real", report["direction_groups"]["asian_handicap"]["by_source"])
+        self.assertEqual(report["direction_groups"]["asian_handicap"]["by_source"]["real"]["n"], 2)
+        self.assertIn("不构造赔率或收益", report["methodology"]["handicap_source"])
         self.assertEqual(report["optimization"]["rule_candidates"], [])
         self.assertEqual(report["optimization"]["status"], "no_validated_rule")
 

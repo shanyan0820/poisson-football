@@ -34,12 +34,12 @@
 </section>
 <section class="card">
   <div class="step">03 / 分层论证</div><h2 class="section-title">比较不同关系、差值与 EV 分组</h2>
-  <input type="hidden" id="market" value="asian_handicap"><div class="field"><label for="dimension">让球分层方式</label><select id="dimension"><option value="by_relation">模型与机构关系</option><option value="by_gap">模型盘口差值</option><option value="by_ev">理论 EV 区间</option><option value="by_side">推荐方向</option></select></div>
+  <input type="hidden" id="market" value="asian_handicap"><div class="field"><label for="dimension">让球分层方式</label><select id="dimension"><option value="by_relation">模型与机构关系</option><option value="by_gap">模型盘口差值</option><option value="by_ev">理论 EV 区间</option><option value="by_side">推荐方向</option><option value="by_source">盘口来源</option></select></div>
   <div id="groups"></div>
 </section>
 <section class="card method">
   <div class="step">04 / 判定原则</div><h2 class="section-title">先验证，再讨论最优</h2>
-  <p><b>让球：</b><span id="handicap-method"></span></p><p><b>市场：</b><span id="ranking-method"></span></p><p><b>共识：</b><span id="consensus-method"></span></p><p><b>定时：</b><span id="schedule-method"></span></p><p><b>分组门槛：</b><span id="optimization-method"></span></p>
+  <p><b>让球：</b><span id="handicap-method"></span></p><p><b>盘口来源：</b><span id="handicap-source-method"></span></p><p><b>市场：</b><span id="ranking-method"></span></p><p><b>共识：</b><span id="consensus-method"></span></p><p><b>定时：</b><span id="schedule-method"></span></p><p><b>分组门槛：</b><span id="optimization-method"></span></p>
   <div class="rule" id="optimization-status">当前没有通过时间外验证的规则，不自动修改精选预测。</div>
 </section>
 <section class="card">
@@ -54,7 +54,7 @@
 const $=id=>document.getElementById(id);let DATA=null;
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
 const roi=v=>v==null?'—':(Number(v)>0?'+':'')+(Number(v)*100).toFixed(2)+'%';
-const labels={aligned:'模型与机构同向',opposed:'模型与机构反向',neutral:'零盘口或方向均衡',home:'主队方向',away:'客队方向'};
+const labels={aligned:'模型与机构同向',opposed:'模型与机构反向',neutral:'零盘口或方向均衡',home:'主队方向',away:'客队方向',real:'真实初盘',simulated:'等效换算盘口',unavailable:'缺少可用盘口'};
 function selection(prefix,summary){$(prefix+'-accuracy').textContent=pct(summary.accuracy);$(prefix+'-n').textContent=summary.n;$(prefix+'-valid').textContent=summary.valid_n;$(prefix+'-roi').textContent=roi(summary.roi)}
 function groupHtml(name,summary){
  const evaluated=summary.validation_status==='evaluated';
@@ -71,7 +71,7 @@ async function init(){try{
  selection('recommendation',DATA.selection_groups.recommendation);selection('featured',DATA.selection_groups.featured);
  const candidates=DATA.optimization?.rule_candidates||[];
  $('consensus-summary').textContent=`${Object.keys(DATA.rule_groups||{}).length} 条规则独立结算；当前候选 ${candidates.length?candidates.join('、'):'暂无'}。达到门槛后仍需人工确认，不自动进入精选。`;
- $('handicap-method').textContent=DATA.methodology.handicap;$('ranking-method').textContent=DATA.methodology.ranking;$('consensus-method').textContent=DATA.methodology.consensus;$('schedule-method').textContent=DATA.methodology.schedule;$('optimization-method').textContent=DATA.methodology.optimization;
+ $('handicap-method').textContent=DATA.methodology.handicap;$('handicap-source-method').textContent=DATA.methodology.handicap_source;$('ranking-method').textContent=DATA.methodology.ranking;$('consensus-method').textContent=DATA.methodology.consensus;$('schedule-method').textContent=DATA.methodology.schedule;$('optimization-method').textContent=DATA.methodology.optimization;
  const qualified=DATA.optimization.qualified_groups.length;$('optimization-status').textContent=qualified?`${qualified} 个分组达到复核条件，但仍需更多独立样本，不自动认定为最优。`:'当前没有通过时间外验证的规则，不自动修改精选预测。';
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');renderGroups();
  }catch(e){$('error').textContent='研究数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
