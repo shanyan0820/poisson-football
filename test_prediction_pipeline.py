@@ -420,6 +420,17 @@ class PageContractTests(unittest.TestCase):
         self.assertNotIn("consensus_type", html)
         self.assertNotIn("featured_class", html)
 
+    def test_mobile_page_has_model_probabilities_score_and_professional_reason(self):
+        html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+        self.assertIn("主胜概率", html)
+        self.assertIn("平局概率", html)
+        self.assertIn("客胜概率", html)
+        self.assertIn("参考比分", html)
+        self.assertIn("推荐理由：", html)
+        self.assertIn("function professionalReason", html)
+        self.assertIn("${probabilityHtml(r)}", html)
+        self.assertNotIn("${base.rule_id}", html)
+
     def test_research_and_settlement_pages_are_v5(self):
         research = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
         predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
