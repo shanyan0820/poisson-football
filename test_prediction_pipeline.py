@@ -420,18 +420,24 @@ class PageContractTests(unittest.TestCase):
         self.assertNotIn("consensus_type", html)
         self.assertNotIn("featured_class", html)
 
-    def test_mobile_page_has_model_probabilities_score_and_professional_reason(self):
+    def test_mobile_page_has_symmetric_metrics_and_direction_consistent_scores(self):
         html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
         self.assertIn("主胜概率", html)
         self.assertIn("平局概率", html)
         self.assertIn("客胜概率", html)
         self.assertIn("参考比分", html)
         self.assertIn("slice(0,3)", html)
-        self.assertIn("score-chip", html)
-        self.assertIn("model-insight", html)
-        self.assertIn("推荐理由：", html)
+        self.assertIn("score-item", html)
+        self.assertIn("analysis-table", html)
+        self.assertIn("versus-grid", html)
+        self.assertIn("band.includes('不败')", html)
+        self.assertIn("h>=a", html)
+        self.assertIn("a>=h", html)
+        self.assertIn("h-a>=2", html)
+        self.assertIn("a-h>=2", html)
+        self.assertIn("分析依据", html)
         self.assertIn("function professionalReason", html)
-        self.assertIn("${probabilityHtml(r)}", html)
+        self.assertIn("${referenceScoresHtml(r)}", html)
         self.assertNotIn("${base.rule_id}", html)
 
     def test_research_and_settlement_pages_are_v5(self):

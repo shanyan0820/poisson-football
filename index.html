@@ -13,10 +13,48 @@
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#c92f35;--red-soft:#fff1f1}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}select{font:inherit}.wrap{max-width:820px;margin:auto;padding:0 14px 36px}.hero{background:var(--dark);color:#fff;padding:20px 16px 26px;border-radius:0 0 22px 22px}.hero-inner{max-width:790px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:22px;margin:0;letter-spacing:.3px}.live{font-size:11px;color:#c9eadb;white-space:nowrap}.hero p{color:#b9c9c1;font-size:13px;margin:7px 0 0}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px}.updated{font-size:10px;color:#8faea0}.nav-links{display:flex;gap:12px}.nav{color:#d8f5e7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 3px 12px rgba(19,34,29,.025)}.setup{margin-top:-12px;position:relative}.step{font-size:10px;color:var(--green);font-weight:800;letter-spacing:1px}.section-title{font-size:17px;margin:3px 0 12px}.summary{display:grid;grid-template-columns:repeat(4,1fr);background:#f5f8f6;border-radius:11px;padding:10px 0}.stat{text-align:center;border-right:1px solid var(--line)}.stat:last-child{border-right:0}.stat strong{display:block;font-size:21px;line-height:1.2}.stat span{font-size:10px;color:var(--muted)}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}select{width:100%;border:1px solid #d6dfd9;background:#fff;color:var(--ink);border-radius:9px;padding:9px 8px;outline:none;font-size:12px}.hint{font-size:11px;color:var(--muted);margin:9px 0 0}.error{display:none;background:#fff1ef;color:#9c352b;border:1px solid #f0ccc7;padding:12px;border-radius:12px;margin-top:14px;font-size:14px}.loading{text-align:center;padding:28px;color:var(--muted)}.section-head{display:flex;justify-content:space-between;align-items:end;gap:12px;margin:20px 2px 0}.section-head .section-title{margin-bottom:0}.section-head .hint{margin:0;text-align:right}.match-card{padding:0;overflow:hidden}.match-top{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:11px 13px;font-size:11px;color:var(--muted)}.badge{display:inline-block;padding:2px 7px;border-radius:99px;background:#eaf5ef;color:var(--green);font-size:10px;font-weight:700;white-space:nowrap}.badge.gray{background:#eef1ef;color:var(--muted)}.badge.amber{background:#fff3df;color:#8c5b13}.match-board{border-top:1px solid var(--line)}.team-row{display:grid;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr)}.team-cell{min-width:0;padding:13px 11px;display:flex;align-items:center;gap:8px}.team-cell.away{justify-content:flex-end;text-align:right}.team-name{font-size:15px;font-weight:750;line-height:1.35;overflow-wrap:anywhere}.team-rank{display:block;color:var(--muted);font-size:9px;font-weight:500;margin-top:4px;white-space:nowrap}.team-xg{flex:none;color:var(--green);font-size:20px;font-weight:800;text-align:center;line-height:1.1}.team-xg small{display:block;color:var(--muted);font-size:8px;font-weight:500;margin-top:4px;white-space:nowrap}.time-cell{border-left:1px solid var(--line);border-right:1px solid var(--line);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:8px 3px}.time-value{font-size:11px;font-weight:700;white-space:nowrap;margin-top:3px}.cell-label{display:block;font-size:10px;color:var(--muted);margin-bottom:3px}.handicap-stack{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}.handicap-line{display:flex;min-width:0;flex-direction:column;align-items:center;justify-content:center;gap:3px;padding:11px 4px;border-right:1px solid var(--line);text-align:center}.handicap-line:last-child{border-right:0}.handicap-line.ranking{background:#f5f8f6}.handicap-line.model{background:#edf7f1}.handicap-line .cell-label{display:block;margin:0;font-size:10px;white-space:nowrap}.handicap-line .cell-value{display:block;font-size:17px;font-weight:800;line-height:1.3;white-space:nowrap}.handicap-line.model .cell-value{color:var(--green)}.model-insight{border-top:1px solid var(--line);padding:10px 12px 11px;background:#f8faf8}.probability-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}.probability-cell{min-width:0;padding:1px 4px 9px;text-align:center}.probability-cell span{display:block;font-size:9px;color:var(--muted);white-space:nowrap}.probability-cell b{display:block;margin-top:2px;font-size:17px;color:var(--ink);font-weight:800;white-space:nowrap}.score-line{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-top:9px;border-top:1px dashed var(--line)}.score-label{font-size:10px;color:var(--muted);white-space:nowrap}.score-label small{display:block;font-size:8px;font-weight:400;margin-top:1px}.score-list{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.score-chip{min-width:44px;padding:4px 7px;text-align:center;background:#fff;border:1px solid var(--line);border-radius:7px;color:var(--green);font-size:13px;font-weight:800;line-height:1.2}.match-details{border-top:1px solid var(--line);padding:8px 13px;background:#fbfcfb}.match-details summary{text-align:center;font-size:10px}.rank-detail{font-size:10px;color:var(--muted);line-height:1.65;margin-top:7px}.rank-detail b{color:var(--ink)}.recommendation-cell{border-top:1px solid var(--line);padding:13px 12px;text-align:center;background:#f5f6f5}.recommendation-cell.selected{background:#edf7f1}.recommendation-cell.featured{background:var(--red-soft);border-top-color:#f0ccce}.recommendation-label{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.4px}.selected .recommendation-label{color:var(--green)}.featured .recommendation-label,.featured .recommendation-main{color:var(--red)}.recommendation-main{display:block;margin-top:3px;font-size:18px;font-weight:850;color:var(--muted);line-height:1.4}.selected .recommendation-main{color:var(--green)}.featured .recommendation-main{color:var(--red)}.recommendation-main small{display:block;font-size:11px;font-weight:700;margin-top:3px}.recommendation-reason{display:block;font-size:11px;color:var(--muted);line-height:1.6;margin:10px 0 0;padding:8px 10px;background:rgba(255,255,255,.72);border:1px solid rgba(104,118,111,.14);border-radius:8px;text-align:left}.recommendation-reason b{display:block;margin-bottom:2px;color:var(--ink);font-size:10px;font-weight:750}.untracked{margin:0 13px 10px;padding:8px 9px;background:#f5f6f5;border-radius:9px;color:var(--muted);font-size:10px}.actual{margin:10px 13px;padding:9px 10px;border-radius:9px;background:#edf5f0;font-size:11px}.actual b{font-size:14px}.settlement{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}.settlement span{background:#fff;border-radius:6px;padding:3px 6px}.freeze-note{font-size:9px;color:#8a958f;margin:0 13px 11px}.method{font-size:11px;color:var(--muted)}.method summary,.match-details summary{cursor:pointer;list-style:none;font-size:12px;color:var(--green);font-weight:700;outline:none}.method summary::-webkit-details-marker{display:none}.method[open] summary{margin-bottom:8px}.method b{color:var(--ink)}.method p{margin:8px 0}.warning{border-left:2px solid var(--amber);padding-left:9px;color:#79511c;font-size:11px;margin-top:10px}.source{font-size:10px;color:var(--muted);margin:14px 3px 0}.source p{margin:4px 0}.source a{color:var(--green);text-decoration:none}.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:10px;padding-right:10px}.hero{padding-left:14px;padding-right:14px}.brand h1{font-size:20px}.live{font-size:10px}.card{padding:14px}.match-card{padding:0}.controls{gap:8px}.stat strong{font-size:19px}.stat span{font-size:9px}.team-name{font-size:14px}.team-xg{font-size:18px}.team-cell{padding:12px 8px;gap:6px}.cell-value{font-size:17px}.hero-meta{align-items:flex-end}}@media(max-width:350px){.controls{grid-template-columns:1fr}.team-name{font-size:13px}.team-xg{font-size:16px}.team-rank{font-size:8px}.cell-value{font-size:15px}}
+
+/* 手机端简洁对称版：统一三列网格，避免信息嵌套与错位。 */
+.match-card{margin-top:14px;border-radius:14px;box-shadow:0 4px 18px rgba(19,34,29,.04)}
+.match-top{padding:10px 12px;background:#fbfcfb;border-bottom:1px solid var(--line)}
+.match-board{border-top:0}
+.versus-grid{display:grid;grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr)}
+.team-panel{min-width:0;padding:15px 7px 13px;text-align:center}
+.team-panel .team-name{display:flex;align-items:center;justify-content:center;min-height:38px;font-size:15px;line-height:1.35}
+.team-panel .team-rank{margin-top:4px}
+.team-expected{margin-top:8px;color:var(--muted);font-size:9px;white-space:nowrap}
+.team-expected b{margin-left:4px;color:var(--green);font-size:18px;line-height:1}
+.versus-panel{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px 2px;border-left:1px solid var(--line);border-right:1px solid var(--line);text-align:center}
+.versus-label{color:#9aa69f;font-size:10px;font-weight:800;letter-spacing:1px}
+.kickoff-date{margin-top:7px;color:var(--muted);font-size:9px;white-space:nowrap}
+.kickoff-time{margin-top:1px;font-size:15px;font-weight:800;white-space:nowrap}
+.recommendation-v2{padding:13px 12px 12px;border-top:1px solid var(--line);background:#f5f6f5;text-align:center}
+.recommendation-v2.selected{background:#edf7f1}
+.recommendation-v2.featured{background:var(--red-soft)}
+.rec-label{display:block;color:var(--muted);font-size:10px;font-weight:750;letter-spacing:.5px}
+.rec-direction{display:block;margin-top:3px;color:var(--muted);font-size:20px;font-weight:850;line-height:1.3}
+.selected .rec-label,.selected .rec-direction{color:var(--green)}
+.featured .rec-label,.featured .rec-direction{color:var(--red)}
+.rec-market{display:block;margin-top:5px;color:var(--ink);font-size:11px;font-weight:650;line-height:1.5}
+.rec-reason{display:block;margin-top:10px;padding-top:9px;border-top:1px solid rgba(104,118,111,.18);color:var(--muted);font-size:11px;line-height:1.65;text-align:left}
+.rec-reason b{color:var(--ink);font-weight:750}
+.analysis-table{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line)}
+.analysis-cell{min-width:0;padding:10px 3px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);text-align:center}
+.analysis-cell:nth-child(3n){border-right:0}
+.analysis-cell span{display:block;color:var(--muted);font-size:9px;white-space:nowrap}
+.analysis-cell b{display:block;margin-top:3px;font-size:16px;font-weight:800;line-height:1.3;white-space:nowrap}
+.analysis-cell.model{background:#f3f9f5}.analysis-cell.model b{color:var(--green)}
+.score-section{padding:11px 12px 12px;background:#fbfcfb}
+.score-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;color:var(--muted);font-size:10px}
+.score-heading b{color:var(--ink);font-size:11px}.score-heading span{text-align:right}
+.score-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.score-item{display:flex;align-items:center;justify-content:center;min-width:0;height:40px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--green);font-size:17px;font-weight:850;line-height:1;white-space:nowrap}
+.freeze-note{text-align:center}
+@media(max-width:350px){.versus-grid{grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr)}.team-panel .team-name{font-size:13px}.score-grid{gap:5px}.score-item{font-size:15px}.rec-market{font-size:10px}}
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">让球盘专项</span></div><p>市场盘口 · 模型盘口 · 机构盘口 · 每日12点冻结</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">让球盘专项</span></div><p>盘口对照 · 概率分析 · 每日12点冻结</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 当前预测周期</div><h2 class="section-title" id="date-title">正在读取12点赛程窗口…</h2>
@@ -35,8 +73,8 @@
     <p><b>统一定义：</b>三种盘口均为负数主队强、正数客队强，绝对值越大代表差距越大。</p>
     <p><b>盘口来源：</b>市场盘口按开球前真实排名线性换算；模型盘口＝客队预期进球−主队预期进球；机构盘口采用AHh。</p>
     <p><b>并行测试：</b>同向、诱盘、阻盘、两方印证与极端分歧等场景同时留样，每条规则独立统计赛后表现。</p>
-    <p><b>概率与比分：</b>主胜、平局、客胜概率由当前泊松模型计算；三个参考比分按单一比分概率从高到低排列，仅用于展示模型倾向。</p>
-    <p><b>推荐理由：</b>根据三项盘口的方向、差值及机构调整生成，不展示内部规则编号，也不代表确定结果。</p>
+    <p><b>概率与比分：</b>主胜、平局、客胜概率由当前泊松模型计算。有推荐时，仅从符合推荐方向的比分中选取概率最高的三个；无推荐时，展示全局概率最高的三个。比分仅作模型情景参考。</p>
+    <p><b>分析依据：</b>根据三项盘口的方向、差值及机构调整生成，不展示内部规则编号，也不代表确定结果。</p>
     <p><b>精选推荐：</b>只有达到有效样本、准确率、时间验证和周稳定性门槛，并经确认的规则才进入红色精选；当前不因短期胜率自动升级。</p>
     <p><b>理论 EV：</b>仅作为展示和研究指标，不决定规则是否触发。</p>
     <p><b>冻结与结算：</b>北京时间每日12:00结算旧样本并冻结当日12:00至次日12:00预测；20:00和次日02:00只同步赛果，不改推荐。</p><div class="warning">本页为模型研究与回查工具，不构成收益保证。</div>
@@ -59,44 +97,58 @@ function isStarted(r){return Date.parse(r.kickoff_utc)<=Date.now()}
 function statusBadge(r){if(r.actual)return'<span class="badge">已核对</span>';if(isStarted(r))return'<span class="badge gray">已开赛</span>';return'<span class="badge amber">未开赛</span>'}
 function settlementHtml(r){const s=r.market_settlement||{},recommendation=s.recommendation,featured=s.integrated;if(!recommendation&&!featured)return'';return`<div class="settlement">${recommendation?`<span>预测推荐：${resultName[recommendation.result]}</span>`:''}${featured?`<span>精选预测：${resultName[featured.result]}</span>`:''}</div>`}
 function selectionName(s){return`${s.side==='home'?'主队':'客队'} ${line(s.line)} 球`}
-function probabilityHtml(r){
- const p=r.featured_prediction,f=p?.forecast,scores=(p?.top_scores||[]).slice(0,3);if(!f)return'';
- const percent=v=>(Number(v)*100).toFixed(1)+'%';
- const scoreHtml=scores.length?scores.map(score=>`<b class="score-chip">${score.home} : ${score.away}</b>`).join(''):'<span class="score-label">—</span>';
- return`<div class="model-insight"><div class="probability-row"><div class="probability-cell"><span>主胜概率</span><b>${percent(f.home_win)}</b></div><div class="probability-cell"><span>平局概率</span><b>${percent(f.draw)}</b></div><div class="probability-cell"><span>客胜概率</span><b>${percent(f.away_win)}</b></div></div><div class="score-line"><span class="score-label">参考比分<small>按模型概率排序</small></span><div class="score-list">${scoreHtml}</div></div></div>`;
+function analysisHtml(r){
+ const p=r.featured_prediction,f=p?.forecast,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.market_handicap,modelLine=xg?xg.away-xg.home:null;
+ const percent=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
+ const cells=[['市场盘口',rankLine==null?'—':signed(rankLine)+' 球',''],['模型盘口',modelLine==null?'—':signed(modelLine)+' 球','model'],['机构盘口',ah?line(ah.home_line)+' 球':'—',''],['主胜概率',percent(f?.home_win),''],['平局概率',percent(f?.draw),''],['客胜概率',percent(f?.away_win),'']];
+ return`<div class="analysis-table">${cells.map(([label,value,cls])=>`<div class="analysis-cell ${cls}"><span>${label}</span><b>${value}</b></div>`).join('')}</div>`;
 }
-function handicapHtml(r){const p=r.featured_prediction,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.market_handicap,modelLine=p?xg.away-xg.home:null;return`<div class="handicap-stack"><div class="handicap-line ranking"><span class="cell-label">市场盘口</span><span class="cell-value">${rankLine==null?'—':signed(rankLine)+' 球'}</span></div><div class="handicap-line model"><span class="cell-label">模型盘口</span><span class="cell-value">${modelLine==null?'—':signed(modelLine)+' 球'}</span></div><div class="handicap-line"><span class="cell-label">机构盘口</span><span class="cell-value">${ah?line(ah.home_line)+' 球':'—'}</span></div></div>`}
+function referenceScores(r){
+ const p=r.featured_prediction,xg=p?.expected_goals,s=r.recommendation_selection;if(!xg)return[];
+ const selected=s?.status==='candidate',band=s?.band_label||'';if(!selected)return(p?.top_scores||[]).slice(0,3);
+ const home=s.side==='home',allow=band.includes('不败')?(h,a)=>home?h>=a:a>=h:band.includes('大胜')?(h,a)=>home?h-a>=2:a-h>=2:band.includes('胜')?(h,a)=>home?h>a:a>h:()=>true;
+ const hp=[Math.exp(-Number(xg.home))],ap=[Math.exp(-Number(xg.away))],scores=[];
+ for(let i=1;i<=10;i++){hp[i]=hp[i-1]*Number(xg.home)/i;ap[i]=ap[i-1]*Number(xg.away)/i}
+ for(let h=0;h<=10;h++)for(let a=0;a<=10;a++)if(allow(h,a))scores.push({home:h,away:a,probability:hp[h]*ap[a]});
+ return scores.sort((a,b)=>b.probability-a.probability).slice(0,3);
+}
+function referenceScoresHtml(r){
+ const scores=referenceScores(r),s=r.recommendation_selection,selected=s?.status==='candidate';if(!scores.length)return'';
+ const note=selected?`符合「${esc(s.band_label)}」方向`:'按模型概率排序';
+ return`<div class="score-section"><div class="score-heading"><b>参考比分</b><span>${note}</span></div><div class="score-grid">${scores.map(score=>`<div class="score-item">${score.home} : ${score.away}</div>`).join('')}</div></div>`;
+}
 function professionalReason(s){
  const reasons={
-  A1:'三项盘口方向一致且差值较小，模型、市场与机构对比赛强弱的判断高度重合，方向参考价值相对较高。',
-  A2:'三项盘口保持同向，尽管数值存在适度差异，整体强弱判断仍然一致，因此采用模型方向作为参考。',
-  A3:'三项盘口方向一致，但数值差值偏大，说明强弱方向存在共识、强度判断仍有分歧，需适当控制预期。',
-  B1:'市场盘口相对模型偏向客队，机构调整幅度有限，热度与真实强度存在偏差，主队方向具备一定的反向保护价值。',
-  B2:'市场与机构对客队方向的强化程度出现差异，盘口分歧更支持防范热门方向，因此倾向主队不败。',
-  B3:'市场盘口相对模型偏向主队，机构未同步加深，热度与真实强度存在偏差，因此倾向客队不败。',
-  C1:'市场与模型差值有限，机构盘口进一步向主队方向调整，为原有判断提供了更明确的强弱确认。',
-  C2:'市场与模型差值有限，机构盘口进一步向客队方向调整，为原有判断提供了更明确的强弱确认。',
-  D1:'模型与机构盘口同向，市场判断存在分歧，优先参考模型与机构形成的双重印证。',
-  D2:'模型与市场、机构判断相反，独立模型信号更支持该方向，属于分歧场次中的逆向选择。',
-  D3:'市场与模型方向一致，机构盘口出现明显逆向调整，重点参考机构盘口所反映的额外信息。'
+  A1:'市场、模型与机构盘口方向一致，且数值差值较小，三类信号对强弱关系的判断相互印证。',
+  A2:'三项盘口方向一致，强度判断存在适度差异，当前以模型方向作为主要参考。',
+  A3:'三项盘口方向一致，但强度分歧较大，仅作方向参考，不宜放大预期。',
+  B1:'市场盘口较模型更偏向客队，而机构调整有限，强弱评估存在分歧，主队方向具备一定防范价值。',
+  B2:'市场与机构对客队强度的表达不一致，盘口信号存在分歧，当前倾向防范主队不败。',
+  B3:'市场盘口较模型更偏向主队，而机构未同步加深，强弱评估存在分歧，当前倾向防范客队不败。',
+  C1:'市场与模型差值有限，机构盘口进一步向主队调整，机构信号对主队方向形成补充印证。',
+  C2:'市场与模型差值有限，机构盘口进一步向客队调整，机构信号对客队方向形成补充印证。',
+  D1:'模型与机构盘口同向，市场判断存在分歧，当前优先参考模型与机构形成的双重印证。',
+  D2:'模型与市场、机构方向相反，属于高分歧场景，当前按模型独立信号保留该方向。',
+  D3:'市场与模型方向一致，机构出现明显逆向调整，当前优先参考机构盘口反映的增量信息。'
  };
- return reasons[s?.rule_id]||'综合三项盘口的方向、差值与机构调整，选择当前相互印证程度更高的方向。';
+ return reasons[s?.rule_id]||'综合三项盘口的方向、差值与机构调整，选取当前相互印证程度更高的方向。';
 }
 function recommendationHtml(r){
  const base=r.recommendation_selection,featured=r.integrated_selection,selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,isFeatured=selected&&!retrospective&&featured?.status==='candidate';
- const main=selected?`${base.band_label}<small>${selectionName(base)} · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}</small>`:'暂无推荐';
- const reason=retrospective?'本场为回溯展示，不计入赛前正式统计。':selected?professionalReason(base):'本场未形成可结算推荐，继续保留研究样本。';
+ const direction=selected?base.band_label:'暂无推荐';
+ const market=selected?`${selectionName(base)} · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`:'';
+ const reason=retrospective?'本场为回溯展示，不计入赛前正式统计。':selected?professionalReason(base):'本场未形成可结算推荐，仅保留模型数据供赛后验证。';
  const label=retrospective?'回溯参考':isFeatured?'精选推荐':selected?'预测推荐':'本场观察';
- return`<div class="recommendation-cell ${selected?'selected':''} ${isFeatured?'featured':''}"><span class="recommendation-label">${label}</span><span class="recommendation-main">${main}</span>${reason?`<span class="recommendation-reason"><b>${selected&&!retrospective?'推荐理由：':'模型说明：'}</b>${esc(reason)}</span>`:''}</div>`;
+ return`<div class="recommendation-v2 ${selected?'selected':''} ${isFeatured?'featured':''}"><span class="rec-label">${label}</span><span class="rec-direction">${direction}</span>${market?`<span class="rec-market">${market}</span>`:''}<span class="rec-reason"><b>${selected&&!retrospective?'分析依据':'模型说明'}｜</b>${esc(reason)}</span></div>`;
 }
 function teamRank(r,side){const rank=r.ranking?.[`${side}_rank`];return rank==null?'排名 —':`第 ${rank} 名`}
 function fixtureHtml(r){
- const p=r.featured_prediction,xg=p?.expected_goals;
+ const p=r.featured_prediction,xg=p?.expected_goals,[date,time]=kickoffTime(r.kickoff_beijing).split(' ');
  const untracked=p?'':`<div class="untracked">${esc(r.status_reason||'该场没有赛前预测档案。')}</div>`;
  const actual=r.actual?`<div class="actual">实际比分 <b>${r.actual.home_goals}:${r.actual.away_goals}</b>${settlementHtml(r)}</div>`:'';
  const frozenAt=r.recommendation_selection?.frozen_at||r.created_at;
  const freeze=!p?'未纳入赛前冻结样本':r.recommendation_selection?.tracking_eligible===false?'回溯展示 · 不计入赛前正式统计':`预测冻结 ${esc(utcTime(frozenAt))} · 日间只同步赛果，不改推荐`;
- return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="team-row"><div class="team-cell"><div><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span></div><span class="team-xg">${p?num(xg.home):'—'}<small>预期进球</small></span></div><div class="time-cell"><span class="cell-label">比赛时间</span><span class="time-value">${kickoffTime(r.kickoff_beijing)}</span></div><div class="team-cell away"><span class="team-xg">${p?num(xg.away):'—'}<small>预期进球</small></span><div><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span></div></div></div>${handicapHtml(r)}${probabilityHtml(r)}${recommendationHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
+ return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="versus-grid"><div class="team-panel"><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span><div class="team-expected">预期进球 <b>${p?num(xg.home):'—'}</b></div></div><div class="versus-panel"><span class="versus-label">VS</span><span class="kickoff-date">${date}</span><span class="kickoff-time">${time}</span></div><div class="team-panel"><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span><div class="team-expected">预期进球 <b>${p?num(xg.away):'—'}</b></div></div></div>${recommendationHtml(r)}${analysisHtml(r)}${referenceScoresHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
 }
 function filteredFixtures(){return DATA.fixtures.filter(r=>{if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;if(status==='STARTED')return isStarted(r);if(status==='UPCOMING')return!isStarted(r);return true})}
 function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.integrated_selection?.status==='candidate'&&r.integrated_selection?.tracking_eligible!==false).length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 预测 ${recommended} 场 · 精选 ${featured} 场`}
