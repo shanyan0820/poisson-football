@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from generate_data import TEAM_ZH, fetch_csv, standings
 from model import Match, analyze, _poisson_matrix
+from recommendation_rules import RULE_DEFINITIONS, evaluate_rules, strength_band
 
 ROOT = Path(__file__).resolve().parent
 UTC = timezone.utc
@@ -26,11 +27,13 @@ FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
 USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
 HANDICAP_EDGE_THRESHOLD = 0.15
-INTEGRATED_RULE_VERSION = "three-line-consensus-featured-v4"
-RECOMMENDATION_RULE_VERSION = "three-line-consensus-v4"
+INTEGRATED_RULE_VERSION = "experience-rules-featured-v5"
+RECOMMENDATION_RULE_VERSION = "experience-rules-v5"
 MARKET_HANDICAP_MAX = 2.0
 CONSENSUS_MAX_SPREAD = 1.0
 FEATURED_MAX_SPREAD = 0.5
+QUALIFIED_RULE_IDS: set[str] = set()
+PRIMARY_RULE_ORDER = ("B1", "B2", "B3", "C1", "C2", "D1", "D2", "D3", "A1", "A2", "A3")
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -384,108 +387,38 @@ def compare_handicap(prediction: dict | None, market: dict | None,
     }
 
 
-def strength_band(value: float) -> dict:
-    """0.25球一个实力档；临界值归入更强方向，平局区间为(-0.25,0.25)。"""
-    if value <= -.75:
-        return {"id": "home_big_win", "label": "主队大胜", "score": -3, "side": "home"}
-    if value <= -.50:
-        return {"id": "home_win", "label": "主队胜", "score": -2, "side": "home"}
-    if value <= -.25:
-        return {"id": "home_unbeaten", "label": "主队不败", "score": -1, "side": "home"}
-    if value < .25:
-        return {"id": "draw", "label": "平局", "score": 0, "side": "draw"}
-    if value < .50:
-        return {"id": "away_unbeaten", "label": "客队不败", "score": 1, "side": "away"}
-    if value < .75:
-        return {"id": "away_win", "label": "客队胜", "score": 2, "side": "away"}
-    return {"id": "away_big_win", "label": "客队大胜", "score": 3, "side": "away"}
-
-
-def choose_recommendation(handicap: dict | None, ranking: dict | None = None) -> dict:
-    """三盘共识V4：同档精选A、同向小差精选B、多数或中位普通推荐。"""
+def choose_recommendation(handicap: dict | None, ranking: dict | None = None,
+                          evaluations: list[dict] | None = None) -> dict:
+    """按经验优先级选择首页主推荐；全部规则仍独立留档，E类只研究不上首页。"""
     base = {"rule_version": RECOMMENDATION_RULE_VERSION, "status": "skip",
             "market": "asian_handicap", "side": None, "line": None, "odds": None,
-            "ev": None, "candidate_count": 0, "featured_class": None}
-    if not handicap:
-        return {**base, "reason": "缺少赛前冻结预测或机构让球盘口，本场不推荐。"}
-    model_handicap = -handicap["model_goal_difference"]
-    institution_handicap = handicap["market_line"]
-    market_handicap = (ranking or {}).get("market_handicap")
-    if market_handicap is None:
-        return {**base, "reason": "缺少开球前市场让球数，无法形成三盘共识，本场不推荐。"}
-    lines = {"market": market_handicap, "model": model_handicap, "institution": institution_handicap}
-    values = list(lines.values())
-    bands = {name: strength_band(value) for name, value in lines.items()}
-    spread = max(values) - min(values)
-    base.update({
-        "market_handicap": market_handicap, "model_handicap": model_handicap,
-        "institution_handicap": institution_handicap, "handicap_lines": lines,
-        "handicap_bands": bands, "spread": spread,
-        "gap": abs(model_handicap - institution_handicap),
-        "signed_gap": model_handicap - institution_handicap,
-        "model_rank_gap": abs(model_handicap - market_handicap),
-    })
-    if min(values) < 0 < max(values):
-        return {**base, "consensus_type": "opposite_direction",
-                "reason": "三个让球数跨正负方向，强弱判断相反，本场放弃推荐。"}
-    if spread > CONSENSUS_MAX_SPREAD + 1e-9:
-        return {**base, "consensus_type": "extreme_disagreement",
-                "reason": f"三个让球数最大差值{spread:.2f}球，超过1.00球，本场放弃推荐。"}
-    scores = [band["score"] for band in bands.values()]
-    unique_scores = set(scores)
-    featured_class = consensus_type = None
-    band = None
-    if len({band["id"] for band in bands.values()}) == 1:
-        featured_class, consensus_type = "A", "same_band"
-        band = bands["model"]
-        reason = f"精选A类：三个让球数同属“{band['label']}”档位。"
-    elif (all(value < 0 for value in values) or all(value > 0 for value in values)) and spread <= FEATURED_MAX_SPREAD + 1e-9:
-        featured_class, consensus_type = "B", "direction_spread"
-        band = strength_band(sorted(values)[1])
-        reason = f"精选B类：三个让球数方向完全一致，最大差值{spread:.2f}球≤0.50球，取中间档“{band['label']}”。"
-    elif len(unique_scores) == 2:
-        majority_score = next(score for score in unique_scores if scores.count(score) == 2)
-        other_score = next(score for score in unique_scores if score != majority_score)
-        if abs(majority_score - other_score) == 1:
-            consensus_type = "majority_adjacent"
-            band = next(item for item in bands.values() if item["score"] == majority_score)
-            reason = f"两个让球数同属“{band['label']}”档位，另一个位于相邻档，按多数一致方向推荐。"
-        else:
-            return {**base, "consensus_type": "non_adjacent_majority",
-                    "reason": "虽有两个让球数同档，但第三个跨越多个档位，分歧较大，本场放弃推荐。"}
-    elif len(unique_scores) == 3:
-        consensus_type = "median_direction"
-        band = strength_band(sorted(values)[1])
-        reason = f"三个让球数档位不同但方向一致，取中间档“{band['label']}”作为普通推荐。"
-    else:
-        return {**base, "consensus_type": "no_consensus", "reason": "三个让球数未形成有效共识，本场放弃推荐。"}
-    side = band["side"]
-    result = {**base, "status": "candidate", "candidate_count": 1,
-              "side": side, "band_id": band["id"], "band_label": band["label"],
-              "band_score": band["score"], "consensus_type": consensus_type,
-              "featured_class": featured_class, "reason": reason}
-    if side == "draw":
-        return {**result, "settleable": False,
-                "reason": reason + " 平局档位仅作赛果方向展示，不参与让球盘四类结算。"}
-    metrics = handicap[f"{side}_metrics"]
-    if metrics.get("odds") is None:
-        return {**base, "status": "skip", "side": side, "band_label": band["label"],
-                "consensus_type": consensus_type, "featured_class": None,
-                "reason": "已形成三盘共识方向，但缺少Bet365赔率，不形成可结算推荐。"}
-    line = institution_handicap if side == "home" else -institution_handicap
-    return {**result, "line": line, "odds": metrics["odds"], "ev": metrics.get("ev"),
-            "settleable": True, "win_probability": metrics["win_eq"],
-            "loss_probability": metrics["loss_eq"], "push_probability": metrics["push_eq"]}
+            "ev": None, "candidate_count": 0, "featured_class": None, "rule_id": None}
+    rules = evaluate_rules(handicap, ranking) if evaluations is None else evaluations
+    if not rules:
+        return {**base, "reason": "缺少赛前预测、市场盘口或机构盘口，本场不推荐。"}
+    by_id = {rule["rule_id"]: rule for rule in rules}
+    for rule_id in PRIMARY_RULE_ORDER:
+        rule = by_id[rule_id]
+        if rule["triggered"] and rule["settleable"]:
+            return {**rule, "rule_version": RECOMMENDATION_RULE_VERSION,
+                    "market": "asian_handicap", "status": "candidate", "candidate_count": 1,
+                    "featured_class": "qualified" if rule_id in QUALIFIED_RULE_IDS else None}
+    context = {key: rules[0][key] for key in (
+        "market_handicap", "model_handicap", "institution_handicap", "handicap_lines",
+        "handicap_bands", "spread", "market_bias", "institution_bias", "gap",
+        "signed_gap", "model_rank_gap")}
+    return {**base, **context, "reason": "本场未触发可结算的前瞻推荐规则。"}
 
 
-def choose_integrated_selection(handicap: dict | None, ranking: dict | None = None) -> dict:
-    """只有精选A类或B类进入红色精选，普通共识保留为普通推荐。"""
-    recommendation = choose_recommendation(handicap, ranking)
-    if recommendation["status"] == "candidate" and recommendation.get("featured_class") in {"A", "B"}:
+def choose_integrated_selection(handicap: dict | None, ranking: dict | None = None,
+                                evaluations: list[dict] | None = None) -> dict:
+    """只有经样本验证并人工确认的规则才进入精选；当前全部规则先独立观察。"""
+    recommendation = choose_recommendation(handicap, ranking, evaluations)
+    if recommendation["status"] == "candidate" and recommendation.get("rule_id") in QUALIFIED_RULE_IDS:
         return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION, "featured": True}
     return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
             "status": "skip", "candidate_count": 0, "featured": False,
-            "reason": recommendation.get("reason", "未形成精选共识。")}
+            "reason": "触发规则尚未达到精选验证门槛。"}
 
 
 def settle_margin(margin: float, line: float, odds: float) -> dict:
@@ -836,6 +769,24 @@ def settle_record_markets(record: dict, handicap: dict | None,
         item = settle_selection(recommendation)
         if item:
             settlements["recommendation"] = item
+    rule_settlements = {}
+    for rule in record.get("rule_evaluations") or []:
+        if not rule.get("triggered") or not rule.get("settleable"):
+            continue
+        item = settle_selection({**rule, "market": "asian_handicap",
+                                 "rule_version": RECOMMENDATION_RULE_VERSION,
+                                 "tracking_eligible": (recommendation or {}).get("tracking_eligible", True)})
+        if item:
+            item.update({"rule_id": rule["rule_id"], "rule_name": rule["rule_name"],
+                         "band_id": rule["band_id"], "band_label": rule["band_label"],
+                         "market_handicap": rule.get("market_handicap"),
+                         "model_handicap": rule.get("model_handicap"),
+                         "institution_handicap": rule.get("institution_handicap"),
+                         "market_bias": rule.get("market_bias"),
+                         "institution_bias": rule.get("institution_bias"),
+                         "spread": rule.get("spread")})
+            rule_settlements[rule["rule_id"]] = item
+    settlements["rule_settlements"] = rule_settlements
     return settlements
 
 
@@ -853,12 +804,12 @@ def summarize_market_rows(rows: list[dict]) -> dict:
 
 def build_market_tracking(finished: list[dict]) -> dict:
     result = {
-        "selection": "三盘共识V4：同档精选A、同向且最大差≤0.50球精选B；多数相邻或同向中位档为普通推荐。",
+        "selection": "V5规则并行评估：A1—E2全部独立留样，首页按B/C/D/A优先级选择可结算方向。",
         "metrics": "累计统计完整正式赛前样本；等效胜率只计全赢、全输、赢一半、输一半。",
-        "bands": "完整保存三盘数值、实力档位、共识类型和最大差值，供后续分层回测。",
-        "recommendation_rule": "跨正负方向或最大差值>1.00球直接放弃；平局档只展示方向，不参与让球盘结算。",
-        "market_handicap_rule": "市场让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队让球，正数客队让球。",
-        "integrated_rule": "精选A：三个让球数同档；精选B：三个让球数同向且最大差值≤0.50球，取中间档。",
+        "bands": "每条规则分别保存盘口、偏差、方向与赛后结果，达标前不自动升级为精选。",
+        "recommendation_rule": "E1/E2极端分歧仅用于研究；精选只来自达到样本、胜率、时间验证和周稳定性门槛的规则。",
+        "market_handicap_rule": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队强，正数客队强。",
+        "integrated_rule": "当前QUALIFIED_RULE_IDS为空，所有规则先观察；经验证并确认后才进入红色精选。",
         "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；20:00和次日02:00只同步赛果。",
     }
     for key in ["asian_handicap", "recommendation", "integrated"]:
@@ -876,6 +827,21 @@ def build_market_tracking(finished: list[dict]) -> dict:
                        "by_gap": {band: summarize_market_rows(items) for band, items in sorted(by_gap.items())},
                        "by_league": {league_id: {"overall": summarize_market_rows(items)}
                                      for league_id, items in sorted(by_league.items())}}
+    result["rule_definitions"] = RULE_DEFINITIONS
+    result["rules"] = {}
+    for rule_id in RULE_DEFINITIONS:
+        rows = [settlement for record in finished
+                for settlement in [(record.get("market_settlement", {}).get("rule_settlements") or {}).get(rule_id)]
+                if settlement and settlement.get("tracking_eligible", True)]
+        by_league = {}
+        for row in rows:
+            if row.get("league_id"):
+                by_league.setdefault(row["league_id"], []).append(row)
+        result["rules"][rule_id] = {
+            "overall": summarize_market_rows(rows),
+            "by_league": {league_id: {"overall": summarize_market_rows(items)}
+                          for league_id, items in sorted(by_league.items())},
+        }
     return result
 
 
@@ -915,10 +881,16 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     result["featured_model_id"] = featured_model_id
     result["featured_prediction"] = featured
     result["handicap_analysis"] = handicap
-    derived_recommendation = choose_recommendation(handicap, record.get("ranking"))
+    rules = record.get("rule_evaluations")
+    if not rules or rules[0].get("rule_version") != RECOMMENDATION_RULE_VERSION:
+        rules = [{**rule, "rule_version": RECOMMENDATION_RULE_VERSION}
+                 for rule in evaluate_rules(handicap, record.get("ranking"))]
+        record["rule_evaluations"] = rules
+    result["rule_evaluations"] = rules
+    derived_recommendation = choose_recommendation(handicap, record.get("ranking"), rules)
     recommendation = freeze_recommendation_selection(record, derived_recommendation, now or datetime.now(UTC))
     result["recommendation_selection"] = recommendation
-    derived_selection = choose_integrated_selection(handicap, record.get("ranking"))
+    derived_selection = choose_integrated_selection(handicap, record.get("ranking"), rules)
     selection = freeze_integrated_selection(record, derived_selection, now or datetime.now(UTC))
     result["integrated_selection"] = selection
     result["featured_selection"] = selection
@@ -953,8 +925,8 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "只研究让球盘。市场、模型、机构三个让球数按0.25球划分实力档；同档为精选A，同向且最大差≤0.50球为精选B，多数相邻或同向中位档为普通推荐。跨正负方向或最大差>1.00球放弃。",
-            "market_handicap": "市场让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数表示主队让球，正数表示客队让球。",
+            "handicap": "V5并行测试A1—E2全部规则；市场盘口、模型盘口、机构盘口分别保存，E类极端分歧仅研究。每条规则独立统计，验证达标后才进入精选。",
+            "market_handicap": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数表示主队强，正数表示客队强。",
         },
         "featured_model_id": featured_model_id,
         "models": MODEL_CONFIGS, "coverage": sorted(coverage, key=lambda c: c["league_id"]),
@@ -985,7 +957,7 @@ def main() -> None:
     research_report_path = ROOT / "data" / "research_report.json"
     dataset = json.loads(dataset_path.read_text(encoding="utf-8"))
     archive = json.loads(archive_path.read_text(encoding="utf-8")) if archive_path.exists() else {"version": 1, "matches": {}}
-    research = json.loads(research_path.read_text(encoding="utf-8")) if research_path.exists() else {"version": 4, "matches": {}}
+    research = json.loads(research_path.read_text(encoding="utf-8")) if research_path.exists() else {"version": 5, "matches": {}}
     if args.settle_only:
         previous = json.loads(public_path.read_text(encoding="utf-8")) if public_path.exists() else {}
         fixtures = archived_window_fixtures(archive, now)
@@ -997,6 +969,7 @@ def main() -> None:
     archive = update_prediction_archive(archive, fixtures, dataset, now)
     public = build_public_dataset(dataset, archive, fixtures, coverage, now, run_mode)
     research, research_report = build_research_data(archive, research, public["featured_model_id"], now)
+    public["market_tracking"]["research_summary"] = research_report["optimization"]
     archive_path.write_text(json.dumps(archive, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     public_path.write_text(json.dumps(public, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     research_path.write_text(json.dumps(research, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

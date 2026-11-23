@@ -184,43 +184,53 @@ class MarketModelTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(strength_band(value)["id"], band)
 
-    def test_featured_a_requires_all_three_in_same_band(self):
+    def test_all_thirteen_rules_are_evaluated_in_parallel(self):
+        from recommendation_rules import RULE_DEFINITIONS, evaluate_rules
         analysis = self.analysis(1.4, 1.0, -.4)
-        selected = choose_recommendation(analysis, {"market_handicap": -.4})
-        self.assertEqual((selected["status"], selected["band_id"]), ("candidate", "home_unbeaten"))
-        self.assertEqual(selected["consensus_type"], "same_band")
-        featured = choose_integrated_selection(analysis, {"market_handicap": -.4})
-        self.assertEqual((featured["status"], featured["featured_class"]), ("candidate", "A"))
-        self.assertEqual(selected["handicap_bands"]["model"]["id"], "home_unbeaten")
+        rules = evaluate_rules(analysis, {"market_handicap": -.4})
+        self.assertEqual(len(RULE_DEFINITIONS), 13)
+        self.assertEqual([r["rule_id"] for r in rules], list(RULE_DEFINITIONS))
+        self.assertEqual(sum(r["triggered"] for r in rules), 1)
+        self.assertEqual(rules[0]["rule_id"], "A1")
+        self.assertFalse(next(r for r in rules if r["rule_id"] == "E1")["front_eligible"])
+        self.assertFalse(next(r for r in rules if r["rule_id"] == "E2")["front_eligible"])
 
-    def test_featured_b_uses_same_direction_and_median_band(self):
-        analysis = self.analysis(1.6, 1.0, -.25)  # 三盘 -0.40/-0.60/-0.25。
-        selected = choose_recommendation(analysis, {"market_handicap": -.4})
-        self.assertEqual(selected["consensus_type"], "direction_spread")
-        self.assertEqual(selected["band_id"], "home_unbeaten")
-        featured = choose_integrated_selection(analysis, {"market_handicap": -.4})
-        self.assertEqual((featured["status"], featured["featured_class"]), ("candidate", "B"))
-        self.assertAlmostEqual(featured["spread"], .35)
+    def test_eight_locked_experience_examples(self):
+        cases = [
+            (.92, .17, .25, "主队不败"), (-.12, -.21, -.50, "主队胜"),
+            (2.00, 1.13, .50, "主队不败"), (-.35, -.09, -1.25, "主队大胜"),
+            (.71, .16, -.25, "主队不败"), (.32, -.02, .50, "主队不败"),
+            (.21, -.32, -.25, "主队不败"), (-.11, .26, -.25, "客队不败"),
+        ]
+        for market, model, institution, expected in cases:
+            with self.subTest(market=market, model=model, institution=institution):
+                analysis = self.analysis(1, 1 + model, institution)
+                selected = choose_recommendation(analysis, {"market_handicap": market})
+                self.assertEqual(selected["status"], "candidate")
+                self.assertEqual(selected["band_label"], expected)
 
-    def test_ordinary_majority_and_median_consensus(self):
-        majority = choose_recommendation(self.analysis(2.4, 1.0, -.74), {"market_handicap": -1.3})
-        self.assertEqual((majority["consensus_type"], majority["band_id"]), ("majority_adjacent", "home_big_win"))
-        self.assertIsNone(majority["featured_class"])
-        median = choose_recommendation(self.analysis(1.9, 1.0, -.55), {"market_handicap": -.25})
-        self.assertEqual((median["consensus_type"], median["band_id"]), ("median_direction", "home_win"))
+    def test_main_recommendation_uses_priority_but_preserves_other_rules(self):
+        analysis = self.analysis(1.21, 1.0, -.5)  # M=-.12、Mo=-.21、O=-.50。
+        ranking = {"market_handicap": -.12}
+        selected = choose_recommendation(analysis, ranking)
+        self.assertEqual((selected["rule_id"], selected["band_label"]), ("C1", "主队胜"))
+        self.assertEqual(selected["rule_version"], "experience-rules-v5")
+        self.assertEqual(choose_integrated_selection(analysis, ranking)["status"], "skip")
+        self.assertEqual(choose_recommendation(None, None)["status"], "skip")
 
-    def test_cross_direction_or_large_spread_is_skipped(self):
-        crossed = choose_recommendation(self.analysis(1.4, 1.0, .3), {"market_handicap": -.4})
-        self.assertEqual((crossed["status"], crossed["consensus_type"]), ("skip", "opposite_direction"))
-        wide = choose_recommendation(self.analysis(2.4, 1.0, 0), {"market_handicap": -1.4})
-        self.assertEqual((wide["status"], wide["consensus_type"]), ("skip", "extreme_disagreement"))
-        self.assertEqual(choose_recommendation(self.analysis(1.4, 1.0, -.4), {})["status"], "skip")
+    def test_extreme_disagreement_is_research_only(self):
+        from recommendation_rules import evaluate_rules
+        analysis = self.analysis(2.4, 1.0, 0)
+        rules = evaluate_rules(analysis, {"market_handicap": -1.4})
+        triggered = {r["rule_id"] for r in rules if r["triggered"]}
+        self.assertIn("E1", triggered)
+        self.assertIn("E2", triggered)
+        self.assertEqual(choose_recommendation(analysis, {"market_handicap": -1.4}, rules)["status"], "skip")
 
     def test_draw_band_is_display_only_and_not_settled(self):
         analysis = self.analysis(1.0, 1.0, 0)
         selected = choose_recommendation(analysis, {"market_handicap": 0})
-        self.assertEqual((selected["status"], selected["side"]), ("candidate", "draw"))
-        self.assertIsNone(selected["odds"])
+        self.assertEqual((selected["status"], selected["side"]), ("skip", None))
         record = {
             "predictions": {"stable": {"expected_goals": {"home": 1, "away": 1}, "forecast": forecast(.3, .4, .3)}},
             "actual": {"home_goals": 1, "away_goals": 1, "outcome": "D"},
@@ -228,15 +238,8 @@ class MarketModelTests(unittest.TestCase):
             "ranking": {"market_handicap": 0},
         }
         public = public_record(record)
-        self.assertEqual(public["recommendation_selection"]["band_id"], "draw")
         self.assertNotIn("recommendation", public["market_settlement"])
         self.assertNotIn("integrated", public["market_settlement"])
-
-    def test_recommendation_rule_version_and_missing_handicap(self):
-        selected = choose_recommendation(self.analysis(1.4, 1.0, -.4), {"market_handicap": -.4})
-        self.assertEqual(selected["rule_version"], "three-line-consensus-v4")
-        self.assertEqual(selected["candidate_count"], 1)
-        self.assertEqual(choose_recommendation(None, None)["status"], "skip")
 
     def test_all_recommendation_does_not_backfill_pregame_tracking(self):
         now = datetime(2026, 11, 22, 10, tzinfo=timezone.utc)
@@ -271,11 +274,12 @@ class MarketModelTests(unittest.TestCase):
             "total_market": {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5},
         }
         public = public_record(record)
-        self.assertEqual(public["integrated_selection"]["status"], "candidate")
-        self.assertIn("integrated", public["market_settlement"])
+        self.assertEqual(public["integrated_selection"]["status"], "skip")
         self.assertIn("recommendation", public["market_settlement"])
-        self.assertEqual(public["recommendation_selection"]["rule_version"], "three-line-consensus-v4")
-        self.assertEqual(public["integrated_selection"]["rule_version"], "three-line-consensus-featured-v4")
+        self.assertEqual(public["recommendation_selection"]["rule_version"], "experience-rules-v5")
+        self.assertEqual(public["integrated_selection"]["rule_version"], "experience-rules-featured-v5")
+        self.assertEqual(len(public["rule_evaluations"]), 13)
+        self.assertIn("A2", public["market_settlement"]["rule_settlements"])
         self.assertFalse(public["recommendation_selection"]["tracking_eligible"])
         self.assertEqual(public["featured_selection"], public["integrated_selection"])
         self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
@@ -289,11 +293,16 @@ class MarketModelTests(unittest.TestCase):
         self.assertNotIn("total_goals", tracking)
         self.assertEqual(tracking["integrated"]["overall"]["n"], 0)
         self.assertEqual(tracking["recommendation"]["overall"]["n"], 0)
-        public["market_settlement"]["integrated"]["tracking_eligible"] = True
         public["market_settlement"]["recommendation"]["tracking_eligible"] = True
         formal = build_market_tracking([public])
-        self.assertEqual(formal["integrated"]["overall"]["n"], 1)
+        self.assertEqual(formal["integrated"]["overall"]["n"], 0)
         self.assertEqual(formal["recommendation"]["by_league"]["TEST"]["overall"]["n"], 1)
+        for settlement in public["market_settlement"]["rule_settlements"].values():
+            settlement["tracking_eligible"] = True
+        with_rules = build_market_tracking([public])
+        self.assertEqual(with_rules["rules"]["A2"]["overall"]["n"], 1)
+        self.assertEqual(with_rules["rules"]["A2"]["overall"]["effective_win_rate"], 1)
+        self.assertEqual(len(with_rules["rule_definitions"]), 13)
 
 
 class BacktestTests(unittest.TestCase):
@@ -399,18 +408,26 @@ class ArchiveTests(unittest.TestCase):
 
 
 class PageContractTests(unittest.TestCase):
-    def test_mobile_page_uses_market_name_without_rank_detail(self):
+    def test_mobile_page_uses_three_handicaps_without_rule_labels(self):
         html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
-        self.assertIn("市场让球", html)
-        self.assertIn("三盘共识规则 V4", html)
-        self.assertNotIn("排名让球", html)
+        self.assertIn("市场盘口", html)
+        self.assertIn("模型盘口", html)
+        self.assertIn("机构盘口", html)
+        self.assertIn("盘口规则与验证口径", html)
+        self.assertIn("grid-template-columns:repeat(3,minmax(0,1fr))", html)
+        self.assertNotIn("市场让球", html)
         self.assertNotIn("排名与差值明细", html)
-        self.assertNotIn("ranking_handicap", html)
+        self.assertNotIn("consensus_type", html)
+        self.assertNotIn("featured_class", html)
 
-    def test_research_page_is_v4(self):
-        html = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
-        self.assertIn("研究模型 V4", html)
-        self.assertIn("consensus-summary", html)
+    def test_research_and_settlement_pages_are_v5(self):
+        research = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
+        predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
+        self.assertIn("研究模型 V5", research)
+        self.assertIn("consensus-summary", research)
+        self.assertIn("A1—E2 独立赛后表现", predictions)
+        self.assertIn("rule_candidates", predictions)
+        self.assertNotIn("精选A", predictions)
 
 
 if __name__ == "__main__":

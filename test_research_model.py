@@ -4,8 +4,8 @@ from datetime import datetime, timedelta, timezone
 
 from prediction_pipeline import public_record
 from research_model import (
-    build_research_report, direction_rows, make_research_snapshot, relation_for,
-    settle_research_directions, summarize_research_rows, summarize_with_time_validation,
+    build_research_report, direction_rows, make_research_snapshot, relation_for, rule_rows,
+    settle_research_directions, summarize_research_rows, summarize_rule_rows, summarize_with_time_validation,
     update_research_archive,
 )
 
@@ -52,7 +52,7 @@ class ResearchSnapshotTests(unittest.TestCase):
     def test_archive_freezes_pregame_inputs_and_only_adds_result(self):
         now = datetime(2026, 11, 22, 10, tzinfo=UTC)
         archive = update_research_archive({"version": 1, "matches": {}}, [public_fixture()], now)
-        self.assertEqual(archive["version"], 4)
+        self.assertEqual(archive["version"], 5)
         original = archive["matches"]["match-1"]["featured_prediction"]
         changed = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
         changed["featured_prediction"]["expected_goals"] = {"home": 9, "away": 9}
@@ -63,6 +63,8 @@ class ResearchSnapshotTests(unittest.TestCase):
         self.assertNotEqual(snapshot["handicap_analysis"]["edge"], 99)
         self.assertEqual(snapshot["actual"]["home_goals"], 2)
         self.assertEqual(set(snapshot["direction_settlements"]), {"asian_handicap"})
+        self.assertEqual(set(snapshot["rule_settlements"]), {"E1", "E2"})
+        self.assertEqual(len(rule_rows(archive)), 2)
 
     def test_late_snapshot_is_retrospective_and_excluded_from_forward_report(self):
         late = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
@@ -106,6 +108,35 @@ class ResearchSettlementTests(unittest.TestCase):
         small = summarize_with_time_validation(rows[:20])
         self.assertEqual(small["validation_status"], "insufficient_sample")
         self.assertFalse(small["qualified"])
+
+    def test_rule_candidate_requires_sample_time_validation_and_weekly_stability(self):
+        rows = []
+        for i in range(60):
+            day = datetime(2026, 1, 1, tzinfo=UTC) + timedelta(days=i)
+            rows.append({"result": "full_win", "unit_profit": .9,
+                         "kickoff_utc": day.isoformat(), "key": str(i),
+                         "market": "asian_handicap", "side": "home", "rule_id": "A1"})
+        summary = summarize_rule_rows(rows)
+        self.assertEqual(summary["valid_n"], 60)
+        self.assertTrue(summary["core_passed"])
+        self.assertTrue(summary["weekly_stable"])
+        self.assertTrue(summary["candidate"])
+        self.assertEqual(summary["review_status"], "candidate_for_review")
+        self.assertFalse(summary["qualified"])
+        small = summarize_rule_rows(rows[:20])
+        self.assertFalse(small["candidate"])
+        self.assertEqual(small["validation_status"], "insufficient_sample")
+
+    def test_report_exposes_all_rule_groups_without_auto_qualification(self):
+        now = datetime(2026, 11, 22, 10, tzinfo=UTC)
+        archive = update_research_archive({"version": 1, "matches": {}}, [public_fixture()], now)
+        finished = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
+        archive = update_research_archive(archive, [finished], now)
+        report = build_research_report(archive, datetime(2026, 11, 22, 10, tzinfo=UTC))
+        self.assertEqual(len(report["rule_groups"]), 13)
+        self.assertEqual(report["sample"]["settled_rule_rows"], 2)
+        self.assertEqual(report["optimization"]["rule_candidates"], [])
+        self.assertEqual(report["optimization"]["status"], "no_validated_rule")
 
 
 if __name__ == "__main__":
