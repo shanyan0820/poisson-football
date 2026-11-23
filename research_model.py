@@ -1,11 +1,11 @@
-"""研究模型 V3：冻结三盘对比、排名让球与赛后分层证据。"""
+"""研究模型 V4：冻结三盘档位共识与赛后分层证据。"""
 from __future__ import annotations
 
 from copy import deepcopy
 from datetime import datetime, timezone
 
 UTC = timezone.utc
-RESEARCH_VERSION = 3
+RESEARCH_VERSION = 4
 MIN_GROUP_SAMPLE = 30
 MIN_VALIDATION_SAMPLE = 10
 VALID_RESULTS = {"full_win", "full_loss", "half_win", "half_loss"}
@@ -107,8 +107,13 @@ def settle_research_selections(snapshot: dict) -> dict:
             "pregame_ev": selection["ev"], "model_gap": selection["signed_gap"], "abs_gap": selection["gap"],
             "gap_band": gap_band(selection["gap"]), "ev_band": ev_band(selection["ev"]),
             "relation": snapshot["relations"][market], "rule_version": selection["rule_version"],
-            "ranking_handicap": selection.get("ranking_handicap"),
+            "market_handicap": selection.get("market_handicap"),
             "model_rank_gap": selection.get("model_rank_gap"),
+            "consensus_type": selection.get("consensus_type"),
+            "featured_class": selection.get("featured_class") or "ordinary",
+            "band_id": selection.get("band_id"), "band_label": selection.get("band_label"),
+            "spread": selection.get("spread"), "handicap_lines": selection.get("handicap_lines"),
+            "handicap_bands": selection.get("handicap_bands"),
         })
         result[name] = item
     return result
@@ -135,8 +140,8 @@ def update_research_archive(archive: dict, public_records: list[dict], now: date
         archive["matches"][key] = existing
     archive["generated_at"] = now.isoformat(timespec="seconds")
     archive["method"] = {
-        "version": "handicap-research-v3",
-        "freeze": "北京时间每日12:00首次生成即冻结八个模型、选用模型、排名让球、机构盘口、两侧概率、EV和推荐；日间只回写真实赛果及结算。",
+        "version": "handicap-research-v4",
+        "freeze": "北京时间每日12:00首次生成即冻结八个模型、选用模型、市场让球、机构盘口、三盘档位、共识类型、推荐依据、两侧概率和EV；日间只回写真实赛果及结算。",
         "sample": "tracking_eligible=true 为正式赛前样本；retrospective 仅回查，不进入前瞻性论证。",
         "relations": "让球：模型净胜球与−AHh同号为aligned、异号为opposed；只研究让球盘。",
     }
@@ -223,6 +228,22 @@ def build_research_report(archive: dict, now: datetime) -> dict:
                     qualified.append({"market": market, "dimension": dimension, "group": value})
         groups[market] = market_report
     selection_report = {name: summarize_with_time_validation(items) for name, items in selections.items()}
+    selection_breakdowns = {}
+    for name, items in selections.items():
+        selection_breakdowns[name] = {
+            "by_featured_class": {
+                value: summarize_with_time_validation([row for row in items if row.get("featured_class") == value])
+                for value in ("A", "B", "ordinary")
+            },
+            "by_consensus": {
+                value: summarize_with_time_validation([row for row in items if row.get("consensus_type") == value])
+                for value in sorted({row.get("consensus_type") for row in items if row.get("consensus_type")})
+            },
+            "by_band": {
+                value: summarize_with_time_validation([row for row in items if row.get("band_id") == value])
+                for value in sorted({row.get("band_id") for row in items if row.get("band_id")})
+            },
+        }
     matches = list(archive.get("matches", {}).values())
     return {
         "version": RESEARCH_VERSION,
@@ -236,8 +257,9 @@ def build_research_report(archive: dict, now: datetime) -> dict:
             "settled_direction_rows": len(rows),
         },
         "methodology": {
-            "handicap": "模型让球数=λ客−λ主；差值=模型让球数−机构AHh；按0.25与0.50球三档规则形成预测推荐。",
-            "ranking": "排名让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；精选要求与推荐同向且模型排名差≤0.50球。",
+            "handicap": "市场让球、模型让球=λ客−λ主、机构让球=AHh；统一负数主队强、正数客队强，每0.25球一个实力档。",
+            "ranking": "市场让球=((主队排名−客队排名)/(联赛实际队数−1))×2球；同档为精选A，同向且最大差≤0.50球为精选B。",
+            "consensus": "两个同档且第三个相邻时按多数档；三个不同档但方向一致时取中间档；跨正负或最大差>1.00球放弃。",
             "schedule": "北京时间每日12:00生成并冻结新周期；20:00和次日02:00仅同步赛果。",
             "accuracy": "仅全赢、全输、赢一半、输一半进入等效准确率；走地和赢输各半排除。",
             "roi": "ROI=每方向均一研究单位的总盈亏/全部已结算方向数，走地与其他结果仍计入收益样本。",
@@ -245,6 +267,7 @@ def build_research_report(archive: dict, now: datetime) -> dict:
             "warning": "满足条件仅表示获得继续观察资格，不自动认定最优，也不自动修改精选规则。",
         },
         "selection_groups": selection_report,
+        "selection_breakdowns": selection_breakdowns,
         "direction_groups": groups,
         "optimization": {
             "min_group_sample": MIN_GROUP_SAMPLE, "min_validation_sample": MIN_VALIDATION_SAMPLE,

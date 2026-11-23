@@ -1,11 +1,12 @@
 import copy
 import unittest
 from datetime import date, datetime, timedelta, timezone
+from pathlib import Path
 from unittest.mock import patch
 
 from prediction_pipeline import (
     ESPN_TEAM_ALIASES, MODEL_CONFIGS, base_fixture, build_market_tracking, choose_integrated_selection,
-    choose_recommendation, compare_handicap, find_result, handicap_rule_direction,
+    choose_recommendation, compare_handicap, find_result, strength_band,
     freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
     parse_main_fixtures, predicted_outcome, public_record, rolling_backtest, score_prediction,
@@ -173,45 +174,67 @@ class MarketModelTests(unittest.TestCase):
         return compare_handicap({"expected_goals": {"home": home, "away": away}},
                                 {"home_line": institution, "bet365_home_odds": 1.9, "bet365_away_odds": 1.9})
 
-    def test_rule_one_uses_model_sign_and_ranking_confirmation(self):
-        analysis = self.analysis(1.2, 1.0, 0)  # 模型-0.20，推荐主队。
-        home = choose_recommendation(analysis, {"ranking_handicap": -.2})
-        self.assertEqual((home["rule_number"], home["side"]), (1, "home"))
-        featured = choose_integrated_selection(analysis, {"ranking_handicap": -.2})
-        self.assertEqual(featured["status"], "candidate")
-        self.assertAlmostEqual(featured["model_rank_gap"], 0)
-        away = choose_recommendation(self.analysis(1.0, 1.2, 0), {"ranking_handicap": .2})
-        self.assertEqual(away["side"], "away")
-        self.assertEqual(choose_integrated_selection(analysis, {"ranking_handicap": .2})["status"], "skip")
+    def test_strength_band_boundaries(self):
+        expected = [(-1, "home_big_win"), (-.75, "home_big_win"), (-.74, "home_win"),
+                    (-.5, "home_win"), (-.49, "home_unbeaten"), (-.25, "home_unbeaten"),
+                    (-.24, "draw"), (0, "draw"), (.24, "draw"), (.25, "away_unbeaten"),
+                    (.49, "away_unbeaten"), (.5, "away_win"), (.74, "away_win"),
+                    (.75, "away_big_win")]
+        for value, band in expected:
+            with self.subTest(value=value):
+                self.assertEqual(strength_band(value)["id"], band)
 
-    def test_rule_two_uses_signed_comparison_and_ranking_gap(self):
-        handicap = self.analysis(1.6, 1.0, -.25)  # 模型-0.60，机构-0.25，差0.35，推荐主队。
-        selected = choose_recommendation(handicap, {"ranking_handicap": -.5})
-        self.assertEqual((selected["rule_number"], selected["side"]), (2, "home"))
-        self.assertEqual(choose_integrated_selection(handicap, {"ranking_handicap": -.5})["status"], "candidate")
-        self.assertEqual(choose_integrated_selection(handicap, {"ranking_handicap": -1.2})["status"], "skip")
-        away = choose_recommendation(self.analysis(1.0, 1.3, 0), {"ranking_handicap": .3})
-        self.assertEqual(away["side"], "away")
+    def test_featured_a_requires_all_three_in_same_band(self):
+        analysis = self.analysis(1.4, 1.0, -.4)
+        selected = choose_recommendation(analysis, {"market_handicap": -.4})
+        self.assertEqual((selected["status"], selected["band_id"]), ("candidate", "home_unbeaten"))
+        self.assertEqual(selected["consensus_type"], "same_band")
+        featured = choose_integrated_selection(analysis, {"market_handicap": -.4})
+        self.assertEqual((featured["status"], featured["featured_class"]), ("candidate", "A"))
+        self.assertEqual(selected["handicap_bands"]["model"]["id"], "home_unbeaten")
 
-    def test_rule_three_uses_institution_sign_and_ranking_confirmation(self):
-        handicap = self.analysis(2.2, 1.0, -.5)  # 模型-1.20，机构-0.50，差0.70。
-        selected = choose_recommendation(handicap, {"ranking_handicap": -1.0})
-        self.assertEqual((selected["rule_number"], selected["side"]), (3, "home"))
-        self.assertEqual(choose_integrated_selection(handicap, {"ranking_handicap": -1.0})["status"], "candidate")
-        self.assertEqual(choose_integrated_selection(handicap, {})["status"], "skip")
-        self.assertEqual(choose_integrated_selection(handicap, {"ranking_handicap": 0})["status"], "skip")
-        away = choose_recommendation(self.analysis(1.0, 2.0, .5), {"ranking_handicap": 1.0})
-        self.assertEqual(away["side"], "away")
+    def test_featured_b_uses_same_direction_and_median_band(self):
+        analysis = self.analysis(1.6, 1.0, -.25)  # 三盘 -0.40/-0.60/-0.25。
+        selected = choose_recommendation(analysis, {"market_handicap": -.4})
+        self.assertEqual(selected["consensus_type"], "direction_spread")
+        self.assertEqual(selected["band_id"], "home_unbeaten")
+        featured = choose_integrated_selection(analysis, {"market_handicap": -.4})
+        self.assertEqual((featured["status"], featured["featured_class"]), ("candidate", "B"))
+        self.assertAlmostEqual(featured["spread"], .35)
 
-    def test_gap_boundaries_and_zero_lines_do_not_force_direction(self):
-        self.assertEqual(handicap_rule_direction(self.analysis(1.5, 1.0, 0))["rule_number"], 2)
-        self.assertEqual(handicap_rule_direction(self.analysis(1.76, 1.0, -.25))["rule_number"], 3)
-        self.assertEqual(choose_recommendation(self.analysis(1.0, 1.0, 0))["status"], "skip")
-        self.assertEqual(choose_recommendation(self.analysis(2.0, 1.0, 0))["status"], "skip")
+    def test_ordinary_majority_and_median_consensus(self):
+        majority = choose_recommendation(self.analysis(2.4, 1.0, -.74), {"market_handicap": -1.3})
+        self.assertEqual((majority["consensus_type"], majority["band_id"]), ("majority_adjacent", "home_big_win"))
+        self.assertIsNone(majority["featured_class"])
+        median = choose_recommendation(self.analysis(1.9, 1.0, -.55), {"market_handicap": -.25})
+        self.assertEqual((median["consensus_type"], median["band_id"]), ("median_direction", "home_win"))
+
+    def test_cross_direction_or_large_spread_is_skipped(self):
+        crossed = choose_recommendation(self.analysis(1.4, 1.0, .3), {"market_handicap": -.4})
+        self.assertEqual((crossed["status"], crossed["consensus_type"]), ("skip", "opposite_direction"))
+        wide = choose_recommendation(self.analysis(2.4, 1.0, 0), {"market_handicap": -1.4})
+        self.assertEqual((wide["status"], wide["consensus_type"]), ("skip", "extreme_disagreement"))
+        self.assertEqual(choose_recommendation(self.analysis(1.4, 1.0, -.4), {})["status"], "skip")
+
+    def test_draw_band_is_display_only_and_not_settled(self):
+        analysis = self.analysis(1.0, 1.0, 0)
+        selected = choose_recommendation(analysis, {"market_handicap": 0})
+        self.assertEqual((selected["status"], selected["side"]), ("candidate", "draw"))
+        self.assertIsNone(selected["odds"])
+        record = {
+            "predictions": {"stable": {"expected_goals": {"home": 1, "away": 1}, "forecast": forecast(.3, .4, .3)}},
+            "actual": {"home_goals": 1, "away_goals": 1, "outcome": "D"},
+            "asian_handicap": {"home_line": 0, "bet365_home_odds": 1.9, "bet365_away_odds": 1.9},
+            "ranking": {"market_handicap": 0},
+        }
+        public = public_record(record)
+        self.assertEqual(public["recommendation_selection"]["band_id"], "draw")
+        self.assertNotIn("recommendation", public["market_settlement"])
+        self.assertNotIn("integrated", public["market_settlement"])
 
     def test_recommendation_rule_version_and_missing_handicap(self):
-        selected = choose_recommendation(self.analysis(1.2, 1.0, 0))
-        self.assertEqual(selected["rule_version"], "three-handicap-rank-linear-v2")
+        selected = choose_recommendation(self.analysis(1.4, 1.0, -.4), {"market_handicap": -.4})
+        self.assertEqual(selected["rule_version"], "three-line-consensus-v4")
         self.assertEqual(selected["candidate_count"], 1)
         self.assertEqual(choose_recommendation(None, None)["status"], "skip")
 
@@ -244,15 +267,15 @@ class MarketModelTests(unittest.TestCase):
             "actual": {"home_goals": 2, "away_goals": 0, "outcome": "H"},
             "asian_handicap": {"home_line": -.5, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
             "ranking": {"home_rank": 1, "away_rank": 2, "league_team_count": 4,
-                        "rank_difference": 1, "rank_ratio": .25, "ranking_handicap": -1.0},
+                        "rank_difference": 1, "rank_ratio": .25, "market_handicap": -1.0},
             "total_market": {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5},
         }
         public = public_record(record)
         self.assertEqual(public["integrated_selection"]["status"], "candidate")
         self.assertIn("integrated", public["market_settlement"])
         self.assertIn("recommendation", public["market_settlement"])
-        self.assertEqual(public["recommendation_selection"]["rule_version"], "three-handicap-rank-linear-v2")
-        self.assertEqual(public["integrated_selection"]["rule_version"], "three-handicap-rank-linear-featured-v2")
+        self.assertEqual(public["recommendation_selection"]["rule_version"], "three-line-consensus-v4")
+        self.assertEqual(public["integrated_selection"]["rule_version"], "three-line-consensus-featured-v4")
         self.assertFalse(public["recommendation_selection"]["tracking_eligible"])
         self.assertEqual(public["featured_selection"], public["integrated_selection"])
         self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
@@ -365,7 +388,7 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(before["rank_ratio"], before["rank_difference"] / before["league_team_count"])
         expected = ((before["home_rank"] - before["away_rank"]) /
                     (before["league_team_count"] - 1) * 2)
-        self.assertAlmostEqual(before["ranking_handicap"], expected)
+        self.assertAlmostEqual(before["market_handicap"], expected)
 
     def test_result_matching_allows_timezone_date_difference(self):
         fixture = copy.deepcopy(self.fixture)
@@ -373,6 +396,21 @@ class ArchiveTests(unittest.TestCase):
         match.update({"home_source": "Alpha", "away_source": "Beta", "date": "2026-11-21"})
         found = find_result(fixture, self.league)
         self.assertIs(found, match)
+
+
+class PageContractTests(unittest.TestCase):
+    def test_mobile_page_uses_market_name_without_rank_detail(self):
+        html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+        self.assertIn("市场让球", html)
+        self.assertIn("三盘共识规则 V4", html)
+        self.assertNotIn("排名让球", html)
+        self.assertNotIn("排名与差值明细", html)
+        self.assertNotIn("ranking_handicap", html)
+
+    def test_research_page_is_v4(self):
+        html = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
+        self.assertIn("研究模型 V4", html)
+        self.assertIn("consensus-summary", html)
 
 
 if __name__ == "__main__":

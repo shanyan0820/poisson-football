@@ -26,7 +26,7 @@ def public_fixture(actual=None):
         }},
         "asian_handicap": {"home_line": -.5, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
         "ranking": {"home_rank": 1, "away_rank": 4, "league_team_count": 4,
-                    "rank_difference": 3, "rank_ratio": .75, "ranking_handicap": -2.0},
+                    "rank_difference": 3, "rank_ratio": .75, "market_handicap": -2.0},
     }
     return public_record(record, now=datetime(2026, 11, 22, 10, tzinfo=UTC))
 
@@ -44,7 +44,7 @@ class ResearchSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["freeze_status"], "pregame")
         self.assertIn("stable", snapshot["predictions"])
         self.assertIn("home_metrics", snapshot["handicap_analysis"])
-        self.assertEqual(snapshot["ranking"]["ranking_handicap"], -2.0)
+        self.assertEqual(snapshot["ranking"]["market_handicap"], -2.0)
         self.assertNotIn("total_analysis", snapshot)
         self.assertNotIn("total_market", snapshot)
         self.assertEqual(set(snapshot["relations"]), {"asian_handicap"})
@@ -52,7 +52,7 @@ class ResearchSnapshotTests(unittest.TestCase):
     def test_archive_freezes_pregame_inputs_and_only_adds_result(self):
         now = datetime(2026, 11, 22, 10, tzinfo=UTC)
         archive = update_research_archive({"version": 1, "matches": {}}, [public_fixture()], now)
-        self.assertEqual(archive["version"], 3)
+        self.assertEqual(archive["version"], 4)
         original = archive["matches"]["match-1"]["featured_prediction"]
         changed = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
         changed["featured_prediction"]["expected_goals"] = {"home": 9, "away": 9}

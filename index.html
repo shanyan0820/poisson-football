@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="老杨足球">
 <link rel="icon" href="data:,">
-<meta name="description" content="老杨足球实验室：专攻让球盘，结合真实联赛排名与三档盘口差形成预测推荐和精选预测">
+<meta name="description" content="老杨足球实验室：市场、模型、机构三盘档位共识，形成普通推荐与精选A/B">
 <title>让球盘专项 · 老杨足球实验室</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#c92f35;--red-soft:#fff1f1}
@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">让球盘专项</span></div><p>排名让球 · 模型让球 · 机构让球 · 每日12点冻结</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>老杨足球实验室</h1><span class="live">让球盘专项</span></div><p>市场让球 · 模型让球 · 机构让球 · 每日12点冻结</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 当前预测周期</div><h2 class="section-title" id="date-title">正在读取12点赛程窗口…</h2>
@@ -27,18 +27,18 @@
   </div>
   <p class="hint" id="model-note">列表采用当前滚动回测综合排名第一的模型。</p><div class="error" id="error"></div>
 </section>
-<div class="loading" id="loading">正在生成让球与排名对比…</div>
+<div class="loading" id="loading">正在计算三盘档位与共识…</div>
 <div id="content" class="hidden">
   <div class="section-head"><div><div class="step">02 / 让球预测</div><h2 class="section-title">本周期比赛列表</h2></div><p class="hint" id="fixture-count"></p></div>
   <div id="fixtures"></div>
-  <details class="card method"><summary>让球规则与排名口径</summary>
-    <p><b>统一定义：</b>三种让球均为负数主队让球、正数客队让球。模型让球＝客队预期进球−主队预期进球；机构让球采用AHh；盘口差＝模型让球−机构让球。</p>
-    <p><b>排名让球：</b>((主队排名−客队排名)÷(联赛实际队数−1))×2球。排名相同为0，榜首对榜尾最大为±2球。</p>
-    <p><b>基础规则1｜差值≤0.25球：</b>模型让球为负推荐主队，为正推荐客队。</p>
-    <p><b>基础规则2｜0.25球＜差值≤0.50球：</b>模型让球大于机构推荐客队，小于机构推荐主队。</p>
-    <p><b>基础规则3｜差值＞0.50球：</b>机构让球为负推荐主队，为正推荐客队。</p>
-    <p><b>精选条件：</b>在基础推荐之上，排名让球必须与推荐方向一致，且模型让球与排名让球差值≤0.50球；满足后以红色字体标出。</p>
-    <p><b>理论 EV：</b>仅作为展示和研究指标，不参与方向选择与精选门槛。规则未指定方向时不强行推荐。</p>
+  <details class="card method"><summary>三盘共识规则 V4</summary>
+    <p><b>统一定义：</b>三种让球均为客队预期进球−主队预期进球；负数主队强，正数客队强，绝对值越大实力差越大。</p>
+    <p><b>市场让球：</b>((主队排名−客队排名)÷(联赛实际队数−1))×2球；模型让球＝客队预期进球−主队预期进球；机构让球采用AHh。</p>
+    <p><b>实力档位：</b>≤−0.75主队大胜；−0.75至−0.50主队胜；−0.50至−0.25主队不败；−0.25至+0.25平局；+0.25至+0.50客队不败；+0.50至+0.75客队胜；≥+0.75客队大胜。临界值归入更强一侧。</p>
+    <p><b>精选推荐：</b>A＝三盘同档；B＝三盘同向且最大差值≤0.50球，取中间档。均以红色字体标出。</p>
+    <p><b>普通推荐：</b>两盘同档、第三盘在相邻档且方向一致时按多数档；三盘不同档但方向全部一致时取中间档。</p>
+    <p><b>放弃：</b>三盘跨正负方向、最大差值＞1.00球或缺少机构盘口时放弃。平局档仅展示方向，不参与让球盘结算。</p>
+    <p><b>理论 EV：</b>仅作为展示和研究指标，不参与共识方向选择。</p>
     <p><b>冻结与结算：</b>北京时间每日12:00结算旧样本并冻结当日12:00至次日12:00预测；20:00和次日02:00只同步赛果，不改推荐。</p><div class="warning">本页为模型研究与回查工具，不构成收益保证。</div>
   </details>
   <section class="source"><b>数据来源</b><p>赛果、主赛程、让球盘口：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；补充赛程：ESPN。联赛排名由开球前真实赛果计算。</p></section>
@@ -59,17 +59,15 @@ function isStarted(r){return Date.parse(r.kickoff_utc)<=Date.now()}
 function statusBadge(r){if(r.actual)return'<span class="badge">已核对</span>';if(isStarted(r))return'<span class="badge gray">已开赛</span>';return'<span class="badge amber">未开赛</span>'}
 function settlementHtml(r){const s=r.market_settlement||{},recommendation=s.recommendation,featured=s.integrated;if(!recommendation&&!featured)return'';return`<div class="settlement">${recommendation?`<span>预测推荐：${resultName[recommendation.result]}</span>`:''}${featured?`<span>精选预测：${resultName[featured.result]}</span>`:''}</div>`}
 function selectionName(s){return`${s.side==='home'?'主队':'客队'} ${line(s.line)} 球`}
-function rankHtml(r){const q=r.ranking;if(!q||q.home_rank==null||q.away_rank==null)return'<details class="match-details"><summary>排名与差值明细</summary><div class="rank-detail">开球前排名数据不足，不计算排名让球，也不能升级为精选。</div></details>';const ratio=q.rank_ratio==null?'—':(q.rank_ratio*100).toFixed(1)+'%',gap=r.recommendation_selection?.model_rank_gap;return`<details class="match-details"><summary>排名与差值明细</summary><div class="rank-detail">主队第 <b>${q.home_rank}</b> 名 · ${q.home_points??'—'} 分　客队第 <b>${q.away_rank}</b> 名 · ${q.away_points??'—'} 分<br>排名差 <b>${q.rank_difference} 位</b> · 联赛 ${q.league_team_count} 队 · 排名差占比 ${ratio}<br>模型与排名让球差 <b>${gap==null?'—':num(gap)+' 球'}</b> · 排名换算最大系数 2 球</div></details>`}
-function handicapHtml(r){const p=r.featured_prediction,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.ranking_handicap,modelLine=p?xg.away-xg.home:null;return`<div class="handicap-stack"><div class="handicap-line ranking"><span class="cell-label">排名让球</span><span class="cell-value">${rankLine==null?'—':signed(rankLine)+' 球'}</span></div><div class="handicap-line model"><span class="cell-label">模型让球</span><span class="cell-value">${modelLine==null?'—':signed(modelLine)+' 球'}</span></div><div class="handicap-line"><span class="cell-label">机构让球</span><span class="cell-value">${ah?line(ah.home_line)+' 球':'—'}</span></div></div>`}
+function handicapHtml(r){const p=r.featured_prediction,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.market_handicap,modelLine=p?xg.away-xg.home:null;return`<div class="handicap-stack"><div class="handicap-line ranking"><span class="cell-label">市场让球</span><span class="cell-value">${rankLine==null?'—':signed(rankLine)+' 球'}</span></div><div class="handicap-line model"><span class="cell-label">模型让球</span><span class="cell-value">${modelLine==null?'—':signed(modelLine)+' 球'}</span></div><div class="handicap-line"><span class="cell-label">机构让球</span><span class="cell-value">${ah?line(ah.home_line)+' 球':'—'}</span></div></div>`}
 function recommendationHtml(r){
  const base=r.recommendation_selection,featured=r.integrated_selection,selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,isFeatured=selected&&!retrospective&&featured?.status==='candidate';
- const main=selected?`${selectionName(base)}<small>Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}</small>`:'本场不推荐';
- let reason=selected?(base.reason||''):(base?.reason||'缺少赛前冻结预测或机构让球盘口。');
+ const main=selected?`${base.band_label}${['home','away'].includes(base.side)?`<small>${selectionName(base)} · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}</small>`:'<small>方向展示 · 不参与让球盘结算</small>'}`:'放弃推荐';
+ let reason=base?.reason||'缺少赛前冻结预测或机构让球盘口。';
  if(retrospective)reason+=' 本场为回溯展示，不计入赛前正式统计。';
- else if(selected&&isFeatured)reason=featured.reason||reason;
- else if(selected&&featured?.reason)reason+=` 未精选：${featured.reason}`;
- const label=retrospective?'回溯参考':isFeatured?'精选预测':'预测推荐';
- return`<div class="recommendation-cell ${selected?'selected':''} ${isFeatured?'featured':''}"><span class="recommendation-label">${label}${selected&&base.rule_number?` · 规则${base.rule_number}`:''}</span><span class="recommendation-main">${main}</span><span class="recommendation-reason">${esc(reason)}</span></div>`;
+ const featuredClass=featured?.featured_class?`精选${featured.featured_class}`:'精选预测';
+ const label=retrospective?'回溯参考':isFeatured?featuredClass:selected?'普通推荐':'本场放弃';
+ return`<div class="recommendation-cell ${selected?'selected':''} ${isFeatured?'featured':''}"><span class="recommendation-label">${label}</span><span class="recommendation-main">${main}</span><span class="recommendation-reason">${esc(reason)}</span></div>`;
 }
 function teamRank(r,side){const rank=r.ranking?.[`${side}_rank`];return rank==null?'排名 —':`第 ${rank} 名`}
 function fixtureHtml(r){
@@ -78,7 +76,7 @@ function fixtureHtml(r){
  const actual=r.actual?`<div class="actual">实际比分 <b>${r.actual.home_goals}:${r.actual.away_goals}</b>${settlementHtml(r)}</div>`:'';
  const frozenAt=r.recommendation_selection?.frozen_at||r.created_at;
  const freeze=!p?'未纳入赛前冻结样本':r.recommendation_selection?.tracking_eligible===false?'回溯展示 · 不计入赛前正式统计':`预测冻结 ${esc(utcTime(frozenAt))} · 日间只同步赛果，不改推荐`;
- return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="team-row"><div class="team-cell"><div><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span></div><span class="team-xg">${p?num(xg.home):'—'}<small>预期进球</small></span></div><div class="time-cell"><span class="cell-label">比赛时间</span><span class="time-value">${kickoffTime(r.kickoff_beijing)}</span></div><div class="team-cell away"><span class="team-xg">${p?num(xg.away):'—'}<small>预期进球</small></span><div><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span></div></div></div>${handicapHtml(r)}${rankHtml(r)}${recommendationHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
+ return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="team-row"><div class="team-cell"><div><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span></div><span class="team-xg">${p?num(xg.home):'—'}<small>预期进球</small></span></div><div class="time-cell"><span class="cell-label">比赛时间</span><span class="time-value">${kickoffTime(r.kickoff_beijing)}</span></div><div class="team-cell away"><span class="team-xg">${p?num(xg.away):'—'}<small>预期进球</small></span><div><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span></div></div></div>${handicapHtml(r)}${recommendationHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
 }
 function filteredFixtures(){return DATA.fixtures.filter(r=>{if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;if(status==='STARTED')return isStarted(r);if(status==='UPCOMING')return!isStarted(r);return true})}
 function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.integrated_selection?.status==='candidate'&&r.integrated_selection?.tracking_eligible!==false).length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 预测 ${recommended} 场 · 精选 ${featured} 场`}
