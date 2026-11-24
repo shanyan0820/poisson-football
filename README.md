@@ -1,6 +1,6 @@
 # 老杨足球实验室
 
-手机优先的足球概率分析工具。GitHub Actions 定时读取 football-data.co.uk 的真实比赛结果、每日赛程和亚盘盘口，GitHub Pages 提供免费手机页面。当前覆盖 30 个欧洲、亚洲和美洲主流联赛，首页已切到 15 条精确盘口规则，首页按当天赛程自动生成比赛列表，无需手动选队。
+手机优先的足球概率分析工具。GitHub Actions 定时读取 football-data.co.uk 的真实比赛结果、每日赛程和亚盘盘口，GitHub Pages 提供免费手机页面。当前覆盖 30 个欧洲、亚洲和美洲主流联赛，公开页面使用 Market Signal Model 与 A/B/C 分档展示，不公开具体规则编号、阈值或分析参数。
 
 ## 当前版本
 
@@ -16,7 +16,7 @@
 - 8 种模型同场比较：联赛均值基准、当前 50/40/10、稳健主客场、近期状态增强、近 5 场状态、2/10 场先验及 Dixon–Coles 低比分修正。
 - 赛前预测写入 `data/prediction_archive.json` 后不再覆盖，赛后只回写真实比分；首次读取时已开赛的比赛不补造预测、不计成绩。
 - 每场历史回测只使用该场之前的赛果，展示胜平负命中率、三分类 Brier 和 Log Loss；先比 Log Loss，再比 Brier，命中率辅助。
-- 58 项当前数据与预测测试，覆盖解析、中文译名、数据生成、预测冻结、亚盘与大小球读取、理论 EV、四分之一盘结算和赛前快照；页面另做实数据浏览器核验。
+- 62 项当前数据与预测测试，覆盖解析、中文译名、数据生成、预测冻结、亚盘与大小球读取、理论 EV、四分之一盘结算、赛前快照和公开数据脱敏；页面另做实数据浏览器核验。
 
 ## 模型
 
@@ -31,7 +31,7 @@
 
 ## 每日预测、赛后核对与最优模型
 
-`predictions.html` 读取 `data/predictions.json`，提供当天全部赛程、8 模型预测、实际比分、命中状态和模型排行榜。`prediction_pipeline.py` 负责：
+`predictions.html` 读取 `data/public_predictions.json` 与 `data/market_signal_backtest.json`，提供 A/B/C 分档赛后统计和历史回测。`prediction_pipeline.py` 负责：
 
 1. 读取主赛程 `fixtures.csv` 与 ESPN `scoreboard`，按北京时间筛选当天比赛。
 2. 开球前将各模型预测冻结到 `data/prediction_archive.json`；档案已存在时不覆盖预测或锁定时间。
@@ -44,7 +44,7 @@
 
 ## 静态页面与自动更新
 
-`index.html` 是当天赛程、泊松指标与亚盘对比入口；`predictions.html` 是 8 模型预测、赛后核对与回测入口，两者都读取 `data/predictions.json`。`generate_data.py` 和 `prediction_pipeline.py` 仅使用 Python 标准库下载、校验并生成真实数据。
+`index.html` 是当天赛程、泊松指标与盘口对比入口；`predictions.html` 是 A/B/C 分档赛后统计与历史回测入口，两者都读取 `data/public_predictions.json`。公开回测另使用 `data/market_signal_backtest.json`；原始预测仍用于内部结算，`public_site_data.py` 在发布前生成仅含展示字段的脱敏数据。`generate_data.py` 和 `prediction_pipeline.py` 仅使用 Python 标准库下载、校验并生成真实数据。
 
 ```bash
 python3 generate_data.py

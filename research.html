@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="研究档案V5（历史）">
 <link rel="icon" href="data:,">
-<meta name="description" content="老杨足球实验室研究档案V5：历史三规则档案；当前上线为15条精确盘口规则">
+<meta name="description" content="老杨足球实验室研究档案V5：历史三规则档案；当前上线为 Market Signal Model">
 <title>研究档案 V5（历史三规则） · 老杨足球实验室</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#a43c32}
@@ -16,7 +16,7 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>研究档案 V5（历史）</h1><span class="live">当前上线：15条精确规则</span></div><p>V5 保留三规则历史档案；当前首页已切换为五季合并切出的 15 条精确盘口规则，实时统计见赛后统计页。</p><div class="hero-meta"><span class="updated" id="updated">正在读取研究档案…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>研究档案 V5（历史）</h1><span class="live">当前上线：Market Signal Model</span></div><p>V5 保留三规则历史档案；当前首页已切换为 Market Signal Model，实时统计见赛后统计页。</p><div class="hero-meta"><span class="updated" id="updated">正在读取研究档案…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛</a><a class="nav" href="predictions.html">赛后统计 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 样本档案</div><h2 class="section-title">正式样本与回溯样本分开保存</h2>
@@ -29,7 +29,7 @@
 <section class="card">
   <div class="step">02 / 当前推荐</div><h2 class="section-title">预测推荐与精选预测的前瞻表现</h2>
   <div class="selections"><div class="selection"><h3>预测推荐</h3><div class="accuracy" id="recommendation-accuracy">—</div><p>样本 <b id="recommendation-n">0</b> · 有效 <b id="recommendation-valid">0</b></p><p>ROI <b id="recommendation-roi">—</b></p></div><div class="selection"><h3>精选预测</h3><div class="accuracy" id="featured-accuracy">—</div><p>样本 <b id="featured-n">0</b> · 有效 <b id="featured-valid">0</b></p><p>ROI <b id="featured-roi">—</b></p></div></div>
-  <p class="hint" id="consensus-summary">V5 历史档案：T1—T3 七档规则独立统计；当前上线为 V6 15条精确规则。</p>
+  <p class="hint" id="consensus-summary">V5 历史档案：T1—T3 七档规则独立统计；当前上线为 Market Signal Model。</p>
   <p class="hint">准确率只计四类有效结果；ROI 使用全部已结算结果。样本为零时统一显示“—”。</p>
 </section>
 <section class="card">
@@ -48,7 +48,7 @@
   <p class="hint">研究档案同时保留八个模型的赛前预测；回溯样本可见，但不进入前瞻性分组报告。</p>
 </section>
 </div>
-<footer class="footer">老杨足球实验室 · 研究档案 V5（历史三规则） · 当前上线 15条精确规则</footer>
+<footer class="footer">老杨足球实验室 · 研究档案 V5（历史三规则） · 当前上线 Market Signal Model</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);let DATA=null;
@@ -70,7 +70,7 @@ async function init(){try{
  $('matches').textContent=DATA.sample.matches;$('pregame').textContent=DATA.sample.pregame_matches;$('retrospective').textContent=DATA.sample.retrospective_matches;$('settled').textContent=DATA.sample.settled_pregame_matches;
  selection('recommendation',DATA.selection_groups.recommendation);selection('featured',DATA.selection_groups.featured);
  const candidates=DATA.optimization?.rule_candidates||[];
- $('consensus-summary').textContent=`V5 历史档案：${Object.keys(DATA.rule_groups||{}).length} 条七档规则独立结算；当前上线为15条精确盘口规则。`;
+ $('consensus-summary').textContent=`V5 历史档案：${Object.keys(DATA.rule_groups||{}).length} 条七档规则独立结算；当前上线为 Market Signal Model。`;
  $('handicap-method').textContent=DATA.methodology.handicap;$('handicap-source-method').textContent=DATA.methodology.handicap_source;$('ranking-method').textContent=DATA.methodology.ranking;$('consensus-method').textContent=DATA.methodology.consensus;$('schedule-method').textContent=DATA.methodology.schedule;$('optimization-method').textContent=DATA.methodology.optimization;
  const qualified=DATA.optimization.qualified_groups.length;$('optimization-status').textContent=qualified?`${qualified} 个分组达到复核条件，但仍需更多独立样本，不自动认定为最优。`:'当前没有通过时间外验证的规则，不自动修改精选预测。';
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');renderGroups();
