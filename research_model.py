@@ -191,8 +191,8 @@ def update_research_archive(archive: dict, public_records: list[dict], now: date
         archive["matches"][key] = existing
     archive["generated_at"] = now.isoformat(timespec="seconds")
     archive["method"] = {
-        "version": "handicap-research-v5",
-        "freeze": "北京时间每日12:00冻结八个模型、市场/模型/机构盘口及A1—E2全部规则触发方向；日间只回写真实赛果与各规则独立结算。",
+        "version": "handicap-research-seven-tiers-v1",
+        "freeze": "北京时间每日12:00冻结八个模型、市场/模型/机构盘口及T1—T3七档规则触发方向；日间只回写真实赛果与各规则独立结算。",
         "sample": "tracking_eligible=true 为正式赛前样本；retrospective 仅回查，不进入前瞻性论证。",
         "relations": "让球：模型净胜球与−AHh同号为aligned、异号为opposed；只研究让球盘。",
         "handicap_source": "real为真实初盘；simulated为初盘欧赔换算等效盘口；unavailable为缺少可用盘口。等效盘口不虚构亚盘赔率。",
@@ -366,15 +366,15 @@ def build_research_report(archive: dict, now: datetime) -> dict:
             "simulated_handicap_matches": sum(match.get("handicap_source") == "simulated" for match in matches),
         },
         "methodology": {
-            "handicap": "市场盘口、模型盘口=λ客−λ主、机构盘口=AHh；负数主队强，正数客队强。A1—E2全部规则逐场并行评估、独立结算。",
+            "handicap": "模型盘口=λ客−λ主并作为唯一基准锚；市场盘口、机构盘口=AHh；负数主队强，正数客队强。T1—T3七档规则逐场并行评估、独立结算。",
             "handicap_source": "real=真实初盘；simulated=初盘欧赔去水后以独立泊松拟合并映射的等效盘口。等效盘口没有真实亚盘赔率，不构造赔率或收益，可按来源分层回查。",
-            "ranking": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；市场偏差=市场−模型，机构偏差=机构−模型。",
-            "consensus": "首页按B/C/D/A优先级选择可结算方向；E1/E2极端分歧只进入研究，不直接驱动首页推荐。",
+            "ranking": "市场盘口=V2B：赛季场均积分盘80%＋近6场盘20%；双方赛前满7轮；市场偏差=市场−模型，机构偏差=机构−模型。",
+            "consensus": "T1机构反向跨档为唯一红色精选，T2三盘同档共识和T3市场情绪偏离为普通推荐；三规则均独立留样。",
             "schedule": "北京时间每日12:00生成并冻结新周期；20:00和次日02:00仅同步赛果。",
             "accuracy": "仅全赢、全输、赢一半、输一半进入等效准确率；走地和赢输各半排除。",
             "roi": "ROI=每方向均一研究单位的总盈亏/全部已结算方向数，走地与其他结果仍计入收益样本。",
-            "optimization": "单规则有效样本≥50场、总准确率≥55%，前后时段准确率均≥53%，最近三个有样本自然周准确率极差≤5个百分点，才进入候选复核。",
-            "warning": "候选规则仍需人工确认，不自动进入精选；小样本高胜率不代表长期有效。",
+            "optimization": "T1机构反向跨档为精选定位；全部规则保留逐季与累计真实结果，不根据短期胜率自动改规则。",
+            "warning": "精选不代表稳定收益；小样本高胜率不代表长期有效。",
         },
         "selection_groups": selection_report,
         "selection_breakdowns": selection_breakdowns,

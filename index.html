@@ -43,6 +43,7 @@
 .analysis-cell:nth-child(3n){border-right:0}
 .analysis-cell span{display:block;color:var(--muted);font-size:9px;white-space:nowrap}
 .analysis-cell b{display:block;margin-top:3px;font-size:16px;font-weight:800;line-height:1.3;white-space:nowrap}
+.analysis-cell small{display:block;margin-top:2px;color:var(--muted);font-size:8px;white-space:nowrap}
 .analysis-cell.model{background:#f3f9f5}.analysis-cell.model b{color:var(--green)}
 .score-section{padding:11px 12px 12px;background:#fbfcfb}
 .score-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;color:var(--muted);font-size:10px}
@@ -71,11 +72,13 @@
   <div id="fixtures"></div>
   <details class="card method"><summary>盘口规则与验证口径</summary>
     <p><b>统一定义：</b>三种盘口均为负数主队强、正数客队强，绝对值越大代表差距越大。</p>
-    <p><b>盘口来源：</b>市场盘口按开球前真实排名线性换算；模型盘口＝客队预期进球−主队预期进球；机构盘口优先采用AHh真实初盘，缺失时由初盘欧赔换算等效值。等效盘口没有真实亚盘赔率时，不生成赔率后推荐。</p>
-    <p><b>并行测试：</b>同向、诱盘、阻盘、两方印证与极端分歧等场景同时留样，每条规则独立统计赛后表现。</p>
+    <p><b>模型为锚：</b>模型盘口＝客队预期进球−主队预期进球，是理论实力差；机构与市场盘口均围绕模型判断，不反过来替代模型。</p>
+    <p><b>盘口来源：</b>市场盘口采用V2B＝赛季场均积分盘80%＋近6场盘20%，双方赛前均需满7轮；机构盘口优先采用AHh真实初盘，缺失时由初盘欧赔换算等效值。等效盘口没有真实亚盘赔率时，不生成赔率后推荐。</p>
+    <p><b>七档划分：</b>旗鼓相当、主/客不败、主/客胜负、主/客大胜。边界±0.25归不败档、±0.75归胜负档、±1.25归大胜档。</p>
+    <p><b>三条规则：</b>T1机构反向跨档（顺机构）、T2三盘同档共识（顺模型）、T3市场情绪偏离（反市场加深方向），全部并行触发并独立留样。</p>
     <p><b>概率与比分：</b>主胜、平局、客胜概率由当前泊松模型计算。有推荐时，仅从符合推荐方向的比分中选取概率最高的三个；无推荐时，展示全局概率最高的三个。比分仅作模型情景参考。</p>
-    <p><b>分析依据：</b>根据三项盘口的方向、差值及机构调整生成，不展示内部规则编号，也不代表确定结果。</p>
-    <p><b>精选推荐：</b>只有达到有效样本、准确率、时间验证和周稳定性门槛，并经确认的规则才进入红色精选；当前不因短期胜率自动升级。</p>
+    <p><b>分析依据：</b>根据模型、市场、机构三项盘口的七档位置生成，不推荐旗鼓相当档，也不代表确定结果。</p>
+    <p><b>精选推荐：</b>机构反向跨档为精选推荐，标签与方向文字标红；三盘同档共识、市场情绪偏离为普通推荐。精选是规则定位，不代表确定结果。</p>
     <p><b>理论 EV：</b>仅作为展示和研究指标，不决定规则是否触发。</p>
     <p><b>冻结与结算：</b>北京时间每日12:00结算旧样本并冻结当日12:00至次日12:00预测；20:00和次日02:00只同步赛果，不改推荐。</p><div class="warning">本页为模型研究与回查工具，不构成收益保证。</div>
   </details>
@@ -97,11 +100,12 @@ function isStarted(r){return Date.parse(r.kickoff_utc)<=Date.now()}
 function statusBadge(r){if(r.actual)return'<span class="badge">已核对</span>';if(isStarted(r))return'<span class="badge gray">已开赛</span>';return'<span class="badge amber">未开赛</span>'}
 function settlementHtml(r){const s=r.market_settlement||{},recommendation=s.recommendation,featured=s.integrated;if(!recommendation&&!featured)return'';return`<div class="settlement">${recommendation?`<span>预测推荐：${resultName[recommendation.result]}</span>`:''}${featured?`<span>精选预测：${resultName[featured.result]}</span>`:''}</div>`}
 function selectionName(s){return`${s.side==='home'?'主队':'客队'} ${line(s.line)} 球`}
+function tierShort(v){if(v==null)return'';const n=Number(v),side=n<0?'主':n>0?'客':'均';const a=Math.abs(n);if(a>=1.25)return side+'大胜档';if(a>=.75)return side+'胜负档';if(a>=.25)return side+'不败档';return'旗鼓相当档'}
 function analysisHtml(r){
  const p=r.featured_prediction,f=p?.forecast,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.market_handicap,modelLine=xg?xg.away-xg.home:null;
  const percent=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
- const cells=[['市场盘口',rankLine==null?'—':signed(rankLine)+' 球',''],['模型盘口',modelLine==null?'—':signed(modelLine)+' 球','model'],['机构盘口',ah?line(ah.home_line)+' 球':'—',''],['主胜概率',percent(f?.home_win),''],['平局概率',percent(f?.draw),''],['客胜概率',percent(f?.away_win),'']];
- return`<div class="analysis-table">${cells.map(([label,value,cls])=>`<div class="analysis-cell ${cls}"><span>${label}</span><b>${value}</b></div>`).join('')}</div>`;
+ const cells=[['市场盘口',rankLine==null?'—':signed(rankLine)+' 球','',tierShort(rankLine)],['模型盘口',modelLine==null?'—':signed(modelLine)+' 球','model',tierShort(modelLine)],['机构盘口',ah?line(ah.home_line)+' 球':'—','',ah?tierShort(ah.home_line):''],['主胜概率',percent(f?.home_win),'',''],['平局概率',percent(f?.draw),'',''],['客胜概率',percent(f?.away_win),'','']];
+ return`<div class="analysis-table">${cells.map(([label,value,cls,tier])=>`<div class="analysis-cell ${cls}"><span>${label}</span><b>${value}</b>${tier?`<small>${tier}</small>`:''}</div>`).join('')}</div>`;
 }
 function referenceScores(r){
  const p=r.featured_prediction,xg=p?.expected_goals,s=r.recommendation_selection;if(!xg)return[];
@@ -119,19 +123,11 @@ function referenceScoresHtml(r){
 }
 function professionalReason(s){
  const reasons={
-  A1:'市场、模型与机构盘口方向一致，且数值差值较小，三类信号对强弱关系的判断相互印证。',
-  A2:'三项盘口方向一致，强度判断存在适度差异，当前以模型方向作为主要参考。',
-  A3:'三项盘口方向一致，但强度分歧较大，仅作方向参考，不宜放大预期。',
-  B1:'市场盘口较模型更偏向客队，而机构调整有限，强弱评估存在分歧，主队方向具备一定防范价值。',
-  B2:'市场与机构对客队强度的表达不一致，盘口信号存在分歧，当前倾向防范主队不败。',
-  B3:'市场盘口较模型更偏向主队，而机构未同步加深，强弱评估存在分歧，当前倾向防范客队不败。',
-  C1:'市场与模型差值有限，机构盘口进一步向主队调整，机构信号对主队方向形成补充印证。',
-  C2:'市场与模型差值有限，机构盘口进一步向客队调整，机构信号对客队方向形成补充印证。',
-  D1:'模型与机构盘口同向，市场判断存在分歧，当前优先参考模型与机构形成的双重印证。',
-  D2:'模型与市场、机构方向相反，属于高分歧场景，当前按模型独立信号保留该方向。',
-  D3:'市场与模型方向一致，机构出现明显逆向调整，当前优先参考机构盘口反映的增量信息。'
+  T1:'模型与市场方向一致，机构反向并跨越至少一个档位，按机构方向形成精选推荐。',
+  T2:'模型、市场与机构处于同一档位，三盘对强弱方向的判断一致，按模型方向推荐。',
+  T3:'市场相对模型同向加深至少一档，而机构仍与模型同档，反向市场加深的情绪方向。'
  };
- return reasons[s?.rule_id]||'综合三项盘口的方向、差值与机构调整，选取当前相互印证程度更高的方向。';
+ return reasons[s?.rule_id]||'以模型盘口为锚，比较市场与机构盘口的七档位置后形成方向。';
 }
 function recommendationHtml(r){
  const base=r.recommendation_selection,featured=r.integrated_selection,selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,isFeatured=selected&&!retrospective&&featured?.status==='candidate';

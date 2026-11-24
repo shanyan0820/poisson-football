@@ -5,34 +5,34 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0b1f1a">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="赛后规则准确率">
+<meta name="apple-mobile-web-app-title" content="七档规则统计">
 <link rel="icon" href="data:,">
-<meta name="description" content="老杨足球实验室盘口规则独立赛后统计，仅统计全赢、全输、赢一半、输一半">
-<title>赛后规则准确率 · 老杨足球实验室</title>
+<meta name="description" content="模型盘口为锚的七档三规则：赛前样本独立结算与四赛季真实回测">
+<title>七档规则统计 · 老杨足球实验室</title>
 <style>
-:root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#a43c32}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}select{font:inherit}.wrap{max-width:900px;margin:auto;padding:0 14px 36px}.hero{background:var(--dark);color:#fff;padding:22px 16px 28px;border-radius:0 0 22px 22px}.hero-inner{max-width:870px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:22px;margin:0}.live{font-size:11px;color:#c9eadb;white-space:nowrap}.hero p{color:#b9c9c1;font-size:13px;margin:8px 0 0}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.updated{font-size:10px;color:#8faea0}.nav-links{display:flex;gap:12px}.nav{color:#d8f5e7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 3px 12px rgba(19,34,29,.025)}.setup{margin-top:-12px;position:relative}.step{font-size:10px;color:var(--green);font-weight:800;letter-spacing:1px}.section-title{font-size:17px;margin:3px 0 12px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.source-control{grid-column:1/-1}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}select{width:100%;border:1px solid #d6dfd9;background:#fff;color:var(--ink);border-radius:9px;padding:10px 9px;outline:none;font-size:13px}.hint{font-size:11px;color:var(--muted);margin:10px 0 0}.loading{text-align:center;padding:28px;color:var(--muted)}.error{display:none;background:#fff1ef;color:#9c352b;border:1px solid #f0ccc7;padding:12px;border-radius:12px;margin-top:14px;font-size:13px}.accuracy-box{text-align:center;background:var(--soft);border-radius:14px;padding:22px 12px}.accuracy-box strong{display:block;color:var(--green);font-size:48px;line-height:1.1;letter-spacing:-1px}.accuracy-box span{display:block;color:var(--muted);font-size:11px;margin-top:9px}.outcomes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.outcome{border:1px solid var(--line);border-radius:11px;padding:14px 6px;text-align:center;background:#fafbfa}.outcome b{display:block;font-size:24px}.outcome span{display:block;font-size:12px;font-weight:750;margin-top:2px}.outcome small{display:block;font-size:9px;color:var(--muted);margin-top:4px}.outcome.good b{color:var(--green)}.outcome.bad b{color:var(--red)}.formula{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}.formula b{color:var(--ink)}.empty{text-align:center;color:var(--muted);font-size:12px;background:#f5f6f5;border-radius:10px;padding:12px;margin-top:12px}.warning{border-left:2px solid var(--amber);padding-left:9px;color:#79511c;font-size:11px;margin-top:12px}.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:11px}.rule-table{width:100%;min-width:790px;border-collapse:collapse;font-size:11px;text-align:center}.rule-table th{background:#f3f6f4;color:var(--muted);font-weight:650;padding:10px 7px;white-space:nowrap}.rule-table td{padding:11px 7px;border-top:1px solid var(--line);white-space:nowrap}.rule-table th:first-child,.rule-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;min-width:175px;box-shadow:1px 0 var(--line)}.rule-table th:first-child{background:#f3f6f4}.rule-id{font-weight:850;color:var(--green);margin-right:5px}.rule-name{color:var(--muted);font-size:10px}.status-pill{display:inline-block;padding:2px 6px;border-radius:99px;background:#eef1ef;color:var(--muted);font-size:10px}.status-pill.candidate{background:#fff1d9;color:#8c5b13}.clickable{cursor:pointer}.clickable:hover td{background:#f7faf8}.clickable:hover td:first-child{background:#f7faf8}.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:10px;padding-right:10px}.hero{padding-left:14px;padding-right:14px}.brand h1{font-size:20px}.live{font-size:10px}.card{padding:14px}.controls{gap:8px}select{font-size:12px}.accuracy-box strong{font-size:44px}.outcomes{gap:7px}.outcome{padding:12px 4px}}
+:root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#c92f35;--red-soft:#fff1f1}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.45}select{font:inherit}.wrap{max-width:960px;margin:auto;padding:0 14px 36px}.hero{background:var(--dark);color:#fff;padding:22px 16px 28px;border-radius:0 0 22px 22px}.hero-inner{max-width:930px;margin:auto}.brand{display:flex;align-items:center;justify-content:space-between;gap:12px}.brand h1{font-size:22px;margin:0}.live{font-size:11px;color:#c9eadb;white-space:nowrap}.hero p{color:#b9c9c1;font-size:13px;margin:8px 0 0}.hero-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:12px}.updated{font-size:10px;color:#8faea0}.nav-links{display:flex;gap:12px}.nav{color:#d8f5e7;font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap}.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-top:12px;box-shadow:0 3px 12px rgba(19,34,29,.025)}.setup{margin-top:-12px;position:relative}.step{font-size:10px;color:var(--green);font-weight:800;letter-spacing:1px}.section-title{font-size:17px;margin:3px 0 12px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px}.source-control{grid-column:1/-1}.field label{display:block;font-size:10px;color:var(--muted);margin-bottom:4px}select{width:100%;border:1px solid #d6dfd9;background:#fff;color:var(--ink);border-radius:9px;padding:10px 9px;outline:none;font-size:13px}.hint{font-size:11px;color:var(--muted);margin:10px 0 0;line-height:1.7}.loading{text-align:center;padding:28px;color:var(--muted)}.error{display:none;background:#fff1ef;color:#9c352b;padding:12px;border-radius:12px;margin-top:14px;font-size:13px}.accuracy-box{text-align:center;background:var(--soft);border-radius:14px;padding:22px 12px}.accuracy-box strong{display:block;color:var(--green);font-size:48px;line-height:1.1}.accuracy-box span{display:block;color:var(--muted);font-size:11px;margin-top:9px}.live-metrics{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}.live-metric{padding:10px;border:1px solid var(--line);border-radius:10px;text-align:center}.live-metric b{display:block;font-size:18px}.live-metric span{font-size:10px;color:var(--muted)}.outcomes{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:14px}.outcome{border:1px solid var(--line);border-radius:11px;padding:14px 6px;text-align:center;background:#fafbfa}.outcome b{display:block;font-size:24px}.outcome span{display:block;font-size:12px;font-weight:750;margin-top:2px}.outcome small{display:block;font-size:9px;color:var(--muted);margin-top:4px}.outcome.good b{color:var(--green)}.outcome.bad b{color:var(--red)}.formula{margin-top:14px;padding-top:12px;border-top:1px solid var(--line);font-size:11px;color:var(--muted);line-height:1.7}.formula b{color:var(--ink)}.empty{text-align:center;color:var(--muted);font-size:12px;background:#f5f6f5;border-radius:10px;padding:12px;margin-top:12px}.warning{border-left:2px solid var(--amber);padding-left:9px;color:#79511c;font-size:11px;margin-top:12px;line-height:1.7}.table-scroll{overflow-x:auto;border:1px solid var(--line);border-radius:11px}.rule-table{width:100%;min-width:850px;border-collapse:collapse;font-size:11px;text-align:center}.rule-table th{background:#f3f6f4;color:var(--muted);font-weight:650;padding:10px 7px;white-space:nowrap}.rule-table td{padding:11px 7px;border-top:1px solid var(--line);white-space:nowrap}.rule-table th:first-child,.rule-table td:first-child{text-align:left;position:sticky;left:0;background:#fff;min-width:175px;box-shadow:1px 0 var(--line)}.rule-table th:first-child{background:#f3f6f4}.rule-id{font-weight:850;color:var(--green);margin-right:5px}.rule-name{color:var(--muted);font-size:10px}.status-pill{display:inline-block;padding:2px 6px;border-radius:99px;background:#eef1ef;color:var(--muted);font-size:10px}.status-pill.featured{background:var(--red-soft);color:var(--red);font-weight:800}.featured-rule td{background:var(--red-soft)}.featured-rule td:first-child{background:var(--red-soft)}.featured-rule .rule-id,.featured-rule .rule-name{color:var(--red)}.clickable{cursor:pointer}.backtest-table{min-width:920px}.backtest-table td:first-child{min-width:165px}.season-cell b{display:block;font-size:12px}.season-cell span{display:block;margin-top:3px;color:var(--muted);font-size:10px}.backtest-meta{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:11px}.backtest-meta span{padding:4px 8px;border-radius:99px;background:#f3f6f4;color:var(--muted);font-size:10px}.footer{text-align:center;color:var(--muted);font-size:10px;margin-top:18px}.hidden{display:none!important}@media(max-width:560px){.wrap{padding-left:10px;padding-right:10px}.hero{padding-left:14px;padding-right:14px}.brand h1{font-size:20px}.live{font-size:10px}.card{padding:14px}.controls{gap:8px}select{font-size:12px}.accuracy-box strong{font-size:44px}.outcomes{gap:7px}.outcome{padding:12px 4px}}
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>赛后规则准确率</h1><span class="live">独立留样 · 并行验证</span></div><p>全部正式赛前样本按规则独立结算，不用短期胜率冒充长期能力。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>七档规则统计</h1><span class="live">模型为锚 · 三规则并行</span></div><p>正式赛前样本与历史回测分开呈现，触发场次、胜率和ROI均使用真实结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="research.html">研究回查</a><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
-  <div class="step">01 / 统计范围</div><h2 class="section-title">选择联赛与统计对象</h2>
+  <div class="step">01 / 正式赛前样本</div><h2 class="section-title">选择联赛与统计对象</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
     <div class="field"><label for="model">统计对象</label><select id="model"><option value="RECOMMENDED">预测推荐</option><option value="FEATURED">精选预测</option></select></div>
     <div class="field source-control"><label for="handicap-source">盘口来源</label><select id="handicap-source"><option value="ALL">全部来源</option><option value="real">仅真实初盘</option><option value="simulated">仅等效换算盘口</option></select></div>
   </div>
-  <p class="hint">每日12点先结算旧样本；可按真实初盘或等效换算盘口分开回查。等效盘口没有真实亚盘赔率时，不进入赔率后结算。</p>
+  <p class="hint">这里只累计网站上已经赛前冻结并完成结算的正式样本；历史回溯不混入。等效盘口没有真实亚盘赔率时，不进入赔率后结算。</p>
   <div class="error" id="error"></div>
 </section>
-<div class="loading" id="loading">正在读取赛后真实结算…</div>
+<div class="loading" id="loading">正在读取真实结算与四赛季回测…</div>
 <div id="content" class="hidden">
 <section class="card">
   <div class="step">02 / 单项准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 预测推荐</h2>
   <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效正确 ÷ 四类结果的等效有效判定</span></div>
+  <div class="live-metrics"><div class="live-metric"><b id="trigger-count">0</b><span>赔率后结算场次（含走盘）</span></div><div class="live-metric"><b id="roi">—</b><span>单位投注ROI</span></div></div>
   <div class="outcomes">
     <div class="outcome good"><b id="full-win">0</b><span>全赢</span><small>计 1 次正确</small></div>
     <div class="outcome bad"><b id="full-loss">0</b><span>全输</span><small>计 1 次错误</small></div>
@@ -40,22 +40,29 @@
     <div class="outcome bad"><b id="half-loss">0</b><span>输一半</span><small>计 0.5 次错误</small></div>
   </div>
   <div class="empty" id="empty">当前筛选暂无符合口径的已结算样本。</div>
-  <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走地、赢输各半及其他结果均不计入分子或分母。</div>
+  <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走盘、赢输各半及其他结果不计入分子或分母；ROI分母包含全部赔率后结算场次。</div>
 </section>
 <section class="card">
-  <div class="step">03 / 规则对比</div><h2 class="section-title">A1—E2 独立赛后表现</h2>
-  <div class="table-scroll"><table class="rule-table"><thead><tr><th>规则</th><th>有效样本</th><th>全赢</th><th>全输</th><th>赢一半</th><th>输一半</th><th>准确率</th><th>状态</th></tr></thead><tbody id="rule-rows"></tbody></table></div>
-  <p class="hint">点击任一行可查看单项详情。候选只代表达到统计门槛，仍需人工确认后才会进入精选。</p>
-  <div class="warning">有效样本至少50场、总准确率至少55%、时间训练段和验证段均至少53%、最近三个有效自然周准确率极差不超过5个百分点。样本不足时不判断优劣。</div>
+  <div class="step">03 / 三规则实时统计</div><h2 class="section-title">T1—T3 独立赛后表现</h2>
+  <div class="table-scroll"><table class="rule-table"><thead><tr><th>规则</th><th>结算场次</th><th>全赢</th><th>全输</th><th>赢一半</th><th>输一半</th><th>胜率</th><th>ROI</th><th>定位</th></tr></thead><tbody id="rule-rows"></tbody></table></div>
+  <p class="hint">点击任一行可查看单项详情。T1机构反向跨档为红色精选；T2三盘同档共识、T3市场情绪偏离为普通推荐。</p>
+</section>
+<section class="card">
+  <div class="step">04 / 历史滚动回测</div><h2 class="section-title">四赛季真实结果（2022-23—2025-26）</h2>
+  <div class="backtest-meta" id="backtest-meta"></div>
+  <div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>规则</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>四季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div>
+  <p class="hint">每格依次显示触发场次、加权胜率、ROI。模型盘口为锚；市场盘口统一为V2B（赛季积分盘80%＋近6场盘20%）；双方赛前满7轮；真实AHh与Bet365赛前赔率结算。</p>
+  <div class="warning">这是历史滚动回测，不等于网站前瞻实盘。T3样本很少，T1逐季波动较大；精选是规则定位，不构成收益保证。</div>
 </section>
 </div>
-<footer class="footer">老杨足球实验室 · 预测赛前冻结 · 赛后只回写真实结果</footer>
+<footer class="footer">老杨足球实验室 · 模型盘口为锚 · 七档规则赛前冻结、赛后真实结算</footer>
 </main>
 <script>
-const $=id=>document.getElementById(id);let DATA=null;
+const $=id=>document.getElementById(id);let DATA=null,BACKTEST=null;
 const modelNames={RECOMMENDED:'预测推荐',FEATURED:'精选预测'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
-const pct=v=>v==null?'—':(Number(v)*100).toFixed(1)+'%';
+const pct=v=>v==null?'—':(Number(v)*100).toFixed(2)+'%';
+const roi=v=>v==null?'—':(Number(v)>0?'+':'')+(Number(v)*100).toFixed(2)+'%';
 const keys=['full_win','full_loss','half_win','half_loss'];
 function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}
 function summaryFor(value){
@@ -65,31 +72,37 @@ function summaryFor(value){
  const scope=league==='ALL'?market:market?.by_league?.[league],source=$('handicap-source').value;
  return source==='ALL'?scope?.overall:scope?.by_source?.[source];
 }
-function statsFrom(summary){const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};if(summary)keys.forEach(k=>counts[k]=summary[k]||0);const n=Object.values(counts).reduce((a,b)=>a+b,0);return{n,accuracy:summary?.effective_win_rate??null,counts}}
+function statsFrom(summary){const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};if(summary)keys.forEach(k=>counts[k]=summary[k]||0);const n=Object.values(counts).reduce((a,b)=>a+b,0);return{n,triggers:summary?.n||0,accuracy:summary?.effective_win_rate??null,roi:summary?.roi??null,counts}}
 function currentStats(){return statsFrom(summaryFor($('model').value))}
 function objectName(value){return modelNames[value]||DATA.market_tracking?.rule_definitions?.[value]?.name||value}
-function candidateSet(){return new Set(DATA.market_tracking?.research_summary?.rule_candidates||[])}
 function renderRules(){
- const candidates=candidateSet();
  $('rule-rows').innerHTML=Object.entries(DATA.market_tracking?.rule_definitions||{}).map(([id,definition])=>{
-  const s=statsFrom(summaryFor(id)),status=candidates.has(id)?'候选复核':s.n?'观察中':'待积累';
-  return`<tr class="clickable" data-rule="${esc(id)}"><td><span class="rule-id">${esc(id)}</span><span class="rule-name">${esc(definition.name)}</span></td><td>${s.n}</td><td>${s.counts.full_win}</td><td>${s.counts.full_loss}</td><td>${s.counts.half_win}</td><td>${s.counts.half_loss}</td><td><b>${pct(s.accuracy)}</b></td><td><span class="status-pill ${candidates.has(id)?'candidate':''}">${status}</span></td></tr>`;
- }).join('')||'<tr><td colspan="8">暂无规则统计数据</td></tr>';
+  const s=statsFrom(summaryFor(id)),featured=id==='T1';
+  return`<tr class="clickable ${featured?'featured-rule':''}" data-rule="${esc(id)}"><td><span class="rule-id">${esc(id)}</span><span class="rule-name">${esc(definition.name)}</span></td><td>${s.triggers}</td><td>${s.counts.full_win}</td><td>${s.counts.full_loss}</td><td>${s.counts.half_win}</td><td>${s.counts.half_loss}</td><td><b>${pct(s.accuracy)}</b></td><td>${roi(s.roi)}</td><td><span class="status-pill ${featured?'featured':''}">${featured?'精选推荐':'普通推荐'}</span></td></tr>`;
+ }).join('')||'<tr><td colspan="9">暂无规则统计数据</td></tr>';
  document.querySelectorAll('[data-rule]').forEach(row=>row.addEventListener('click',()=>{$('model').value=row.dataset.rule;render();window.scrollTo({top:0,behavior:'smooth'})}));
+}
+function backtestCell(summary){return`<td class="season-cell"><b>${summary?.n||0}场</b><span>${pct(summary?.effective_win_rate)} · ${roi(summary?.roi)}</span></td>`}
+function renderBacktest(){
+ if(!BACKTEST)return;
+ $('backtest-meta').innerHTML=`<span>有效样本 ${BACKTEST.combined.valid_samples} 场</span><span>原始完赛 ${BACKTEST.combined.raw_matches} 场</span><span>模型盘口为唯一基准锚</span>`;
+ $('backtest-rows').innerHTML=Object.entries(BACKTEST.combined.rules).map(([id,rule])=>`<tr class="${id==='T1'?'featured-rule':''}"><td><span class="rule-id">${id}</span><span class="rule-name">${esc(rule.name)}</span></td>${Object.values(BACKTEST.seasons).map(season=>backtestCell(season.rules[id].overall)).join('')}${backtestCell(rule.overall)}</tr>`).join('');
 }
 function render(){
  const stats=currentStats(),c=stats.counts;
- $('accuracy').textContent=pct(stats.accuracy);keys.forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
+ $('accuracy').textContent=pct(stats.accuracy);$('trigger-count').textContent=stats.triggers;$('roi').textContent=roi(stats.roi);keys.forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
  const league=$('league'),model=$('model'),leagueName=league.value==='ALL'?'全部联赛':league.options[league.selectedIndex].text,source=$('handicap-source').value,sourceName=source==='ALL'?'':` · ${source==='real'?'仅真实初盘':'仅等效换算'}`;
- $('scope-title').textContent=`${leagueName} · ${objectName(model.value)}${sourceName}`;$('empty').classList.toggle('hidden',stats.n>0);renderRules();
+ $('scope-title').textContent=`${leagueName} · ${objectName(model.value)}${sourceName}`;$('empty').classList.toggle('hidden',stats.triggers>0);renderRules();
 }
 async function init(){try{
- const response=await fetch(`data/predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
+ const [response,backtestResponse]=await Promise.all([fetch(`data/predictions.json?v=${Date.now()}`,{cache:'no-store'}),fetch(`data/seven_tier_backtest.json?v=${Date.now()}`,{cache:'no-store'})]);
+ if(!response.ok)throw new Error(`赛前数据 HTTP ${response.status}`);if(!backtestResponse.ok)throw new Error(`回测数据 HTTP ${backtestResponse.status}`);
+ DATA=await response.json();BACKTEST=await backtestResponse.json();
  const names={};if(DATA.stat_leagues)DATA.stat_leagues.forEach(r=>names[r.league_id]=r.league_name);else records().forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
  Object.entries(DATA.market_tracking?.rule_definitions||{}).forEach(([id,definition])=>$('model').insertAdjacentHTML('beforeend',`<option value="${esc(id)}">${esc(id)} · ${esc(definition.name)}</option>`));
- $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();
- }catch(e){$('error').textContent='赛后数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
+ $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();renderBacktest();
+ }catch(e){$('error').textContent='统计数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
 $('league').addEventListener('change',render);$('model').addEventListener('change',render);$('handicap-source').addEventListener('change',render);init();
 </script>
 </body>

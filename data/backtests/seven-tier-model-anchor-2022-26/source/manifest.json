@@ -1,0 +1,46 @@
+{
+  "season": "2025-26",
+  "retrieved_at": "2026-11-24T06:12:08+00:00",
+  "files": {
+    "E0": {
+      "url": "https://www.football-data.co.uk/mmz4281/2526/E0.csv",
+      "sha256": "3e3a8352f9ada6789c508d6ca184424421fed56a30400904a4a327c583407e62",
+      "bytes": 203438,
+      "parsed_matches": 380,
+      "valid_samples": 309,
+      "excluded": 71
+    },
+    "SP1": {
+      "url": "https://www.football-data.co.uk/mmz4281/2526/SP1.csv",
+      "sha256": "4ca2e285f3ee0702f6bc55fcaa4f5a15cb3aef6220735a1d15398131e21d63f5",
+      "bytes": 197653,
+      "parsed_matches": 380,
+      "valid_samples": 306,
+      "excluded": 74
+    },
+    "D1": {
+      "url": "https://www.football-data.co.uk/mmz4281/2526/D1.csv",
+      "sha256": "618301a4b39918225a8ccc57f0f839d675e1abd92fa3a3ccd9a67acd7c79dd7f",
+      "bytes": 159944,
+      "parsed_matches": 306,
+      "valid_samples": 243,
+      "excluded": 63
+    },
+    "I1": {
+      "url": "https://www.football-data.co.uk/mmz4281/2526/I1.csv",
+      "sha256": "709ae279617d16af226312bcceac941e71241745ddaf950bdac2b83afad4fcbb",
+      "bytes": 196217,
+      "parsed_matches": 380,
+      "valid_samples": 310,
+      "excluded": 70
+    },
+    "F1": {
+      "url": "https://www.football-data.co.uk/mmz4281/2526/F1.csv",
+      "sha256": "898b7ddcd373cfe955ae353b1a98cf7f1c8757ca10b69d53039f4e098e88f192",
+      "bytes": 158471,
+      "parsed_matches": 306,
+      "valid_samples": 243,
+      "excluded": 63
+    }
+  }
+}

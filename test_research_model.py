@@ -24,9 +24,9 @@ def public_fixture(actual=None):
             "forecast": {"home_win": .5, "draw": .25, "away_win": .25},
             "top_scores": [{"home": 2, "away": 1, "probability": .1}],
         }},
-        "asian_handicap": {"home_line": -.5, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
+        "asian_handicap": {"home_line": .5, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
         "ranking": {"home_rank": 1, "away_rank": 4, "league_team_count": 4,
-                    "rank_difference": 3, "rank_ratio": .75, "market_handicap": -2.0},
+                    "rank_difference": 3, "rank_ratio": .75, "market_handicap": -1.0},
     }
     return public_record(record, now=datetime(2026, 11, 22, 10, tzinfo=UTC))
 
@@ -44,7 +44,7 @@ class ResearchSnapshotTests(unittest.TestCase):
         self.assertEqual(snapshot["freeze_status"], "pregame")
         self.assertIn("stable", snapshot["predictions"])
         self.assertIn("home_metrics", snapshot["handicap_analysis"])
-        self.assertEqual(snapshot["ranking"]["market_handicap"], -2.0)
+        self.assertEqual(snapshot["ranking"]["market_handicap"], -1.0)
         self.assertNotIn("total_analysis", snapshot)
         self.assertNotIn("total_market", snapshot)
         self.assertEqual(set(snapshot["relations"]), {"asian_handicap"})
@@ -63,8 +63,8 @@ class ResearchSnapshotTests(unittest.TestCase):
         self.assertNotEqual(snapshot["handicap_analysis"]["edge"], 99)
         self.assertEqual(snapshot["actual"]["home_goals"], 2)
         self.assertEqual(set(snapshot["direction_settlements"]), {"asian_handicap"})
-        self.assertEqual(set(snapshot["rule_settlements"]), {"E1", "E2"})
-        self.assertEqual(len(rule_rows(archive)), 2)
+        self.assertEqual(set(snapshot["rule_settlements"]), {"T1"})
+        self.assertEqual(len(rule_rows(archive)), 1)
 
     def test_late_snapshot_is_retrospective_and_excluded_from_forward_report(self):
         late = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
@@ -133,8 +133,8 @@ class ResearchSettlementTests(unittest.TestCase):
         finished = public_fixture({"home_goals": 2, "away_goals": 0, "outcome": "H"})
         archive = update_research_archive(archive, [finished], now)
         report = build_research_report(archive, datetime(2026, 11, 22, 10, tzinfo=UTC))
-        self.assertEqual(len(report["rule_groups"]), 13)
-        self.assertEqual(report["sample"]["settled_rule_rows"], 2)
+        self.assertEqual(len(report["rule_groups"]), 3)
+        self.assertEqual(report["sample"]["settled_rule_rows"], 1)
         self.assertEqual(report["sample"]["real_handicap_matches"], 1)
         self.assertEqual(report["sample"]["simulated_handicap_matches"], 0)
         self.assertIn("real", report["direction_groups"]["asian_handicap"]["by_source"])

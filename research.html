@@ -29,7 +29,7 @@
 <section class="card">
   <div class="step">02 / 当前推荐</div><h2 class="section-title">预测推荐与精选预测的前瞻表现</h2>
   <div class="selections"><div class="selection"><h3>预测推荐</h3><div class="accuracy" id="recommendation-accuracy">—</div><p>样本 <b id="recommendation-n">0</b> · 有效 <b id="recommendation-valid">0</b></p><p>ROI <b id="recommendation-roi">—</b></p></div><div class="selection"><h3>精选预测</h3><div class="accuracy" id="featured-accuracy">—</div><p>样本 <b id="featured-n">0</b> · 有效 <b id="featured-valid">0</b></p><p>ROI <b id="featured-roi">—</b></p></div></div>
-  <p class="hint" id="consensus-summary">全部盘口规则分别留档、独立统计，达标后先进入候选复核。</p>
+  <p class="hint" id="consensus-summary">T1—T3七档规则分别留档、独立统计；机构反向跨档为精选。</p>
   <p class="hint">准确率只计四类有效结果；ROI 使用全部已结算结果。样本为零时统一显示“—”。</p>
 </section>
 <section class="card">
@@ -70,7 +70,7 @@ async function init(){try{
  $('matches').textContent=DATA.sample.matches;$('pregame').textContent=DATA.sample.pregame_matches;$('retrospective').textContent=DATA.sample.retrospective_matches;$('settled').textContent=DATA.sample.settled_pregame_matches;
  selection('recommendation',DATA.selection_groups.recommendation);selection('featured',DATA.selection_groups.featured);
  const candidates=DATA.optimization?.rule_candidates||[];
- $('consensus-summary').textContent=`${Object.keys(DATA.rule_groups||{}).length} 条规则独立结算；当前候选 ${candidates.length?candidates.join('、'):'暂无'}。达到门槛后仍需人工确认，不自动进入精选。`;
+ $('consensus-summary').textContent=`${Object.keys(DATA.rule_groups||{}).length} 条七档规则独立结算；T1机构反向跨档为精选，T2/T3为普通推荐。`;
  $('handicap-method').textContent=DATA.methodology.handicap;$('handicap-source-method').textContent=DATA.methodology.handicap_source;$('ranking-method').textContent=DATA.methodology.ranking;$('consensus-method').textContent=DATA.methodology.consensus;$('schedule-method').textContent=DATA.methodology.schedule;$('optimization-method').textContent=DATA.methodology.optimization;
  const qualified=DATA.optimization.qualified_groups.length;$('optimization-status').textContent=qualified?`${qualified} 个分组达到复核条件，但仍需更多独立样本，不自动认定为最优。`:'当前没有通过时间外验证的规则，不自动修改精选预测。';
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');renderGroups();

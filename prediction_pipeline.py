@@ -27,13 +27,10 @@ FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
 USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
 HANDICAP_EDGE_THRESHOLD = 0.15
-INTEGRATED_RULE_VERSION = "experience-rules-featured-v5"
-RECOMMENDATION_RULE_VERSION = "experience-rules-v5"
-MARKET_HANDICAP_MAX = 2.0
-CONSENSUS_MAX_SPREAD = 1.0
-FEATURED_MAX_SPREAD = 0.5
-QUALIFIED_RULE_IDS: set[str] = set()
-PRIMARY_RULE_ORDER = ("B1", "B2", "B3", "C1", "C2", "D1", "D2", "D3", "A1", "A2", "A3")
+INTEGRATED_RULE_VERSION = "model-anchor-seven-tiers-featured-v1"
+RECOMMENDATION_RULE_VERSION = "model-anchor-seven-tiers-v1"
+PRIMARY_RULE_ORDER = ("T1", "T2", "T3")
+QUALIFIED_RULE_IDS: set[str] = {"T1"}
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -258,7 +255,7 @@ def base_fixture(league: dict, home_source: str, away_source: str, kickoff: date
 
 
 def ranking_snapshot(fixture: dict, league: dict) -> dict:
-    """只用开球日期前赛果重建排名，并按线性规则换算为让球数。"""
+    """只用开球日期前赛果；市场盘=V2B赛季积分80%+近6场20%，双方均需满7轮。"""
     kickoff_date = datetime.fromisoformat(fixture["kickoff_beijing"]).date().isoformat()
     prior = [{"home": m["home_source"], "away": m["away_source"],
               "home_goals": m["home_goals"], "away_goals": m["away_goals"]}
@@ -267,23 +264,49 @@ def ranking_snapshot(fixture: dict, league: dict) -> dict:
     ranks = {team["id"]: team for team in table}
     home, away = ranks.get(fixture["home_source"]), ranks.get(fixture["away_source"])
     team_count = max(len(table), len(league.get("teams", [])))
-    base = {"ranking_basis": "仅使用开球日期前的已结束比赛重建积分榜",
+    base = {"ranking_basis": "仅使用开球日期前的已结束比赛重建积分榜与近期状态；同日赛果不进入快照",
             "ranking_as_of": max((m["date"] for m in league["matches"] if m["date"] < kickoff_date), default=None),
             "league_team_count": team_count,
-            "market_handicap_method": "线性版：((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队让球，正数客队让球",
-            "market_handicap_max": MARKET_HANDICAP_MAX}
+            "market_handicap_method": "V2B：赛季场均积分盘80%＋近6场场均积分盘20%；积分盘=−(主队场均积分−客队场均积分)×2/3",
+            "market_version": "points_form20"}
     if not home or not away or team_count <= 1:
         return {**base, "home_rank": None, "away_rank": None, "rank_difference": None,
                 "rank_ratio": None, "rank_category": "unknown", "market_handicap": None}
+
+    def recent_ppg(team: str) -> float | None:
+        rows = [m for m in prior if team in (m["home"], m["away"])][-6:]
+        if not rows:
+            return None
+        points = 0
+        for match in rows:
+            is_home = match["home"] == team
+            scored = match["home_goals"] if is_home else match["away_goals"]
+            conceded = match["away_goals"] if is_home else match["home_goals"]
+            points += 3 if scored > conceded else 1 if scored == conceded else 0
+        return points / len(rows)
+
     difference = abs(home["rank"] - away["rank"])
     ratio = difference / team_count
     signed_difference = home["rank"] - away["rank"]
-    market_handicap = signed_difference / (team_count - 1) * MARKET_HANDICAP_MAX
+    rank_market = signed_difference / (team_count - 1) * 2.0
+    home_season_ppg = home["points"] / home["played"] if home["played"] else None
+    away_season_ppg = away["points"] / away["played"] if away["played"] else None
+    home_recent_ppg, away_recent_ppg = recent_ppg(fixture["home_source"]), recent_ppg(fixture["away_source"])
+    season_market = (-(home_season_ppg - away_season_ppg) * 2 / 3
+                     if home_season_ppg is not None and away_season_ppg is not None else None)
+    recent_market = (-(home_recent_ppg - away_recent_ppg) * 2 / 3
+                     if home_recent_ppg is not None and away_recent_ppg is not None else None)
+    eligible = home["played"] >= 7 and away["played"] >= 7
+    market_handicap = .8 * season_market + .2 * recent_market if eligible and recent_market is not None else None
     return {**base, "home_rank": home["rank"], "away_rank": away["rank"],
             "home_points": home["points"], "away_points": away["points"],
+            "home_played": home["played"], "away_played": away["played"],
             "rank_difference": difference, "rank_ratio": ratio,
             "signed_rank_difference": signed_difference,
-            "market_handicap": market_handicap}
+            "rank_market": rank_market, "season_market": season_market, "recent6_market": recent_market,
+            "home_season_ppg": home_season_ppg, "away_season_ppg": away_season_ppg,
+            "home_recent6_ppg": home_recent_ppg, "away_recent6_ppg": away_recent_ppg,
+            "seven_match_eligible": eligible, "market_handicap": market_handicap}
 
 
 def parse_asian_handicap(row: dict) -> dict | None:
@@ -927,12 +950,12 @@ def summarize_market_rows(rows: list[dict]) -> dict:
 
 def build_market_tracking(finished: list[dict]) -> dict:
     result = {
-        "selection": "V5规则并行评估：A1—E2全部独立留样，首页按B/C/D/A优先级选择可结算方向。",
+        "selection": "模型盘口为唯一基准锚，T1—T3七档规则并行触发；优先级为机构反向跨档、三盘同档共识、市场情绪偏离。",
         "metrics": "累计统计完整正式赛前样本；等效胜率只计全赢、全输、赢一半、输一半。",
-        "bands": "每条规则分别保存盘口、偏差、方向与赛后结果，达标前不自动升级为精选。",
-        "recommendation_rule": "E1/E2极端分歧仅用于研究；精选只来自达到样本、胜率、时间验证和周稳定性门槛的规则。",
-        "market_handicap_rule": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数主队强，正数客队强。",
-        "integrated_rule": "当前QUALIFIED_RULE_IDS为空，所有规则先观察；经验证并确认后才进入红色精选。",
+        "bands": "七档边界：±0.25归不败档、±0.75归胜负档、±1.25归大胜档；中间为旗鼓相当档。",
+        "recommendation_rule": "T1机构反向跨档为唯一精选推荐并标红；T2、T3为普通推荐，三条规则均独立结算。",
+        "market_handicap_rule": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；双方赛前均需满7轮。",
+        "integrated_rule": "精选只来自T1机构反向跨档；赛前冻结后不根据赛果改写方向。",
         "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；20:00和次日02:00只同步赛果。",
     }
     for key in ["asian_handicap", "recommendation", "integrated"]:
@@ -1057,8 +1080,8 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "V5并行测试A1—E2全部规则；市场盘口、模型盘口、机构盘口分别保存，E类极端分歧仅研究。机构盘口优先真实AHh初盘，缺失时由初盘欧赔换算等效值并标记simulated；无真实亚盘赔率则不构造收益。",
-            "market_handicap": "市场盘口=((主队排名−客队排名)/(联赛实际队数−1))×2球；负数表示主队强，正数表示客队强。",
+            "handicap": "模型盘口为唯一基准锚，T1—T3七档规则并行触发、独立结算；T1机构反向跨档为唯一红色精选。机构盘口优先真实AHh初盘，缺失时等效值标记simulated；无真实亚盘赔率则不构造收益。",
+            "market_handicap": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；负数主队强，正数客队强，双方赛前均需满7轮。",
         },
         "featured_model_id": featured_model_id,
         "models": MODEL_CONFIGS, "coverage": sorted(coverage, key=lambda c: c["league_id"]),
