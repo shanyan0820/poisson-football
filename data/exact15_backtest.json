@@ -1,0 +1,1544 @@
+{
+  "schema": "exact15-lines-five-season-v1",
+  "generated_at": "2026-11-24T16:16:18+00:00",
+  "title": "15条精确盘口规则 · 五季合并训练与2026-27样本外",
+  "anchor": "机构盘口精确落点 + 模型盘口阈值",
+  "rule_version": "exact-15-lines-v1",
+  "sample": {
+    "all_line_matches": 10759,
+    "train_matches": 9991,
+    "holdout_matches": 768,
+    "selected_train": 3237,
+    "selected_holdout": 281
+  },
+  "seasons": {
+    "2021-22": {
+      "season": "2021-22",
+      "label": "训练",
+      "valid_samples": 4470,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 32,
+            "effective_win_rate": 0.576271186440678,
+            "unit_profit": 3.4699999999999998,
+            "roi": 0.10843749999999999
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 269,
+            "effective_win_rate": 0.5238095238095238,
+            "unit_profit": 2.774999999999998,
+            "roi": 0.010315985130111517
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 27,
+            "effective_win_rate": 0.5116279069767442,
+            "unit_profit": 0.2899999999999998,
+            "roi": 0.010740740740740733
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 46,
+            "effective_win_rate": 0.5869565217391305,
+            "unit_profit": 6.39,
+            "roi": 0.13891304347826086
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 81,
+            "effective_win_rate": 0.6419753086419753,
+            "unit_profit": 18.52,
+            "roi": 0.22864197530864197
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 57,
+            "effective_win_rate": 0.5252525252525253,
+            "unit_profit": 1.0299999999999991,
+            "roi": 0.018070175438596476
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 183,
+            "effective_win_rate": 0.5474452554744526,
+            "unit_profit": 10.779999999999998,
+            "roi": 0.0589071038251366
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 35,
+            "effective_win_rate": 0.53125,
+            "unit_profit": 2.1499999999999995,
+            "roi": 0.061428571428571416
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 53,
+            "effective_win_rate": 0.6415094339622641,
+            "unit_profit": 13.11,
+            "roi": 0.24735849056603773
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 76,
+            "effective_win_rate": 0.5,
+            "unit_profit": -1.3600000000000014,
+            "roi": -0.017894736842105283
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 44,
+            "effective_win_rate": 0.6285714285714286,
+            "unit_profit": 7.779999999999999,
+            "roi": 0.1768181818181818
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 170,
+            "effective_win_rate": 0.525,
+            "unit_profit": 4.039999999999997,
+            "roi": 0.023764705882352927
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 362,
+            "effective_win_rate": 0.4911717495987159,
+            "unit_profit": -9.580000000000005,
+            "roi": -0.02646408839779007
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 51,
+            "effective_win_rate": 0.46511627906976744,
+            "unit_profit": -4.095000000000001,
+            "roi": -0.08029411764705884
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 33,
+            "effective_win_rate": 0.5,
+            "unit_profit": -0.7450000000000002,
+            "roi": -0.022575757575757582
+          }
+        }
+      }
+    },
+    "2022-23": {
+      "season": "2022-23",
+      "label": "训练",
+      "valid_samples": 1433,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 18,
+            "effective_win_rate": 0.5882352941176471,
+            "unit_profit": 2.5599999999999996,
+            "roi": 0.1422222222222222
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 58,
+            "effective_win_rate": 0.5268817204301075,
+            "unit_profit": 1.105,
+            "roi": 0.019051724137931034
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 25,
+            "effective_win_rate": 0.5777777777777777,
+            "unit_profit": 2.92,
+            "roi": 0.1168
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 16,
+            "effective_win_rate": 0.5625,
+            "unit_profit": 1.48,
+            "roi": 0.0925
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 38,
+            "effective_win_rate": 0.4473684210526316,
+            "unit_profit": -4.940000000000001,
+            "roi": -0.13000000000000003
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 15,
+            "effective_win_rate": 0.6666666666666666,
+            "unit_profit": 4.279999999999999,
+            "roi": 0.28533333333333327
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 65,
+            "effective_win_rate": 0.5384615384615384,
+            "unit_profit": 2.5599999999999987,
+            "roi": 0.039384615384615365
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.6521739130434783,
+            "unit_profit": 3.5699999999999994,
+            "roi": 0.25499999999999995
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 21,
+            "effective_win_rate": 0.42857142857142855,
+            "unit_profit": -2.91,
+            "roi": -0.13857142857142857
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 13,
+            "effective_win_rate": 0.6923076923076923,
+            "unit_profit": 4.72,
+            "roi": 0.3630769230769231
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.5454545454545454,
+            "unit_profit": 0.78,
+            "roi": 0.055714285714285716
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 31,
+            "effective_win_rate": 0.5238095238095238,
+            "unit_profit": 0.7599999999999998,
+            "roi": 0.02451612903225806
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 92,
+            "effective_win_rate": 0.48148148148148145,
+            "unit_profit": -2.6500000000000012,
+            "roi": -0.02880434782608697
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 7,
+            "effective_win_rate": 0.5384615384615384,
+            "unit_profit": 0.3650000000000001,
+            "roi": 0.05214285714285716
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 12,
+            "effective_win_rate": 0.7142857142857143,
+            "unit_profit": 4.18,
+            "roi": 0.34833333333333333
+          }
+        }
+      }
+    },
+    "2023-24": {
+      "season": "2023-24",
+      "label": "训练",
+      "valid_samples": 1360,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 21,
+            "effective_win_rate": 0.6842105263157895,
+            "unit_profit": 6.52,
+            "roi": 0.31047619047619046
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 63,
+            "effective_win_rate": 0.54,
+            "unit_profit": 2.4199999999999986,
+            "roi": 0.03841269841269839
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 24,
+            "effective_win_rate": 0.6341463414634146,
+            "unit_profit": 5.609999999999999,
+            "roi": 0.23374999999999999
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 15,
+            "effective_win_rate": 0.5333333333333333,
+            "unit_profit": 0.5999999999999994,
+            "roi": 0.03999999999999996
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 36,
+            "effective_win_rate": 0.5555555555555556,
+            "unit_profit": 2.8099999999999996,
+            "roi": 0.07805555555555554
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 22,
+            "effective_win_rate": 0.55,
+            "unit_profit": 1.5899999999999999,
+            "roi": 0.07227272727272727
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 56,
+            "effective_win_rate": 0.5,
+            "unit_profit": 0.01999999999999913,
+            "roi": 0.0003571428571428416
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 21,
+            "effective_win_rate": 0.5428571428571428,
+            "unit_profit": 1.1099999999999994,
+            "roi": 0.05285714285714283
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 11,
+            "effective_win_rate": 0.7272727272727273,
+            "unit_profit": 4.85,
+            "roi": 0.44090909090909086
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 11,
+            "effective_win_rate": 0.7272727272727273,
+            "unit_profit": 5.22,
+            "roi": 0.47454545454545455
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 11,
+            "effective_win_rate": 0.8333333333333334,
+            "unit_profit": 3.8399999999999994,
+            "roi": 0.34909090909090906
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 29,
+            "effective_win_rate": 0.45454545454545453,
+            "unit_profit": -2.47,
+            "roi": -0.08517241379310346
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 82,
+            "effective_win_rate": 0.5611510791366906,
+            "unit_profit": 7.209999999999999,
+            "roi": 0.08792682926829268
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 9,
+            "effective_win_rate": 0.375,
+            "unit_profit": -1.8250000000000004,
+            "roi": -0.20277777777777783
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 21,
+            "effective_win_rate": 0.4594594594594595,
+            "unit_profit": -2.0949999999999998,
+            "roi": -0.09976190476190475
+          }
+        }
+      }
+    },
+    "2024-25": {
+      "season": "2024-25",
+      "label": "训练",
+      "valid_samples": 1359,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 23,
+            "effective_win_rate": 0.631578947368421,
+            "unit_profit": 4.05,
+            "roi": 0.1760869565217391
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 54,
+            "effective_win_rate": 0.5777777777777777,
+            "unit_profit": 6.109999999999999,
+            "roi": 0.11314814814814814
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 22,
+            "effective_win_rate": 0.5641025641025641,
+            "unit_profit": 2.509999999999999,
+            "roi": 0.11409090909090903
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 15,
+            "effective_win_rate": 0.5333333333333333,
+            "unit_profit": 0.9599999999999991,
+            "roi": 0.06399999999999993
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 49,
+            "effective_win_rate": 0.6326530612244898,
+            "unit_profit": 10.639999999999999,
+            "roi": 0.2171428571428571
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 22,
+            "effective_win_rate": 0.47368421052631576,
+            "unit_profit": -1.5999999999999996,
+            "roi": -0.07272727272727271
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 64,
+            "effective_win_rate": 0.4117647058823529,
+            "unit_profit": -10.120000000000001,
+            "roi": -0.15812500000000002
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 17,
+            "effective_win_rate": 0.6774193548387096,
+            "unit_profit": 5.069999999999999,
+            "roi": 0.29823529411764704
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.7142857142857143,
+            "unit_profit": 5.470000000000001,
+            "roi": 0.39071428571428574
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 17,
+            "effective_win_rate": 0.5294117647058824,
+            "unit_profit": 0.7000000000000004,
+            "roi": 0.041176470588235314
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 13,
+            "effective_win_rate": 0.45454545454545453,
+            "unit_profit": -1.0100000000000005,
+            "roi": -0.07769230769230773
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 34,
+            "effective_win_rate": 0.42857142857142855,
+            "unit_profit": -3.2600000000000002,
+            "roi": -0.09588235294117647
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 76,
+            "effective_win_rate": 0.5151515151515151,
+            "unit_profit": 2.0199999999999987,
+            "roi": 0.026578947368421035
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 19,
+            "effective_win_rate": 0.6875,
+            "unit_profit": 5.275,
+            "roi": 0.27763157894736845
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.5833333333333334,
+            "unit_profit": 1.55,
+            "roi": 0.11071428571428572
+          }
+        }
+      }
+    },
+    "2025-26": {
+      "season": "2025-26",
+      "label": "训练",
+      "valid_samples": 1369,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 23,
+            "effective_win_rate": 0.5365853658536586,
+            "unit_profit": 1.3299999999999994,
+            "roi": 0.057826086956521715
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 55,
+            "effective_win_rate": 0.5833333333333334,
+            "unit_profit": 5.644999999999999,
+            "roi": 0.10263636363636361
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 13,
+            "effective_win_rate": 0.6363636363636364,
+            "unit_profit": 3.01,
+            "roi": 0.23153846153846153
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 13,
+            "effective_win_rate": 0.6153846153846154,
+            "unit_profit": 2.4799999999999995,
+            "roi": 0.19076923076923075
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 32,
+            "effective_win_rate": 0.53125,
+            "unit_profit": 0.7099999999999986,
+            "roi": 0.022187499999999957
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 20,
+            "effective_win_rate": 0.7894736842105263,
+            "unit_profit": 10.619999999999997,
+            "roi": 0.5309999999999999
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 55,
+            "effective_win_rate": 0.6666666666666666,
+            "unit_profit": 12.379999999999999,
+            "roi": 0.22509090909090906
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.48148148148148145,
+            "unit_profit": -1.0800000000000003,
+            "roi": -0.07714285714285717
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 9,
+            "effective_win_rate": 0.6666666666666666,
+            "unit_profit": 2.4899999999999993,
+            "roi": 0.2766666666666666
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.5714285714285714,
+            "unit_profit": 1.6999999999999993,
+            "roi": 0.12142857142857137
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.7142857142857143,
+            "unit_profit": 2.84,
+            "roi": 0.20285714285714285
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 40,
+            "effective_win_rate": 0.5769230769230769,
+            "unit_profit": 2.5299999999999994,
+            "roi": 0.06324999999999999
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 71,
+            "effective_win_rate": 0.6356589147286822,
+            "unit_profit": 16.479999999999997,
+            "roi": 0.23211267605633798
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 12,
+            "effective_win_rate": 0.7894736842105263,
+            "unit_profit": 4.93,
+            "roi": 0.41083333333333333
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 9,
+            "effective_win_rate": 0.75,
+            "unit_profit": 3.4999999999999996,
+            "roi": 0.38888888888888884
+          }
+        }
+      }
+    },
+    "2026-27": {
+      "season": "2026-27",
+      "label": "样本外",
+      "valid_samples": 768,
+      "rules": {
+        "A01": {
+          "name": "-1.75 客队 -0.95",
+          "grade": "A",
+          "line": -1.75,
+          "side": "away",
+          "threshold": -0.95,
+          "overall": {
+            "n": 3,
+            "effective_win_rate": 0.6666666666666666,
+            "unit_profit": 0.8799999999999999,
+            "roi": 0.2933333333333333
+          }
+        },
+        "A02": {
+          "name": "-0.25 客队 -0.20",
+          "grade": "A",
+          "line": -0.25,
+          "side": "away",
+          "threshold": -0.2,
+          "overall": {
+            "n": 31,
+            "effective_win_rate": 0.42857142857142855,
+            "unit_profit": -5.2250000000000005,
+            "roi": -0.16854838709677422
+          }
+        },
+        "A03": {
+          "name": "-0.25 主队 +0.50",
+          "grade": "A",
+          "line": -0.25,
+          "side": "home",
+          "threshold": 0.5,
+          "overall": {
+            "n": 8,
+            "effective_win_rate": 0.8571428571428571,
+            "unit_profit": 4.59,
+            "roi": 0.57375
+          }
+        },
+        "A04": {
+          "name": "+1.50 客队 +2.05",
+          "grade": "A",
+          "line": 1.5,
+          "side": "away",
+          "threshold": 2.05,
+          "overall": {
+            "n": 11,
+            "effective_win_rate": 0.6363636363636364,
+            "unit_profit": 2.55,
+            "roi": 0.2318181818181818
+          }
+        },
+        "B01": {
+          "name": "-1.50 客队 -0.75",
+          "grade": "B",
+          "line": -1.5,
+          "side": "away",
+          "threshold": -0.75,
+          "overall": {
+            "n": 14,
+            "effective_win_rate": 0.35714285714285715,
+            "unit_profit": -4.260000000000001,
+            "roi": -0.3042857142857143
+          }
+        },
+        "B02": {
+          "name": "-1.25 主队 -0.50",
+          "grade": "B",
+          "line": -1.25,
+          "side": "home",
+          "threshold": -0.5,
+          "overall": {
+            "n": 12,
+            "effective_win_rate": 0.6363636363636364,
+            "unit_profit": 2.67,
+            "roi": 0.2225
+          }
+        },
+        "B03": {
+          "name": "-1.00 主队 -0.70",
+          "grade": "B",
+          "line": -1.0,
+          "side": "home",
+          "threshold": -0.7,
+          "overall": {
+            "n": 49,
+            "effective_win_rate": 0.5588235294117647,
+            "unit_profit": 2.6599999999999993,
+            "roi": 0.05428571428571427
+          }
+        },
+        "B04": {
+          "name": "-0.75 主队 +0.00",
+          "grade": "B",
+          "line": -0.75,
+          "side": "home",
+          "threshold": 0.0,
+          "overall": {
+            "n": 3,
+            "effective_win_rate": 0.6,
+            "unit_profit": 0.44499999999999984,
+            "roi": 0.1483333333333333
+          }
+        },
+        "B05": {
+          "name": "-0.50 客队 -0.65",
+          "grade": "B",
+          "line": -0.5,
+          "side": "away",
+          "threshold": -0.65,
+          "overall": {
+            "n": 7,
+            "effective_win_rate": 0.2857142857142857,
+            "unit_profit": -3.0700000000000003,
+            "roi": -0.4385714285714286
+          }
+        },
+        "B06": {
+          "name": "+0.50 客队 +0.35",
+          "grade": "B",
+          "line": 0.5,
+          "side": "away",
+          "threshold": 0.35,
+          "overall": {
+            "n": 17,
+            "effective_win_rate": 0.5882352941176471,
+            "unit_profit": 2.4099999999999993,
+            "roi": 0.1417647058823529
+          }
+        },
+        "B07": {
+          "name": "+1.00 客队 +0.80",
+          "grade": "B",
+          "line": 1.0,
+          "side": "away",
+          "threshold": 0.8,
+          "overall": {
+            "n": 15,
+            "effective_win_rate": 0.46153846153846156,
+            "unit_profit": -1.1400000000000003,
+            "roi": -0.07600000000000003
+          }
+        },
+        "C01": {
+          "name": "0.00 客队 -0.05",
+          "grade": "C",
+          "line": 0.0,
+          "side": "away",
+          "threshold": -0.05,
+          "overall": {
+            "n": 31,
+            "effective_win_rate": 0.4,
+            "unit_profit": -4.59,
+            "roi": -0.14806451612903226
+          }
+        },
+        "C02": {
+          "name": "+0.25 客队 +0.50",
+          "grade": "C",
+          "line": 0.25,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 66,
+            "effective_win_rate": 0.6153846153846154,
+            "unit_profit": 12.979999999999997,
+            "roi": 0.19666666666666663
+          }
+        },
+        "C03": {
+          "name": "+0.75 客队 +0.50",
+          "grade": "C",
+          "line": 0.75,
+          "side": "away",
+          "threshold": 0.5,
+          "overall": {
+            "n": 12,
+            "effective_win_rate": 0.45454545454545453,
+            "unit_profit": -1.37,
+            "roi": -0.11416666666666668
+          }
+        },
+        "C04": {
+          "name": "+1.25 主队 +1.10",
+          "grade": "C",
+          "line": 1.25,
+          "side": "home",
+          "threshold": 1.1,
+          "overall": {
+            "n": 2,
+            "effective_win_rate": 0.3333333333333333,
+            "unit_profit": -0.51,
+            "roi": -0.255
+          }
+        }
+      }
+    }
+  },
+  "combined": {
+    "valid_samples": 9991,
+    "raw_matches": 10759,
+    "selected": 3237,
+    "rules": {
+      "A01": {
+        "name": "-1.75 客队 -0.95",
+        "grade": "A",
+        "line": -1.75,
+        "side": "away",
+        "threshold": -0.95,
+        "overall": {
+          "n": 117,
+          "effective_win_rate": 0.6,
+          "unit_profit": 17.93,
+          "roi": 0.15324786324786324
+        },
+        "min_season_roi": 0.057826086956521715,
+        "positive_seasons": 5,
+        "min_season_n": 18
+      },
+      "A02": {
+        "name": "-0.25 客队 -0.20",
+        "grade": "A",
+        "line": -0.25,
+        "side": "away",
+        "threshold": -0.2,
+        "overall": {
+          "n": 499,
+          "effective_win_rate": 0.5386444708680143,
+          "unit_profit": 18.054999999999996,
+          "roi": 0.03618236472945891
+        },
+        "min_season_roi": 0.010315985130111517,
+        "positive_seasons": 5,
+        "min_season_n": 54
+      },
+      "A03": {
+        "name": "-0.25 主队 +0.50",
+        "grade": "A",
+        "line": -0.25,
+        "side": "home",
+        "threshold": 0.5,
+        "overall": {
+          "n": 111,
+          "effective_win_rate": 0.5789473684210527,
+          "unit_profit": 14.339999999999998,
+          "roi": 0.12918918918918917
+        },
+        "min_season_roi": 0.010740740740740733,
+        "positive_seasons": 5,
+        "min_season_n": 13
+      },
+      "A04": {
+        "name": "+1.50 客队 +2.05",
+        "grade": "A",
+        "line": 1.5,
+        "side": "away",
+        "threshold": 2.05,
+        "overall": {
+          "n": 105,
+          "effective_win_rate": 0.5714285714285714,
+          "unit_profit": 11.909999999999997,
+          "roi": 0.11342857142857139
+        },
+        "min_season_roi": 0.03999999999999996,
+        "positive_seasons": 5,
+        "min_season_n": 13
+      },
+      "B01": {
+        "name": "-1.50 客队 -0.75",
+        "grade": "B",
+        "line": -1.5,
+        "side": "away",
+        "threshold": -0.75,
+        "overall": {
+          "n": 236,
+          "effective_win_rate": 0.5805084745762712,
+          "unit_profit": 27.739999999999995,
+          "roi": 0.11754237288135591
+        },
+        "min_season_roi": -0.13000000000000003,
+        "positive_seasons": 4,
+        "min_season_n": 32
+      },
+      "B02": {
+        "name": "-1.25 主队 -0.50",
+        "grade": "B",
+        "line": -1.25,
+        "side": "home",
+        "threshold": -0.5,
+        "overall": {
+          "n": 136,
+          "effective_win_rate": 0.5785123966942148,
+          "unit_profit": 15.919999999999998,
+          "roi": 0.11705882352941176
+        },
+        "min_season_roi": -0.07272727272727271,
+        "positive_seasons": 4,
+        "min_season_n": 15
+      },
+      "B03": {
+        "name": "-1.00 主队 -0.70",
+        "grade": "B",
+        "line": -1.0,
+        "side": "home",
+        "threshold": -0.7,
+        "overall": {
+          "n": 423,
+          "effective_win_rate": 0.5339506172839507,
+          "unit_profit": 15.619999999999994,
+          "roi": 0.036926713947990526
+        },
+        "min_season_roi": -0.15812500000000002,
+        "positive_seasons": 4,
+        "min_season_n": 55
+      },
+      "B04": {
+        "name": "-0.75 主队 +0.00",
+        "grade": "B",
+        "line": -0.75,
+        "side": "home",
+        "threshold": 0.0,
+        "overall": {
+          "n": 101,
+          "effective_win_rate": 0.5666666666666667,
+          "unit_profit": 10.819999999999997,
+          "roi": 0.1071287128712871
+        },
+        "min_season_roi": -0.07714285714285717,
+        "positive_seasons": 4,
+        "min_season_n": 14
+      },
+      "B05": {
+        "name": "-0.50 客队 -0.65",
+        "grade": "B",
+        "line": -0.5,
+        "side": "away",
+        "threshold": -0.65,
+        "overall": {
+          "n": 108,
+          "effective_win_rate": 0.6203703703703703,
+          "unit_profit": 23.009999999999998,
+          "roi": 0.21305555555555553
+        },
+        "min_season_roi": -0.13857142857142857,
+        "positive_seasons": 4,
+        "min_season_n": 9
+      },
+      "B06": {
+        "name": "+0.50 客队 +0.35",
+        "grade": "B",
+        "line": 0.5,
+        "side": "away",
+        "threshold": 0.35,
+        "overall": {
+          "n": 131,
+          "effective_win_rate": 0.549618320610687,
+          "unit_profit": 10.979999999999997,
+          "roi": 0.08381679389312975
+        },
+        "min_season_roi": -0.017894736842105283,
+        "positive_seasons": 4,
+        "min_season_n": 11
+      },
+      "B07": {
+        "name": "+1.00 客队 +0.80",
+        "grade": "B",
+        "line": 1.0,
+        "side": "away",
+        "threshold": 0.8,
+        "overall": {
+          "n": 96,
+          "effective_win_rate": 0.6142857142857143,
+          "unit_profit": 14.229999999999999,
+          "roi": 0.14822916666666666
+        },
+        "min_season_roi": -0.07769230769230773,
+        "positive_seasons": 4,
+        "min_season_n": 11
+      },
+      "C01": {
+        "name": "0.00 客队 -0.05",
+        "grade": "C",
+        "line": 0.0,
+        "side": "away",
+        "threshold": -0.05,
+        "overall": {
+          "n": 304,
+          "effective_win_rate": 0.5142857142857142,
+          "unit_profit": 1.5999999999999968,
+          "roi": 0.005263157894736832
+        },
+        "min_season_roi": -0.09588235294117647,
+        "positive_seasons": 3,
+        "min_season_n": 29
+      },
+      "C02": {
+        "name": "+0.25 客队 +0.50",
+        "grade": "C",
+        "line": 0.25,
+        "side": "away",
+        "threshold": 0.5,
+        "overall": {
+          "n": 683,
+          "effective_win_rate": 0.5164556962025316,
+          "unit_profit": 13.47999999999999,
+          "roi": 0.019736456808199108
+        },
+        "min_season_roi": -0.02880434782608697,
+        "positive_seasons": 3,
+        "min_season_n": 71
+      },
+      "C03": {
+        "name": "+0.75 客队 +0.50",
+        "grade": "C",
+        "line": 0.75,
+        "side": "away",
+        "threshold": 0.5,
+        "overall": {
+          "n": 98,
+          "effective_win_rate": 0.5421686746987951,
+          "unit_profit": 4.649999999999999,
+          "roi": 0.04744897959183672
+        },
+        "min_season_roi": -0.20277777777777783,
+        "positive_seasons": 3,
+        "min_season_n": 7
+      },
+      "C04": {
+        "name": "+1.25 主队 +1.10",
+        "grade": "C",
+        "line": 1.25,
+        "side": "home",
+        "threshold": 1.1,
+        "overall": {
+          "n": 89,
+          "effective_win_rate": 0.56,
+          "unit_profit": 6.389999999999999,
+          "roi": 0.07179775280898876
+        },
+        "min_season_roi": -0.09976190476190475,
+        "positive_seasons": 3,
+        "min_season_n": 9
+      }
+    },
+    "overall": {
+      "n": 3237,
+      "effective_win_rate": 0.5489877078814173,
+      "unit_profit": 206.67499999999995,
+      "roi": 0.06384769848625269
+    },
+    "holdout": {
+      "n": 281,
+      "effective_win_rate": 0.5324947589098532,
+      "unit_profit": 9.019999999999994,
+      "roi": 0.032099644128113856
+    }
+  },
+  "full_train": {
+    "n": 3237,
+    "effective_win_rate": 0.5489877078814173,
+    "unit_profit": 206.67499999999995,
+    "roi": 0.06384769848625269
+  },
+  "full_holdout": {
+    "n": 281,
+    "effective_win_rate": 0.5324947589098532,
+    "unit_profit": 9.019999999999994,
+    "roi": 0.032099644128113856
+  },
+  "loso": {
+    "n": 3462,
+    "wins": 1558.0,
+    "losses": 1471.5,
+    "profit": 10.58499999999995,
+    "win_rate": 0.514276283215052,
+    "roi": 0.0030574812247255775,
+    "max_drawdown": 49.61500000000002,
+    "ci_low": 0.4964717831102299,
+    "ci_high": 0.5320446226912137
+  },
+  "ab_train": {
+    "n": 2063,
+    "wins": 1017.5,
+    "losses": 788.0,
+    "profit": 180.55499999999998,
+    "win_rate": 0.563555801716976,
+    "roi": 0.08752060106640813,
+    "max_drawdown": 17.194999999999997,
+    "ci_low": 0.540568230073489,
+    "ci_high": 0.5862734895885141
+  },
+  "ab_holdout": {
+    "n": 170,
+    "wins": 77.5,
+    "losses": 70.0,
+    "profit": 2.5099999999999962,
+    "win_rate": 0.5254237288135594,
+    "roi": 0.01476470588235292,
+    "max_drawdown": 12.685000000000002,
+    "ci_low": 0.4452175990242258,
+    "ci_high": 0.6043391652758743
+  },
+  "ab_loso": {
+    "n": 2032,
+    "wins": 898.5,
+    "losses": 900.0,
+    "profit": -47.270000000000024,
+    "win_rate": 0.49958298582151794,
+    "roi": -0.023262795275590564,
+    "max_drawdown": 51.330000000000034,
+    "ci_low": 0.476500071015972,
+    "ci_high": 0.522667678316341
+  },
+  "warning": "训练池是同一套切点在五个赛季上的回看；2026-27 只有半季。留一赛季 ROI 仅 +0.31%，不构成可上线证据。"
+}
