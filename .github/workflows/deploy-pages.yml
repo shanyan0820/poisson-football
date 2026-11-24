@@ -30,7 +30,7 @@ jobs:
       - name: Fetch real results and generate league data
         run: python generate_data.py
       - name: Run model and prediction tests
-        run: python -m unittest test_generate_data test_prediction_pipeline test_research_model -v
+        run: python -m unittest test_generate_data test_prediction_pipeline test_research_model test_seven_tier_backtest -v
       - name: Select full prediction or result-only mode
         id: mode
         run: |
@@ -73,40 +73,40 @@ jobs:
               ranking = fixture.get('ranking', {})
               if ranking.get('rank_ratio') is not None:
                   assert 0 <= ranking['rank_ratio'] <= 1
-                  expected = ((ranking['home_rank'] - ranking['away_rank']) /
-                              (ranking['league_team_count'] - 1) * 2)
+                  expected = .8 * ranking['season_market'] + .2 * ranking['recent6_market']
                   assert abs(ranking['market_handicap'] - expected) < 1e-9
+                  assert ranking['market_version'] == 'points_form20'
               recommendation = fixture.get('recommendation_selection', {})
               if fixture.get('handicap_analysis') and ranking.get('market_handicap') is not None:
                   evaluations = fixture.get('rule_evaluations', [])
-                  assert len(evaluations) == 13
-                  assert {rule['rule_id'] for rule in evaluations} == {'A1','A2','A3','B1','B2','B3','C1','C2','D1','D2','D3','E1','E2'}
+                  assert len(evaluations) == 3
+                  assert {rule['rule_id'] for rule in evaluations} == {'T1','T2','T3'}
               if recommendation.get('status') == 'candidate':
-                  assert recommendation['rule_version'] == 'experience-rules-v5'
-                  assert recommendation['rule_id'] not in {'E1', 'E2'}
+                  assert recommendation['rule_version'] == 'model-anchor-seven-tiers-v1'
+                  assert recommendation['rule_id'] in {'T1','T2','T3'}
                   assert recommendation['settleable'] and recommendation['odds'] is not None
                   assert set(recommendation['handicap_lines']) == {'market', 'model', 'institution'}
                   assert set(recommendation['handicap_bands']) == {'market', 'model', 'institution'}
               featured = fixture.get('integrated_selection', {})
               if featured.get('status') == 'candidate':
-                  assert featured['rule_version'] == 'experience-rules-featured-v5'
-                  assert featured['rule_id'] == recommendation['rule_id']
+                  assert featured['rule_version'] == 'model-anchor-seven-tiers-featured-v1'
+                  assert featured['rule_id'] == 'T1'
                   assert featured['featured_class'] == 'qualified'
               if fixture.get('actual'):
                   assert 'rule_settlements' in fixture.get('market_settlement', {})
           assert set(predictions['market_tracking']) >= {'asian_handicap', 'recommendation', 'integrated', 'rules', 'rule_definitions', 'research_summary'}
-          assert len(predictions['market_tracking']['rule_definitions']) == 13
-          assert len(predictions['market_tracking']['rules']) == 13
+          assert len(predictions['market_tracking']['rule_definitions']) == 3
+          assert len(predictions['market_tracking']['rules']) == 3
           for fixture in predictions['fixtures']:
               assert fixture['featured_selection'] == fixture['integrated_selection']
               if fixture.get('featured_prediction'):
                   assert fixture['recommendation_selection'] is not None
           research = json.loads(Path('data/research_archive.json').read_text(encoding='utf-8'))
           report = json.loads(Path('data/research_report.json').read_text(encoding='utf-8'))
-          assert research['version'] == 5 and research['method']['version'] == 'handicap-research-v5'
+          assert research['version'] == 5 and research['method']['version'] == 'handicap-research-seven-tiers-v1'
           assert report['sample']['matches'] == len(research['matches'])
           assert report['sample']['pregame_matches'] + report['sample']['retrospective_matches'] == len(research['matches'])
-          assert len(report['rule_groups']) == 13 and len(report['rule_definitions']) == 13
+          assert len(report['rule_groups']) == 3 and len(report['rule_definitions']) == 3
           assert all(not group['qualified'] for group in report['rule_groups'].values())
           assert set(report['optimization']['rule_candidates']) == {rule_id for rule_id, group in report['rule_groups'].items() if group['candidate']}
           assert all('predictions' in match and 'relations' in match and 'rule_evaluations' in match for match in research['matches'].values())
@@ -128,7 +128,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html predictions.html research.html _site/
-          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json _site/data/
+          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json data/seven_tier_backtest.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
