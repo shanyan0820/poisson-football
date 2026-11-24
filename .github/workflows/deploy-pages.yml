@@ -30,7 +30,7 @@ jobs:
       - name: Fetch real results and generate league data
         run: python generate_data.py
       - name: Run model and prediction tests
-        run: python -m unittest test_generate_data test_prediction_pipeline test_research_model test_seven_tier_backtest -v
+        run: python -m unittest test_generate_data test_prediction_pipeline test_research_model test_seven_tier_backtest test_public_site_data -v
       - name: Select full prediction or result-only mode
         id: mode
         run: |
@@ -41,6 +41,8 @@ jobs:
           fi
       - name: Freeze noon predictions or synchronize results
         run: python prediction_pipeline.py ${{ steps.mode.outputs.args }}
+      - name: Build public presentation data
+        run: python public_site_data.py --predictions data/predictions.json --public-output data/public_predictions.json
       - name: Validate model inputs
         run: |
           python - <<'PY'
@@ -113,12 +115,26 @@ jobs:
           assert all('predictions' in match and 'relations' in match and 'rule_evaluations' in match for match in research['matches'].values())
           print(f"Research matches: {report['sample']['matches']}; pregame: {report['sample']['pregame_matches']}; settled: {report['sample']['settled_pregame_matches']}.")
           print(f"Daily fixtures: {len(predictions['fixtures'])}; predictions: {sum(bool(f.get('featured_prediction')) for f in predictions['fixtures'])}; all recommendations: {sum(f.get('recommendation_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; featured: {sum(f.get('integrated_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
+          public = json.loads(Path('data/public_predictions.json').read_text(encoding='utf-8'))
+          public_text = json.dumps(public, ensure_ascii=False)
+          assert set(public['market_tracking']['grades']) == {'A', 'B', 'C'}
+          for forbidden in ('rule_id', 'rule_name', 'threshold', 'rule_evaluations', 'rule_definitions', 'exact-15-lines', 'handicap_analysis'):
+              assert forbidden not in public_text, forbidden
+          public_backtest = json.loads(Path('data/market_signal_backtest.json').read_text(encoding='utf-8'))
+          assert set(public_backtest['combined']['grades']) == {'A', 'B', 'C'}
+          assert set(public_backtest['full_holdout']['grades']) == {'A', 'B', 'C'}
+          for page_name in ('index.html', 'predictions.html'):
+              page = Path(page_name).read_text(encoding='utf-8')
+              for forbidden in ('rule_id', 'threshold', '盘口规则与验证口径', '15条精确', 'exact15_backtest', 'data/predictions.json'):
+                  assert forbidden not in page, (page_name, forbidden)
+          assert 'handicap-source' not in Path('predictions.html').read_text(encoding='utf-8')
+          print('Public prediction and backtest datasets are presentation-safe.')
           PY
       - name: Persist immutable prediction archive
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/predictions.json data/prediction_archive.json data/research_archive.json data/research_report.json
+          git add data/predictions.json data/public_predictions.json data/prediction_archive.json data/research_archive.json data/research_report.json data/market_signal_backtest.json
           if git diff --cached --quiet; then
             printf 'Prediction archive is already up to date.\n'
           else
@@ -129,7 +145,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html predictions.html research.html _site/
-          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json data/exact15_backtest.json _site/data/
+          cp data/leagues.json data/public_predictions.json data/research_archive.json data/research_report.json data/market_signal_backtest.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
