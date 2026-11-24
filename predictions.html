@@ -22,7 +22,7 @@
   <div class="step">01 / 正式赛前样本</div><h2 class="section-title">选择联赛与统计档位</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="model">统计档位</label><select id="model"><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
+    <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
   </div>
   <p class="hint">这里只累计网站上已经赛前冻结并完成结算的正式样本；历史回看数据不混入。A/B/C 为综合信号分级，不展示具体参数。</p>
   <div class="error" id="error"></div>
@@ -30,7 +30,7 @@
 <div class="loading" id="loading">正在读取真实结算与历史回测…</div>
 <div id="content" class="hidden">
 <section class="card">
-  <div class="step">02 / 分档准确率</div><h2 class="section-title" id="scope-title">全部联赛 · A级</h2>
+  <div class="step">02 / 分档准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 全部档位</h2>
   <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效正确 ÷ 四类结果的等效有效判定</span></div>
   <div class="live-metrics"><div class="live-metric"><b id="trigger-count">0</b><span>赔率后结算场次（含走盘）</span></div><div class="live-metric"><b id="roi">—</b><span>单位投注ROI</span></div></div>
   <div class="outcomes">
@@ -60,17 +60,27 @@
 <script>
 const $=id=>document.getElementById(id);let DATA=null,BACKTEST=null;
 const GRADES=['A','B','C'];
-const modelNames={A:'A级',B:'B级',C:'C级'};
+const modelNames={ALL:'全部档位',A:'A级',B:'B级',C:'C级'};
 const gradeDescriptions={A:'重点观察',B:'综合信号',C:'综合信号'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(2)+'%';
 const roi=v=>v==null?'—':(Number(v)>0?'+':'')+(Number(v)*100).toFixed(2)+'%';
 const keys=['full_win','full_loss','half_win','half_loss'];
 function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}
-function summaryFor(grade){
+function combineSummaries(summaries){
+ const combined={n:0,unit_profit:0};keys.forEach(k=>combined[k]=0);
+ summaries.filter(Boolean).forEach(summary=>{combined.n+=Number(summary.n)||0;combined.unit_profit+=Number(summary.unit_profit)||0;keys.forEach(k=>combined[k]+=Number(summary[k])||0)});
+ const effectiveBase=combined.full_win+combined.full_loss+.5*combined.half_win+.5*combined.half_loss;
+ const effectiveWins=combined.full_win+.5*combined.half_win;
+ combined.effective_win_rate=effectiveBase>0?effectiveWins/effectiveBase:null;
+ combined.roi=combined.n>0?combined.unit_profit/combined.n:null;
+ return combined;
+}
+function gradeSummary(grade){
  const league=$('league').value,market=DATA.market_tracking?.grades?.[grade];
  return league==='ALL'?market?.overall:market?.by_league?.[league];
 }
+function summaryFor(grade){return grade==='ALL'?combineSummaries(GRADES.map(gradeSummary)):gradeSummary(grade)}
 function statsFrom(summary){const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};if(summary)keys.forEach(k=>counts[k]=summary[k]||0);const n=Object.values(counts).reduce((a,b)=>a+b,0);return{n,triggers:summary?.n||0,accuracy:summary?.effective_win_rate??null,roi:summary?.roi??null,counts}}
 function currentStats(){return statsFrom(summaryFor($('model').value))}
 function renderRules(){
