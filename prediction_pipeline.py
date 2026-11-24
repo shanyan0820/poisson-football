@@ -17,7 +17,10 @@ from zoneinfo import ZoneInfo
 
 from generate_data import TEAM_ZH, fetch_csv, standings
 from model import Match, analyze, _poisson_matrix
-from recommendation_rules import RULE_DEFINITIONS, evaluate_rules, strength_band
+from recommendation_rules import (
+    FEATURED_RULE_IDS, RULE_DEFINITIONS, RULE_IDS, RULE_VERSION,
+    evaluate_rules, strength_band,
+)
 
 ROOT = Path(__file__).resolve().parent
 UTC = timezone.utc
@@ -27,10 +30,10 @@ FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
 USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
 MIN_HISTORY_MATCHES = 30
 HANDICAP_EDGE_THRESHOLD = 0.15
-INTEGRATED_RULE_VERSION = "model-anchor-seven-tiers-featured-v1"
-RECOMMENDATION_RULE_VERSION = "model-anchor-seven-tiers-v1"
-PRIMARY_RULE_ORDER = ("T1", "T2", "T3")
-QUALIFIED_RULE_IDS: set[str] = {"T1"}
+INTEGRATED_RULE_VERSION = "exact-15-lines-v1-grade-a"
+RECOMMENDATION_RULE_VERSION = RULE_VERSION
+PRIMARY_RULE_ORDER = RULE_IDS
+QUALIFIED_RULE_IDS: set[str] = set(FEATURED_RULE_IDS)
 
 MAIN_FIXTURE_LEAGUES = {
     "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
@@ -513,13 +516,13 @@ def compare_handicap(prediction: dict | None, market: dict | None,
 
 def choose_recommendation(handicap: dict | None, ranking: dict | None = None,
                           evaluations: list[dict] | None = None) -> dict:
-    """按经验优先级选择首页主推荐；全部规则仍独立留档，E类只研究不上首页。"""
+    """按 15 条规则选择首页主触发；同一场只取一条，全部触发项独立留档。"""
     base = {"rule_version": RECOMMENDATION_RULE_VERSION, "status": "skip",
             "market": "asian_handicap", "side": None, "line": None, "odds": None,
             "ev": None, "candidate_count": 0, "featured_class": None, "rule_id": None}
     rules = evaluate_rules(handicap, ranking) if evaluations is None else evaluations
     if not rules:
-        return {**base, "reason": "缺少赛前预测、市场盘口或机构盘口，本场不推荐。"}
+        return {**base, "reason": "缺少赛前预测或机构盘口，本场不形成规则触发。"}
     by_id = {rule["rule_id"]: rule for rule in rules}
     for rule_id in PRIMARY_RULE_ORDER:
         rule = by_id[rule_id]
@@ -531,18 +534,19 @@ def choose_recommendation(handicap: dict | None, ranking: dict | None = None,
         "market_handicap", "model_handicap", "institution_handicap", "handicap_lines",
         "handicap_bands", "spread", "market_bias", "institution_bias", "gap",
         "signed_gap", "model_rank_gap")}
-    return {**base, **context, "reason": "本场未触发可结算的前瞻推荐规则。"}
+    return {**base, **context, "reason": "本场机构盘口未命中 15 条精确规则，或命中后模型未越过阈值。"}
 
 
 def choose_integrated_selection(handicap: dict | None, ranking: dict | None = None,
                                 evaluations: list[dict] | None = None) -> dict:
-    """只有经样本验证并人工确认的规则才进入精选；当前全部规则先独立观察。"""
+    """A 级规则作为重点观察；不等于实盘验证通过。"""
     recommendation = choose_recommendation(handicap, ranking, evaluations)
     if recommendation["status"] == "candidate" and recommendation.get("rule_id") in QUALIFIED_RULE_IDS:
-        return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION, "featured": True}
+        return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION, "featured": True,
+                "reason": recommendation.get("reason", "") + " A 级只作重点观察，不构成收益保证。"}
     return {**recommendation, "rule_version": INTEGRATED_RULE_VERSION,
             "status": "skip", "candidate_count": 0, "featured": False,
-            "reason": "触发规则尚未达到精选验证门槛。"}
+            "reason": "非 A 级规则，或本场未触发 A 级规则。"}
 
 
 def settle_margin(margin: float, line: float, odds: float) -> dict:
@@ -950,12 +954,12 @@ def summarize_market_rows(rows: list[dict]) -> dict:
 
 def build_market_tracking(finished: list[dict]) -> dict:
     result = {
-        "selection": "模型盘口为唯一基准锚，T1—T3七档规则并行触发；优先级为机构反向跨档、三盘同档共识、市场情绪偏离。",
+        "selection": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发。A 级为重点观察，不等于实盘验证通过。",
         "metrics": "累计统计完整正式赛前样本；等效胜率只计全赢、全输、赢一半、输一半。",
-        "bands": "七档边界：±0.25归不败档、±0.75归胜负档、±1.25归大胜档；中间为旗鼓相当档。",
-        "recommendation_rule": "T1机构反向跨档为唯一精选推荐并标红；T2、T3为普通推荐，三条规则均独立结算。",
+        "bands": "精确盘口范围 -1.75 至 +1.75；+1.75 无规则；±2.00 及以上排除。",
+        "recommendation_rule": "15 条规则逐场独立评估；A 级 4 条为重点观察，B/C 级为覆盖与观察，全部独立结算。",
         "market_handicap_rule": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；双方赛前均需满7轮。",
-        "integrated_rule": "精选只来自T1机构反向跨档；赛前冻结后不根据赛果改写方向。",
+        "integrated_rule": "A 级规则只作重点标记，不构成收益保证；赛前冻结后不根据赛果改写方向。",
         "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；20:00和次日02:00只同步赛果。",
     }
     for key in ["asian_handicap", "recommendation", "integrated"]:
@@ -1080,7 +1084,7 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "模型盘口为唯一基准锚，T1—T3七档规则并行触发、独立结算；T1机构反向跨档为唯一红色精选。机构盘口优先真实AHh初盘，缺失时等效值标记simulated；无真实亚盘赔率则不构造收益。",
+            "handicap": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发，全部独立结算。A 级只作重点观察，不代表实盘验证通过。机构盘口优先真实AHh初盘，缺失时等效值标记simulated；无真实亚盘赔率则不构造收益。",
             "market_handicap": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；负数主队强，正数客队强，双方赛前均需满7轮。",
         },
         "featured_model_id": featured_model_id,

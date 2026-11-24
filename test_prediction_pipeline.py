@@ -227,37 +227,43 @@ class MarketModelTests(unittest.TestCase):
             with self.subTest(value=value):
                 self.assertEqual(strength_band(value)["id"], band)
 
-    def test_all_three_tier_rules_are_evaluated_in_parallel(self):
+    def test_exact_rule_engine_evaluates_all_15_lines(self):
         from recommendation_rules import RULE_DEFINITIONS, evaluate_rules
-        analysis = self.analysis(1.5, 1.0, -.5)
-        rules = evaluate_rules(analysis, {"market_handicap": -.5})
-        self.assertEqual(len(RULE_DEFINITIONS), 3)
-        self.assertEqual([r["rule_id"] for r in rules], ["T1", "T2", "T3"])
-        self.assertEqual(sum(r["triggered"] for r in rules), 1)
-        self.assertTrue(next(r for r in rules if r["rule_id"] == "T2")["triggered"])
+        analysis = self.analysis(2.02, 1.0, -1.75)
+        rules = evaluate_rules(analysis, {"market_handicap": -1.5})
+        self.assertEqual(len(RULE_DEFINITIONS), 15)
+        self.assertEqual([r["rule_id"] for r in rules], list(RULE_DEFINITIONS))
+        triggered = [r for r in rules if r["triggered"]]
+        self.assertEqual([(r["rule_id"], r["side"], r["line"], r["grade"]) for r in triggered],
+                         [("A01", "away", 1.75, "A")])
         self.assertTrue(all(r["front_eligible"] for r in rules))
 
-    def test_three_locked_tier_examples(self):
+    def test_exact_rule_examples_and_minus_quarter_split(self):
         cases = [
-            (-.5, 1.5, 1, .5, "T1", "away", "客队不败档"),
-            (-.5, 1.5, 1, -.5, "T2", "home", "主队不败档"),
-            (-1.0, 1.5, 1, -.5, "T3", "away", "客队不败档"),
+            (-1.75, 2.02, 1.0, "A01", "away", 1.75, "A"),
+            (-1.00, 1.6, 1.1, "B03", "home", -1.00, "B"),
+            (-0.25, 1.8, 1.0, "A02", "away", 0.25, "A"),
+            (-0.25, 1.0, 1.6, "A03", "home", -0.25, "A"),
+            (1.50, 1.0, 2.0, "A04", "away", -1.50, "A"),
         ]
-        for market, home, away, institution, rule_id, side, label in cases:
+        for institution, home, away, rule_id, side, line, grade in cases:
             with self.subTest(rule_id=rule_id):
                 analysis = self.analysis(home, away, institution)
-                selected = choose_recommendation(analysis, {"market_handicap": market})
-                self.assertEqual((selected["rule_id"], selected["side"], selected["band_label"]), (rule_id, side, label))
+                selected = choose_recommendation(analysis, {"market_handicap": institution})
+                self.assertEqual((selected["rule_id"], selected["side"], selected["line"], selected["grade"]),
+                                 (rule_id, side, line, grade))
 
-    def test_institution_reverse_is_the_only_featured_rule(self):
-        analysis = self.analysis(1.5, 1, .5)
-        ranking = {"market_handicap": -.5}
+    def test_a_grade_is_featured_but_not_a_profit_guarantee(self):
+        analysis = self.analysis(2.02, 1.0, -1.75)
+        ranking = {"market_handicap": -1.5}
         selected = choose_recommendation(analysis, ranking)
-        self.assertEqual(selected["rule_id"], "T1")
-        self.assertEqual(selected["rule_version"], "model-anchor-seven-tiers-v1")
-        self.assertEqual(choose_integrated_selection(analysis, ranking)["status"], "candidate")
-        consensus = self.analysis(1.5, 1, -.5)
-        self.assertEqual(choose_integrated_selection(consensus, {"market_handicap": -.5})["status"], "skip")
+        self.assertEqual(selected["rule_id"], "A01")
+        self.assertEqual(selected["rule_version"], "exact-15-lines-v1")
+        featured = choose_integrated_selection(analysis, ranking)
+        self.assertEqual(featured["status"], "candidate")
+        self.assertIn("不构成收益保证", featured["reason"])
+        b_grade = self.analysis(1.8, 1.0, -.5)
+        self.assertEqual(choose_integrated_selection(b_grade, {"market_handicap": -.5})["status"], "skip")
         self.assertEqual(choose_recommendation(None, None)["status"], "skip")
 
     def test_draw_band_is_display_only_and_not_settled(self):
@@ -299,31 +305,31 @@ class MarketModelTests(unittest.TestCase):
     def test_finished_record_automatically_builds_handicap_tracking(self):
         record = {
             "league_id": "TEST", "league_name": "测试联赛",
-            "predictions": {"stable": {"expected_goals": {"home": 2, "away": 1}, "forecast": forecast()}},
+            "predictions": {"stable": {"expected_goals": {"home": 2.02, "away": 1.0}, "forecast": forecast()}},
             "actual": {"home_goals": 2, "away_goals": 0, "outcome": "H"},
-            "asian_handicap": {"home_line": .5, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
+            "asian_handicap": {"home_line": -1.75, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
             "ranking": {"home_rank": 1, "away_rank": 2, "league_team_count": 4,
-                        "rank_difference": 1, "rank_ratio": .25, "market_handicap": -1.0},
+                        "rank_difference": 1, "rank_ratio": .25, "market_handicap": -1.5},
             "total_market": {"line": 2.5, "bet365_over_odds": 2.0, "bet365_under_odds": 1.5},
         }
         public = public_record(record)
         self.assertEqual(public["integrated_selection"]["status"], "candidate")
         self.assertIn("recommendation", public["market_settlement"])
         self.assertIn("integrated", public["market_settlement"])
-        self.assertEqual(public["recommendation_selection"]["rule_version"], "model-anchor-seven-tiers-v1")
-        self.assertEqual(public["integrated_selection"]["rule_version"], "model-anchor-seven-tiers-featured-v1")
-        self.assertEqual(len(public["rule_evaluations"]), 3)
-        self.assertIn("T1", public["market_settlement"]["rule_settlements"])
+        self.assertEqual(public["recommendation_selection"]["rule_version"], "exact-15-lines-v1")
+        self.assertEqual(public["integrated_selection"]["rule_version"], "exact-15-lines-v1-grade-a")
+        self.assertEqual(len(public["rule_evaluations"]), 15)
+        self.assertIn("A01", public["market_settlement"]["rule_settlements"])
         self.assertFalse(public["recommendation_selection"]["tracking_eligible"])
         self.assertEqual(public["featured_selection"], public["integrated_selection"])
-        self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "full_win")
+        self.assertEqual(public["market_settlement"]["asian_handicap"]["result"], "half_loss")
         self.assertNotIn("total_market", public)
         self.assertNotIn("total_analysis", public)
         self.assertNotIn("total_goals", public["market_settlement"])
         tracking = build_market_tracking([public])
         ah = tracking["asian_handicap"]["overall"]
-        self.assertEqual((ah["n"], ah["effective_win_rate"]), (1, 1))
-        self.assertAlmostEqual(ah["roi"], 1.2)
+        self.assertEqual((ah["n"], ah["effective_win_rate"]), (1, 0))
+        self.assertAlmostEqual(ah["roi"], -.5)
         self.assertNotIn("total_goals", tracking)
         self.assertEqual(tracking["integrated"]["overall"]["n"], 0)
         self.assertEqual(tracking["recommendation"]["overall"]["n"], 0)
@@ -334,12 +340,12 @@ class MarketModelTests(unittest.TestCase):
         for settlement in public["market_settlement"]["rule_settlements"].values():
             settlement["tracking_eligible"] = True
         with_rules = build_market_tracking([public])
-        self.assertEqual(with_rules["rules"]["T1"]["overall"]["n"], 1)
-        self.assertEqual(with_rules["rules"]["T1"]["overall"]["effective_win_rate"], 0)
-        self.assertEqual(with_rules["rules"]["T1"]["by_source"]["real"]["n"], 1)
-        self.assertEqual(with_rules["rules"]["T1"]["by_source"]["simulated"]["n"], 0)
+        self.assertEqual(with_rules["rules"]["A01"]["overall"]["n"], 1)
+        self.assertEqual(with_rules["rules"]["A01"]["overall"]["effective_win_rate"], 0)
+        self.assertEqual(with_rules["rules"]["A01"]["by_source"]["real"]["n"], 1)
+        self.assertEqual(with_rules["rules"]["A01"]["by_source"]["simulated"]["n"], 0)
         self.assertEqual(with_rules["recommendation"]["by_league"]["TEST"]["by_source"]["real"]["n"], 1)
-        self.assertEqual(len(with_rules["rule_definitions"]), 3)
+        self.assertEqual(len(with_rules["rule_definitions"]), 15)
 
 
 class BacktestTests(unittest.TestCase):
@@ -468,24 +474,24 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("score-item", html)
         self.assertIn("analysis-table", html)
         self.assertIn("versus-grid", html)
-        self.assertIn("band.includes('不败')", html)
-        self.assertIn("h>=a", html)
-        self.assertIn("a>=h", html)
-        self.assertIn("h-a>=2", html)
-        self.assertIn("a-h>=2", html)
+        self.assertIn("触发规则", html)
+        self.assertIn("阈值", html)
+        self.assertIn("allow=home?(h,a)=>h>a:(h,a)=>a>h", html)
         self.assertIn("分析依据", html)
         self.assertIn("function professionalReason", html)
         self.assertIn("${referenceScoresHtml(r)}", html)
-        self.assertNotIn("${base.rule_id}", html)
+        self.assertIn("${base.rule_id}", html)
 
-    def test_research_and_settlement_pages_use_seven_tier_rules(self):
+    def test_research_and_settlement_pages_use_exact_15_rules(self):
         research = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
         predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
-        self.assertIn("研究模型 V5", research)
+        self.assertIn("研究档案 V5", research)
+        self.assertIn("当前上线：15条精确规则", research)
         self.assertIn("consensus-summary", research)
-        self.assertIn("T1—T3 独立赛后表现", predictions)
-        self.assertIn("四赛季真实结果", predictions)
-        self.assertIn("data/seven_tier_backtest.json", predictions)
+        self.assertIn("15条精确盘口统计", predictions)
+        self.assertIn("A/B/C 逐条独立赛后表现", predictions)
+        self.assertIn("五季合并训练", predictions)
+        self.assertIn("data/exact15_backtest.json", predictions)
         self.assertIn("handicap-source", predictions)
         self.assertIn("by_source", predictions)
         self.assertIn("by_source", research)

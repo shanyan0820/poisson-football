@@ -4,7 +4,8 @@ from __future__ import annotations
 from copy import deepcopy
 from datetime import datetime, timezone
 
-from recommendation_rules import RULE_DEFINITIONS, RULE_IDS
+from tier_rules import RULE_DEFINITIONS, RULE_IDS
+from legacy_tier_rules import evaluate_rules as evaluate_legacy_tier_rules
 
 UTC = timezone.utc
 RESEARCH_VERSION = 5
@@ -51,6 +52,9 @@ def make_research_snapshot(public: dict, now: datetime) -> dict:
         "selection_settlements": {},
         "rule_settlements": {},
     })
+    if snapshot.get("handicap_analysis") and snapshot.get("ranking"):
+        snapshot["rule_evaluations"] = evaluate_legacy_tier_rules(
+            snapshot["handicap_analysis"], snapshot["ranking"])
     return snapshot
 
 
