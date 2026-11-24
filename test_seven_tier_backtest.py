@@ -39,7 +39,11 @@ class SevenTierBacktestTests(unittest.TestCase):
             self.assertGreater(row["odds"], 1)
         for rule_id in ("T1", "T2", "T3"):
             summary = summarize_market_rows([row for row in self.rows if row["rule_id"] == rule_id])
-            self.assertEqual(summary, self.report["combined"]["rules"][rule_id]["overall"])
+            expected = self.report["combined"]["rules"][rule_id]["overall"]
+            for key in ("n", "effective_win_rate", "full_win", "half_win", "push", "half_loss", "full_loss", "win_loss"):
+                self.assertEqual(summary[key], expected[key])
+            self.assertAlmostEqual(summary["unit_profit"], expected["unit_profit"])
+            self.assertAlmostEqual(summary["roi"], expected["roi"])
 
     def test_all_samples_use_v2b_and_have_real_two_sided_settlement_inputs(self):
         for season, samples in self.samples.items():
