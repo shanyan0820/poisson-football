@@ -47,6 +47,7 @@ jobs:
           import json
           from pathlib import Path
           from generate_data import LEAGUES
+          from exact_line_rules import RULE_IDS, FEATURED_RULE_IDS, RULE_VERSION
           data = json.loads(Path('data/leagues.json').read_text(encoding='utf-8'))
           assert len(data['leagues']) == len(LEAGUES)
           for league in data['leagues']:
@@ -79,24 +80,24 @@ jobs:
               recommendation = fixture.get('recommendation_selection', {})
               if fixture.get('handicap_analysis') and ranking.get('market_handicap') is not None:
                   evaluations = fixture.get('rule_evaluations', [])
-                  assert len(evaluations) == 3
-                  assert {rule['rule_id'] for rule in evaluations} == {'T1','T2','T3'}
+                  assert len(evaluations) == len(RULE_IDS)
+                  assert {rule['rule_id'] for rule in evaluations} == set(RULE_IDS)
               if recommendation.get('status') == 'candidate':
-                  assert recommendation['rule_version'] == 'model-anchor-seven-tiers-v1'
-                  assert recommendation['rule_id'] in {'T1','T2','T3'}
+                  assert recommendation['rule_version'] == RULE_VERSION
+                  assert recommendation['rule_id'] in RULE_IDS
                   assert recommendation['settleable'] and recommendation['odds'] is not None
                   assert set(recommendation['handicap_lines']) == {'market', 'model', 'institution'}
                   assert set(recommendation['handicap_bands']) == {'market', 'model', 'institution'}
               featured = fixture.get('integrated_selection', {})
               if featured.get('status') == 'candidate':
-                  assert featured['rule_version'] == 'model-anchor-seven-tiers-featured-v1'
-                  assert featured['rule_id'] == 'T1'
+                  assert featured['rule_version'] == 'exact-15-lines-v1-grade-a'
+                  assert featured['rule_id'] in FEATURED_RULE_IDS
                   assert featured['featured_class'] == 'qualified'
               if fixture.get('actual'):
                   assert 'rule_settlements' in fixture.get('market_settlement', {})
           assert set(predictions['market_tracking']) >= {'asian_handicap', 'recommendation', 'integrated', 'rules', 'rule_definitions', 'research_summary'}
-          assert len(predictions['market_tracking']['rule_definitions']) == 3
-          assert len(predictions['market_tracking']['rules']) == 3
+          assert len(predictions['market_tracking']['rule_definitions']) == len(RULE_IDS)
+          assert len(predictions['market_tracking']['rules']) == len(RULE_IDS)
           for fixture in predictions['fixtures']:
               assert fixture['featured_selection'] == fixture['integrated_selection']
               if fixture.get('featured_prediction'):
@@ -128,7 +129,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html predictions.html research.html _site/
-          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json data/seven_tier_backtest.json _site/data/
+          cp data/leagues.json data/predictions.json data/research_archive.json data/research_report.json data/exact15_backtest.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
