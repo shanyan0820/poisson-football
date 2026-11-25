@@ -537,6 +537,14 @@ class PageContractTests(unittest.TestCase):
         self.assertIn('flex-wrap:nowrap;justify-content:flex-end;margin-top:0', html)
         self.assertIn('color:var(--red);font-weight:800;white-space:nowrap', html)
 
+    def test_research_navigation_is_hidden(self):
+        index = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+        predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
+        self.assertNotIn('href="research.html"', index)
+        self.assertNotIn('href="research.html"', predictions)
+        self.assertNotIn("研究回查", index)
+        self.assertNotIn("研究回查", predictions)
+
     def test_research_and_settlement_pages_use_public_signal_names(self):
         research = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
         predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
