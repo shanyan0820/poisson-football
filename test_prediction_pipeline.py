@@ -530,6 +530,13 @@ class PageContractTests(unittest.TestCase):
         self.assertNotIn("${base.rule_id}", html)
         self.assertNotIn("base.threshold", html)
 
+    def test_final_score_and_settlement_share_one_red_line(self):
+        html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
+        self.assertIn('<span class="actual-score">实际比分', html)
+        self.assertIn('display:flex;align-items:center;justify-content:space-between;gap:8px;white-space:nowrap', html)
+        self.assertIn('flex-wrap:nowrap;justify-content:flex-end;margin-top:0', html)
+        self.assertIn('color:var(--red);font-weight:800;white-space:nowrap', html)
+
     def test_research_and_settlement_pages_use_public_signal_names(self):
         research = Path(__file__).with_name("research.html").read_text(encoding="utf-8")
         predictions = Path(__file__).with_name("predictions.html").read_text(encoding="utf-8")
