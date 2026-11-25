@@ -597,4 +597,5 @@ class LeaguePatternTests(unittest.TestCase):
         wrong_tier = evaluate_pattern("D2", 1.20, -0.50)
         self.assertEqual(wrong_tier["status"], "skip")
         blocked = evaluate_pattern("DNK", -0.30, -0.50)
-        self.assertEqual(blocked["status"], "skip")
+        self.assertEqual(blocked["status"], "observe")
+        self.assertIn("只给方向", blocked["reason"])

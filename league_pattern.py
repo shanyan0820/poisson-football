@@ -85,7 +85,8 @@ def evaluate_pattern(league_id: str | None, model_handicap: float | None,
     pattern = PATTERNS.get(league_id or "")
     if not pattern:
         return {**base, "reason": gate["reason"]}
-    if not gate["pattern_enabled"]:
+    display_only = gate["status"] == "display_only"
+    if not gate["pattern_enabled"] and not display_only:
         return {**base, "level": pattern["level"], "reason": gate["reason"]}
     if model_handicap is None or institution_line is None:
         return {**base, "level": pattern["level"], "reason": "缺少模型盘口或机构盘口，无法判定规律。"}
@@ -105,9 +106,12 @@ def evaluate_pattern(league_id: str | None, model_handicap: float | None,
         return {**base, "level": pattern["level"], "tier": tier, "reason": reason_skip,
                 "data_source": data_source,
                 "threshold": threshold, "expected_side": side}
-    return {**base, "status": "candidate", "matched": True, "side": side, "data_source": data_source,
+    hit_status = "observe" if display_only else "candidate"
+    hit_reason = ("该联赛规律为 B 级，五季收益接近盈亏平衡，只给方向不给注码。" if display_only else None)
+    return {**base, "status": hit_status, "matched": True, "side": side, "data_source": data_source,
+
             "line": institution_line if side == "home" else -institution_line,
             "institution_line": institution_line, "tier": tier, "level": pattern["level"],
             "threshold": threshold, "n_all": pattern["n_all"], "wr_all": pattern["wr_all"],
             "roi_all": pattern.get("roi_all"), "source": pattern["source"],
-            "reason": f"命中该联赛 {pattern['tier']} 规律（{pattern['level']} 级，五季 {pattern['n_all']} 注）。"}
+            "reason": hit_reason or f"命中该联赛 {pattern['tier']} 规律（{pattern['level']} 级，五季 {pattern['n_all']} 注）。"}

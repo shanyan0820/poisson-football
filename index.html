@@ -137,7 +137,7 @@ function recommendationHtml(r){
  let label,direction,market,reason,cls;
  if(gradeA){label='A级观察';direction=`${base.side==='home'?'主队':'客队'} ${line(base.line)}`;market=`${base.grade}级信号 · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`;reason=professionalReason(base);cls='selected grade-a'}
  else if(patternHit){label='联赛规律信号';direction=`${pattern.side==='home'?'主队':'客队'} ${line(pattern.line)}`;market=patternText(pattern);reason=`${pattern.level}级规律命中：该联赛在${pattern.tier}、模型与机构分歧到门槛时，历史${pattern.side==='home'?'主队':'客队'}方向占优。`;cls='selected pattern'}
- else if(observe){label='方向参考';direction=`${pattern.side==='home'?'主队':'客队'} ${line(pattern.line)}`;market='无公开亚盘赔率 · 只给方向';reason=`${pattern.level}级规律命中，但该联赛没有公开盘口赔率，方向仅供参考，不计入注码与收益统计。`;cls='observe'}
+ else if(observe){label='方向参考';direction=`${pattern.side==='home'?'主队':'客队'} ${line(pattern.line)}`;market='只给方向 · 不给注码';reason=pattern.reason||`${pattern.level}级规律命中，该场只给方向参考，不计入注码与收益统计。`;cls='observe'}
  else if(selected&&!retrospective){label='模型信号';direction=`${base.side==='home'?'主队':'客队'} ${line(base.line)}`;market=`${base.grade}级信号 · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`;reason=professionalReason(base);cls='selected'}
  else if(blocked){label='本场不推荐';direction=gate.status==='paused'?'联赛未通过验证':'观察联赛';market=gate.reason||'';reason='';cls='muted'}
  else{label='本场观察';direction='暂列观察';market='';reason='综合主客场表现、预期进球与市场定价后，本场暂未形成足够明确的模型信号，保留观察。';cls=''}
