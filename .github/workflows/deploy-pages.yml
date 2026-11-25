@@ -3,11 +3,8 @@ name: Update data and deploy GitHub Pages
 on:
   workflow_dispatch:
   schedule:
-    # UTC 04:00 = 北京时间12:00：结算旧周期并生成新周期。
-    - cron: '0 4 * * *'
-    # UTC 12:00 / 18:00 = 北京时间20:00 / 次日02:00：只同步赛果。
-    - cron: '0 12 * * *'
-    - cron: '0 18 * * *'
+    # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成新周期，其余整点只同步赛果。
+    - cron: '0 * * * *'
 
 permissions:
   contents: write
@@ -34,7 +31,7 @@ jobs:
       - name: Select full prediction or result-only mode
         id: mode
         run: |
-          if [[ "${{ github.event.schedule }}" == "0 12 * * *" || "${{ github.event.schedule }}" == "0 18 * * *" ]]; then
+          if [[ "${{ github.event_name }}" == "schedule" && "$(date -u +%H)" != "04" ]]; then
             echo "args=--settle-only" >> "$GITHUB_OUTPUT"
           else
             echo "args=" >> "$GITHUB_OUTPUT"
