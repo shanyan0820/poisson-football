@@ -27,7 +27,15 @@ SELECTION_FIELDS = (
 )
 SETTLEMENT_FIELDS = (
     "result", "unit_profit", "win_eq", "loss_eq", "odds", "side", "line",
-    "grade", "status",
+    "grade", "status", "level", "market",
+)
+PATTERN_FIELDS = (
+    "rule_version", "status", "matched", "side", "line", "odds", "level", "tier",
+    "n_all", "wr_all", "roi_all", "reason", "tracking_eligible",
+)
+GATE_FIELDS = (
+    "status", "level", "recommend_enabled", "pattern_enabled", "t1_enabled",
+    "reason", "tier", "side", "n_all", "wr_all", "roi_all",
 )
 
 
@@ -54,9 +62,13 @@ def sanitize_fixture(fixture):
         public["recommendation_selection"] = pick(
             fixture["recommendation_selection"], SELECTION_FIELDS
         )
+    if fixture.get("league_gate") is not None:
+        public["league_gate"] = pick(fixture["league_gate"], GATE_FIELDS)
+    if fixture.get("pattern_selection") is not None:
+        public["pattern_selection"] = pick(fixture["pattern_selection"], PATTERN_FIELDS)
     settlement = fixture.get("market_settlement") or {}
     public_settlement = {}
-    for key in ("recommendation", "integrated"):
+    for key in ("recommendation", "integrated", "pattern"):
         if settlement.get(key) is not None:
             public_settlement[key] = pick(settlement[key], SETTLEMENT_FIELDS)
     if public_settlement:

@@ -37,6 +37,11 @@
 .featured .rec-label,.featured .rec-direction{color:var(--red)}
 .grade-a.recommendation-v2{background:#fff8ec}
 .grade-a .rec-label,.grade-a .rec-direction{color:var(--amber)}
+.recommendation-v2.pattern{background:#eaf2ff}
+.pattern .rec-label,.pattern .rec-direction{color:#2563eb}
+.recommendation-v2.muted{background:#f0f1f0}
+.recommendation-v2.observe{background:#f4f7fb}
+.observe .rec-label,.observe .rec-direction{color:#4b6b8a}
 .rec-market{display:block;margin-top:5px;color:var(--ink);font-size:11px;font-weight:650;line-height:1.5}
 .rec-reason{display:block;margin-top:10px;padding-top:9px;border-top:1px solid rgba(104,118,111,.18);color:var(--muted);font-size:11px;line-height:1.65;text-align:left}
 .rec-reason b{color:var(--ink);font-weight:750}
@@ -116,13 +121,22 @@ function professionalReason(s){
  const gradeText={A:'A级重点观察',B:'B级综合信号',C:'C级综合信号'}[grade]||'综合信号';
  return`${gradeText}。基于主客场表现、预期进球、联赛排名与盘口定价的综合评估，${side}方向的比赛画像更具关注度。赔率用于衡量潜在回报，不单独决定方向；请结合临场阵容与市场变化审慎参考。`;
 }
+function patternText(p){const n=p.n_all||0,wr=p.wr_all,r=p.roi_all;return `该联赛五季 ${n} 注 · 胜率 ${wr==null?'—':(wr*100).toFixed(1)+'%'}${r==null?' · 等效口径只报方向':` · 收益 ${(r*100).toFixed(1)}%`}`}
 function recommendationHtml(r){
- const base=r.recommendation_selection,selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,gradeA=selected&&base.grade==='A';
- const direction=selected?`${base.side==='home'?'主队':'客队'} ${line(base.line)}`:'暂列观察';
- const market=selected?`${base.grade}级信号 · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`:'';
- const reason=retrospective?'本场为历史回看展示，不计入赛前正式统计。':selected?professionalReason(base):'综合主客场表现、预期进球与市场定价后，本场暂未形成足够明确的模型信号，保留观察。';
- const label=retrospective?'回溯参考':gradeA?'A级观察':selected?'模型信号':'本场观察';
- return`<div class="recommendation-v2 ${selected?'selected':''} ${gradeA?'grade-a':''}"><span class="rec-label">${label}</span><span class="rec-direction">${direction}</span>${market?`<span class="rec-market">${market}</span>`:''}<span class="rec-reason"><b>${selected&&!retrospective?'分析依据':'模型说明'}｜</b>${esc(reason)}</span></div>`;
+ const base=r.recommendation_selection,gate=r.league_gate||{},pattern=r.pattern_selection||{};
+ const selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,gradeA=selected&&base.grade==='A';
+ const patternHit=pattern.status==='candidate'&&pattern.tracking_eligible!==false;
+ const observe=pattern.status==='observe'&&pattern.side;
+ const blocked=!gradeA&&!patternHit&&!selected&&(gate.status==='paused'||gate.status==='display_only');
+ let label,direction,market,reason,cls;
+ if(gradeA){label='A级观察';direction=`${base.side==='home'?'主队':'客队'} ${line(base.line)}`;market=`${base.grade}级信号 · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`;reason=professionalReason(base);cls='selected grade-a'}
+ else if(patternHit){label='联赛规律信号';direction=`${pattern.side==='home'?'主队':'客队'} ${line(pattern.line)}`;market=patternText(pattern);reason=`${pattern.level}级规律命中：该联赛在${pattern.tier}、模型与机构分歧到门槛时，历史${pattern.side==='home'?'主队':'客队'}方向占优。`;cls='selected pattern'}
+ else if(observe){label='方向参考';direction=`${pattern.side==='home'?'主队':'客队'} ${line(pattern.line)}`;market='无公开亚盘赔率 · 只给方向';reason=`${pattern.level}级规律命中，但该联赛没有公开盘口赔率，方向仅供参考，不计入注码与收益统计。`;cls='observe'}
+ else if(selected&&!retrospective){label='模型信号';direction=`${base.side==='home'?'主队':'客队'} ${line(base.line)}`;market=`${base.grade}级信号 · Bet365 ${num(base.odds)} · 理论 EV ${evpct(base.ev)}`;reason=professionalReason(base);cls='selected'}
+ else if(blocked){label='本场不推荐';direction=gate.status==='paused'?'联赛未通过验证':'观察联赛';market=gate.reason||'';reason='';cls='muted'}
+ else{label='本场观察';direction='暂列观察';market='';reason='综合主客场表现、预期进球与市场定价后，本场暂未形成足够明确的模型信号，保留观察。';cls=''}
+ const head=retrospective?'回溯参考':label;
+ return`<div class="recommendation-v2 ${cls}"><span class="rec-label">${head}</span><span class="rec-direction">${direction}</span>${market?`<span class="rec-market">${market}</span>`:''}${reason?`<span class="rec-reason"><b>${gradeA||patternHit?'分析依据':'模型说明'}｜</b>${esc(reason)}</span>`:''}</div>`;
 }
 function teamRank(r,side){const rank=r.ranking?.[`${side}_rank`];return rank==null?'排名 —':`第 ${rank} 名`}
 function fixtureHtml(r){
@@ -133,8 +147,8 @@ function fixtureHtml(r){
  const freeze=!p?'未纳入赛前冻结样本':r.recommendation_selection?.tracking_eligible===false?'回溯展示 · 不计入赛前正式统计':`预测冻结 ${esc(utcTime(frozenAt))} · 日间只同步赛果，不改推荐`;
  return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="versus-grid"><div class="team-panel"><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span><div class="team-expected">预期进球 <b>${p?num(xg.home):'—'}</b></div></div><div class="versus-panel"><span class="versus-label">VS</span><span class="kickoff-date">${date}</span><span class="kickoff-time">${time}</span></div><div class="team-panel"><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span><div class="team-expected">预期进球 <b>${p?num(xg.away):'—'}</b></div></div></div>${recommendationHtml(r)}${analysisHtml(r)}${referenceScoresHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
 }
-function filteredFixtures(){return DATA.fixtures.filter(r=>{if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;if(status==='SIGNAL')return r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false;if(status==='STARTED')return isStarted(r);if(status==='UPCOMING')return!isStarted(r);return true})}
-function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.grade==='A'&&r.recommendation_selection?.tracking_eligible!==false).length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 信号 ${recommended} 场 · A级 ${featured} 场`}
+function filteredFixtures(){return DATA.fixtures.filter(r=>{if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;if(status==='SIGNAL')return (r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false)||(r.pattern_selection?.status==='candidate'&&r.pattern_selection?.tracking_eligible!==false);if(status==='STARTED')return isStarted(r);if(status==='UPCOMING')return!isStarted(r);return true})}
+function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.grade==='A'&&r.recommendation_selection?.tracking_eligible!==false).length,patterned=rows.filter(r=>r.pattern_selection?.status==='candidate'&&r.pattern_selection?.tracking_eligible!==false).length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 规律 ${patterned} 场 · 信号 ${recommended} 场`}
 async function init(){try{
  const response=await fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
  const names={};DATA.fixtures.forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));

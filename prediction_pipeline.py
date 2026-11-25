@@ -16,6 +16,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from generate_data import TEAM_ZH, fetch_csv, standings
+from league_pattern import PATTERN_VERSION, evaluate_pattern, league_gate
 from model import Match, analyze, _poisson_matrix
 from recommendation_rules import (
     FEATURED_RULE_IDS, RULE_DEFINITIONS, RULE_IDS, RULE_VERSION,
@@ -938,7 +939,8 @@ def gap_band(gap: float) -> str:
 
 def settle_record_markets(record: dict, handicap: dict | None,
                           integrated: dict | None = None,
-                          recommendation: dict | None = None) -> dict:
+                          recommendation: dict | None = None,
+                          pattern: dict | None = None) -> dict:
     """只结算让球理论 EV 方向、预测推荐与精选预测。"""
     actual = record.get("actual")
     if not actual:
@@ -982,6 +984,25 @@ def settle_record_markets(record: dict, handicap: dict | None,
         item = settle_selection(recommendation)
         if item:
             settlements["recommendation"] = item
+    if pattern and pattern.get("status") == "candidate":
+        side = pattern.get("side")
+        line = pattern.get("line")
+        if side in {"home", "away"} and line is not None:
+            margin = actual["home_goals"] - actual["away_goals"]
+            if side == "away":
+                margin = -margin
+            odds = None
+            if handicap:
+                odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
+            item = settle_margin(margin, line, odds if odds else 1.0)
+            item.update({"market": "league_pattern", "side": side, "line": line,
+                         "rule_version": pattern.get("rule_version"), "level": pattern.get("level"),
+                         "odds": odds, "odds_available": odds is not None,
+                         "unit_profit": item["unit_profit"] if odds else None,
+                         "league_id": record.get("league_id"), "league_name": record.get("league_name"),
+                         "kickoff_utc": record.get("kickoff_utc"), "key": record.get("key"),
+                         "tracking_eligible": pattern.get("tracking_eligible", True)})
+            settlements["pattern"] = item
     rule_settlements = {}
     for rule in record.get("rule_evaluations") or []:
         if not rule.get("triggered") or not rule.get("settleable"):
@@ -1109,14 +1130,46 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
                  for rule in evaluate_rules(handicap, record.get("ranking"))]
         record["rule_evaluations"] = rules
     result["rule_evaluations"] = rules
+    gate = league_gate(record.get("league_id"))
+    result["league_gate"] = gate
+    expected = (featured or {}).get("expected_goals") or {}
+    model_line = (expected["away"] - expected["home"]) if expected else (
+        -handicap["model_goal_difference"] if handicap and handicap.get("model_goal_difference") is not None else None)
+    asian = record.get("asian_handicap") or {}
+    institution_line = asian.get("home_line")
+    if institution_line is None and handicap:
+        institution_line = handicap.get("market_line")
+    result["pattern_selection"] = evaluate_pattern(record.get("league_id"), model_line, institution_line)
+    pattern = result["pattern_selection"]
+    if pattern.get("status") == "candidate":
+        side_odds = (handicap.get(f"{pattern['side']}_metrics") or {}).get("odds") if handicap else None
+        if side_odds is None:
+            side_odds = asian.get("bet365_home_odds" if pattern["side"] == "home" else "bet365_away_odds")
+        pattern["odds"] = side_odds
+        if side_odds is None:
+            if pattern.get("data_source") == "等效口径":
+                pattern["status"] = "observe"
+                pattern["reason"] = "该联赛没有公开亚盘赔率，只给方向参考，不计入注码与收益统计。"
+            else:
+                pattern["status"] = "skip"
+                pattern["reason"] = "本场缺少真实亚盘赔率，不输出推荐。"
     derived_recommendation = choose_recommendation(handicap, record.get("ranking"), rules)
+    if not gate["recommend_enabled"]:
+        derived_recommendation = {**derived_recommendation, "status": "skip", "candidate_count": 0,
+                                  "featured_class": None, "reason": gate["reason"]}
     recommendation = freeze_recommendation_selection(record, derived_recommendation, now or datetime.now(UTC))
     result["recommendation_selection"] = recommendation
     derived_selection = choose_integrated_selection(handicap, record.get("ranking"), rules)
+    if not gate["t1_enabled"]:
+        derived_selection = {**derived_selection, "status": "skip", "featured": False,
+                             "candidate_count": 0,
+                             "reason": gate["reason"] if not gate["recommend_enabled"]
+                             else "该联赛原有重点规则五季真实收益为负，已停用；本场走联赛规律信号。"}
     selection = freeze_integrated_selection(record, derived_selection, now or datetime.now(UTC))
     result["integrated_selection"] = selection
     result["featured_selection"] = selection
-    result["market_settlement"] = settle_record_markets(record, handicap, selection, recommendation)
+    result["market_settlement"] = settle_record_markets(record, handicap, selection, recommendation,
+                                                       result.get("pattern_selection"))
     if record.get("status_reason"):
         result["status_reason"] = record["status_reason"]
     return result

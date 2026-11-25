@@ -115,3 +115,21 @@ class PublicSiteDataTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PatternSanitizeTests(unittest.TestCase):
+    def test_pattern_public_without_threshold(self):
+        from public_site_data import sanitize_fixture
+        fixture = {
+            "id": "x", "league_id": "D2",
+            "league_gate": {"status": "active", "level": "S", "threshold": 0.61,
+                            "recommend_enabled": True, "pattern_enabled": True},
+            "pattern_selection": {"status": "candidate", "side": "home", "line": 0.5,
+                                  "threshold": 0.61, "tier": "minor", "level": "S",
+                                  "n_all": 120, "wr_all": 0.63, "roi_all": 0.12,
+                                  "reason": "ok"},
+        }
+        public = sanitize_fixture(fixture)
+        self.assertEqual(public["pattern_selection"]["status"], "candidate")
+        self.assertNotIn("threshold", public["pattern_selection"])
+        self.assertNotIn("threshold", public["league_gate"])

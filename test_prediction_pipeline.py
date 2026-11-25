@@ -325,7 +325,7 @@ class MarketModelTests(unittest.TestCase):
 
     def test_finished_record_automatically_builds_handicap_tracking(self):
         record = {
-            "league_id": "TEST", "league_name": "测试联赛",
+            "league_id": "T1", "league_name": "土超",
             "predictions": {"stable": {"expected_goals": {"home": 2.02, "away": 1.0}, "forecast": forecast()}},
             "actual": {"home_goals": 2, "away_goals": 0, "outcome": "H"},
             "asian_handicap": {"home_line": -1.75, "bet365_home_odds": 2.2, "bet365_away_odds": 1.6},
@@ -357,7 +357,7 @@ class MarketModelTests(unittest.TestCase):
         public["market_settlement"]["recommendation"]["tracking_eligible"] = True
         formal = build_market_tracking([public])
         self.assertEqual(formal["integrated"]["overall"]["n"], 0)
-        self.assertEqual(formal["recommendation"]["by_league"]["TEST"]["overall"]["n"], 1)
+        self.assertEqual(formal["recommendation"]["by_league"]["T1"]["overall"]["n"], 1)
         for settlement in public["market_settlement"]["rule_settlements"].values():
             settlement["tracking_eligible"] = True
         with_rules = build_market_tracking([public])
@@ -365,7 +365,7 @@ class MarketModelTests(unittest.TestCase):
         self.assertEqual(with_rules["rules"]["A01"]["overall"]["effective_win_rate"], 0)
         self.assertEqual(with_rules["rules"]["A01"]["by_source"]["real"]["n"], 1)
         self.assertEqual(with_rules["rules"]["A01"]["by_source"]["simulated"]["n"], 0)
-        self.assertEqual(with_rules["recommendation"]["by_league"]["TEST"]["by_source"]["real"]["n"], 1)
+        self.assertEqual(with_rules["recommendation"]["by_league"]["T1"]["by_source"]["real"]["n"], 1)
         self.assertEqual(len(with_rules["rule_definitions"]), 15)
 
 
@@ -571,3 +571,30 @@ class PageContractTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LeaguePatternTests(unittest.TestCase):
+    def test_gate_levels(self):
+        from league_pattern import league_gate
+        self.assertEqual(league_gate("TEST")["status"], "paused")
+        self.assertFalse(league_gate("TEST")["recommend_enabled"])
+        self.assertEqual(league_gate("DNK")["status"], "display_only")
+        self.assertFalse(league_gate("DNK")["recommend_enabled"])
+        self.assertEqual(league_gate("P1")["status"], "t1_only")
+        self.assertTrue(league_gate("P1")["recommend_enabled"])
+        self.assertFalse(league_gate("P1")["pattern_enabled"])
+        self.assertEqual(league_gate("D2")["status"], "active")
+        self.assertTrue(league_gate("D2")["pattern_enabled"])
+
+    def test_pattern_hit_and_miss(self):
+        from league_pattern import evaluate_pattern
+        hit = evaluate_pattern("D2", 1.20, 0.50)
+        self.assertEqual(hit["status"], "candidate")
+        self.assertEqual(hit["side"], "home")
+        self.assertEqual(hit["line"], 0.50)
+        miss = evaluate_pattern("D2", 0.30, 0.50)
+        self.assertEqual(miss["status"], "skip")
+        wrong_tier = evaluate_pattern("D2", 1.20, -0.50)
+        self.assertEqual(wrong_tier["status"], "skip")
+        blocked = evaluate_pattern("DNK", -0.30, -0.50)
+        self.assertEqual(blocked["status"], "skip")
