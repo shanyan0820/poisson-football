@@ -77,6 +77,12 @@
 <div id="content" class="hidden">
   <div class="section-head"><div><div class="step">02 / 让球预测</div><h2 class="section-title">本周期比赛列表</h2></div><p class="hint" id="fixture-count"></p></div>
   <div id="fixtures"></div>
+  <details class="method card"><summary>推荐方法与联赛准入说明</summary>
+    <p><b>两层推荐并行。</b>① 联赛规律：每个联赛只用前 3 季发现、后 2 季盲验，真实亚盘 16 个联赛五季 1518 注收益 +15.8%，2026-27 样本外 50 注 +20.4%。② 原有规则：只保留五季真实收益为正的联赛（土超、意甲、法乙、英超、葡超、西甲），其余联赛停用改走规律。</p>
+    <p><b>按表现定级与停推。</b>规律按后 2 季真实收益分 S/A/B 级：S 级 3 单位、A 级 2 单位、B 级只展示不给注码。没有五季验证的联赛（如俄超、墨超）暂停推荐，只展示赛前数据。</p>
+    <p><b>无赔率不给注码。</b>日本J1、巴甲、阿甲等没有公开亚盘赔率的联赛，命中只标“方向参考”，不计入下注与收益统计。</p>
+    <p class="warning">以上为历史回测结果，不代表未来收益；请结合临场阵容与盘口变化审慎参考。</p>
+  </details>
   <section class="source"><b>数据来源</b><p>赛果、主赛程、让球盘口：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；补充赛程：ESPN。联赛排名由开球前真实赛果计算。</p></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后结算</footer>
@@ -148,7 +154,7 @@ function fixtureHtml(r){
  return`<article class="card match-card"><div class="match-top"><span>${esc(r.league_name)}</span>${statusBadge(r)}</div><div class="match-board"><div class="versus-grid"><div class="team-panel"><span class="team-name">${esc(r.home)}</span><span class="team-rank">${teamRank(r,'home')}</span><div class="team-expected">预期进球 <b>${p?num(xg.home):'—'}</b></div></div><div class="versus-panel"><span class="versus-label">VS</span><span class="kickoff-date">${date}</span><span class="kickoff-time">${time}</span></div><div class="team-panel"><span class="team-name">${esc(r.away)}</span><span class="team-rank">${teamRank(r,'away')}</span><div class="team-expected">预期进球 <b>${p?num(xg.away):'—'}</b></div></div></div>${recommendationHtml(r)}${analysisHtml(r)}${referenceScoresHtml(r)}</div>${untracked}${actual}<div class="freeze-note">${freeze}</div></article>`;
 }
 function filteredFixtures(){return DATA.fixtures.filter(r=>{if($('league').value!=='ALL'&&r.league_id!==$('league').value)return false;const status=$('status').value;if(status==='SIGNAL')return (r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false)||(r.pattern_selection?.status==='candidate'&&r.pattern_selection?.tracking_eligible!==false);if(status==='STARTED')return isStarted(r);if(status==='UPCOMING')return!isStarted(r);return true})}
-function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.grade==='A'&&r.recommendation_selection?.tracking_eligible!==false).length,patterned=rows.filter(r=>r.pattern_selection?.status==='candidate'&&r.pattern_selection?.tracking_eligible!==false).length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 规律 ${patterned} 场 · 信号 ${recommended} 场`}
+function render(){const rows=filteredFixtures(),recommended=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.tracking_eligible!==false).length,featured=rows.filter(r=>r.recommendation_selection?.status==='candidate'&&r.recommendation_selection?.grade==='A'&&r.recommendation_selection?.tracking_eligible!==false).length,patterned=rows.filter(r=>r.pattern_selection?.status==='candidate'&&r.pattern_selection?.tracking_eligible!==false).length,observed=rows.filter(r=>r.pattern_selection?.status==='observe').length;$('fixtures').innerHTML=rows.length?rows.map(fixtureHtml).join(''):'<section class="card"><div class="untracked" style="margin:0">当前筛选条件下没有比赛。</div></section>';$('fixture-count').textContent=`显示 ${rows.length} 场 · 规律 ${patterned} 场 · 参考 ${observed} 场 · 信号 ${recommended} 场`}
 async function init(){try{
  const response=await fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
  const names={};DATA.fixtures.forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
