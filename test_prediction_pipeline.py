@@ -162,6 +162,27 @@ class FixtureParserTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual((result[0]["home_source"], result[0]["away_source"]), ("Hammarby", "Sirius"))
         self.assertEqual(result[0]["source_event_id"], "evt1")
+
+    def test_espn_completed_event_provides_real_final_score(self):
+        league = {**sample_league(), "id": "SWE", "name": "瑞典超"}
+        league["matches"] = league["matches"][:2]
+        league["matches"][0].update({"home_source": "Hammarby", "away_source": "Sirius"})
+        event = {
+            "id": "finished-1", "date": "2026-11-22T16:00Z",
+            "status": {"type": {"state": "post", "completed": True}},
+            "competitions": [{"competitors": [
+                {"homeAway": "home", "score": "3", "team": {"displayName": "Hammarby IF"}},
+                {"homeAway": "away", "score": "1", "team": {"displayName": "IK Sirius"}},
+            ]}],
+        }
+        result = parse_espn_events([{"events": [event]}], league, ["Hammarby", "Sirius"], date(2026, 11, 23))
+        self.assertEqual(result[0]["actual"]["home_goals"], 3)
+        self.assertEqual(result[0]["actual"]["away_goals"], 1)
+        self.assertEqual(result[0]["actual"]["outcome"], "H")
+        event["status"] = {"type": {"state": "in", "completed": False}}
+        live = parse_espn_events([{"events": [event]}], league, ["Hammarby", "Sirius"], date(2026, 11, 23))
+        self.assertNotIn("actual", live[0])
+
     def test_prediction_window_is_noon_to_noon_and_end_is_exclusive(self):
         start, end = prediction_window(datetime(2026, 11, 22, 4, tzinfo=timezone.utc))
         self.assertEqual(start.isoformat(), "2026-11-22T12:00:00+08:00")
@@ -442,6 +463,23 @@ class ArchiveTests(unittest.TestCase):
         self.assertAlmostEqual(before["market_handicap"], expected)
         self.assertEqual(before["market_version"], "points_form20")
         self.assertGreaterEqual(min(before["home_played"], before["away_played"]), 7)
+
+    def test_espn_final_score_settles_without_rewriting_frozen_prediction(self):
+        archive = update_prediction_archive({"version": 1, "matches": {}}, [self.fixture], self.dataset, self.now)
+        key = next(iter(archive["matches"]))
+        original = copy.deepcopy(archive["matches"][key]["predictions"])
+        finished = {**self.fixture, "source_event_id": "different-espn-event-id", "actual": {
+            "date": "2026-11-21", "home_goals": 2, "away_goals": 2,
+            "outcome": "D", "source": "ESPN scoreboard",
+        }}
+        archive = update_prediction_archive(archive, [], self.dataset, self.now + timedelta(days=2),
+                                            result_fixtures=[finished])
+        record = archive["matches"][key]
+        self.assertEqual(record["predictions"], original)
+        self.assertEqual(record["status"], "finished")
+        self.assertEqual(record["actual"]["home_goals"], 2)
+        self.assertEqual(record["actual"]["away_goals"], 2)
+        self.assertEqual(record["actual"]["source"], "ESPN scoreboard")
 
     def test_result_matching_allows_timezone_date_difference(self):
         fixture = copy.deepcopy(self.fixture)

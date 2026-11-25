@@ -45,6 +45,14 @@ ESPN_LEAGUES = {
     "ARG": "arg.1", "DNK": "den.1", "FIN": "fin.1", "ROU": "rou.1",
     "MEX": "mex.1", "USA": "usa.1",
 }
+# 主赛程仍由 football-data 提供；ESPN 只补充终场状态和真实全场比分。
+ESPN_RESULT_LEAGUES = {
+    **ESPN_LEAGUES,
+    "E0": "eng.1", "E1": "eng.2", "SP1": "esp.1", "SP2": "esp.2",
+    "I1": "ita.1", "I2": "ita.2", "D1": "ger.1", "D2": "ger.2",
+    "F1": "fra.1", "F2": "fra.2", "N1": "ned.1", "B1": "bel.1",
+    "SC0": "sco.1", "T1": "tur.1", "G1": "gre.1",
+}
 
 MODEL_CONFIGS = [
     {"id": "baseline", "name": "联赛均值基准", "description": "每场均使用截至赛前的联赛主、客队进球均值。", "baseline_only": True},
@@ -61,6 +69,11 @@ MODEL_BY_ID = {m["id"]: m for m in MODEL_CONFIGS}
 # ESPN 展示名到 football-data 队名。只做明确别名，不用模糊匹配冒充同一支球队。
 ESPN_TEAM_ALIASES = {
     "FC Porto": "Porto", "Sporting CP": "Sp Lisbon", "Sporting Lisbon": "Sp Lisbon",
+    "Cardiff City": "Cardiff", "Preston North End": "Preston",
+    "Charlton Athletic": "Charlton", "Lincoln City": "Lincoln",
+    "Swansea City": "Swansea", "Norwich City": "Norwich", "Queens Park Rangers": "QPR",
+    "West Ham United": "West Ham", "Wolverhampton Wanderers": "Wolves", "Derby County": "Derby",
+    "Hellas Verona": "Verona",
     "Académico de Viseu": "Academico Viseu", "Braga": "Sp Braga", "FC Famalicao": "Famalicao",
     "C.D. Nacional": "Nacional", "Vitória de Guimaraes": "Guimaraes",
     "Hammarby IF": "Hammarby", "IK Sirius": "Sirius", "BK Häcken": "Hacken",
@@ -242,6 +255,11 @@ def fixture_key(fixture: dict) -> str:
         return f"espn:{fixture['source_event_id']}"
     raw = f"{fixture['league_id']}|{fixture['home_source']}|{fixture['away_source']}|{fixture['source_date']}"
     return "fd:" + hashlib.sha1(raw.encode("utf-8")).hexdigest()[:20]
+
+
+def result_identity(fixture: dict) -> tuple[str, str, str, str]:
+    """跨赛程源匹配同一场比赛，不使用各自不同的事件 ID。"""
+    return (fixture["league_id"], fixture["home_source"], fixture["away_source"], fixture["source_date"])
 
 
 def base_fixture(league: dict, home_source: str, away_source: str, kickoff: datetime,
@@ -716,6 +734,22 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
             item["opening_1x2"] = parse_espn_opening_1x2(competition)
             item["espn_home"] = home_raw
             item["espn_away"] = away_raw
+            # ESPN 的 completed 状态和双方比分仅在终场后采用；进行中或字段缺失不生成赛果。
+            status = event.get("status", {}).get("type", {})
+            if status.get("completed") or status.get("state") == "post":
+                try:
+                    home_score = next(c["score"] for c in competitors if c["homeAway"] == "home")
+                    away_score = next(c["score"] for c in competitors if c["homeAway"] == "away")
+                    home_goals, away_goals = int(float(home_score)), int(float(away_score))
+                    if home_goals < 0 or away_goals < 0:
+                        raise ValueError("negative score")
+                    item["actual"] = {
+                        "date": kickoff.astimezone(BEIJING).date().isoformat(),
+                        "home_goals": home_goals, "away_goals": away_goals,
+                        "outcome": outcome(home_goals, away_goals), "source": "ESPN scoreboard",
+                    }
+                except (KeyError, StopIteration, TypeError, ValueError):
+                    pass
             if error:
                 item["mapping_error"] = error
             fixtures.append(item)
@@ -754,6 +788,26 @@ def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[
     return sorted(unique.values(), key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"])), coverage
 
 
+def load_result_fixtures(dataset: dict, now: datetime, fixtures: list[dict]) -> list[dict]:
+    """只抓取当前周期有待结算比赛的 ESPN 联赛，避免无关联赛的高频请求。"""
+    leagues = {league["id"]: league for league in dataset["leagues"]}
+    window_start, window_end = prediction_window(now)
+    days = sorted({window_start.astimezone(UTC).date(), window_end.astimezone(UTC).date()})
+    league_ids = sorted({fixture["league_id"] for fixture in fixtures
+                         if not fixture.get("actual") and fixture["league_id"] in ESPN_RESULT_LEAGUES})
+    results = []
+    for league_id in league_ids:
+        league = leagues[league_id]
+        try:
+            payloads = [fetch_json(espn_scoreboard_url(ESPN_RESULT_LEAGUES[league_id], day)) for day in days]
+            source_names = sorted({match[key] for match in league["matches"] for key in ["home_source", "away_source"]})
+            results.extend(parse_espn_events(payloads, league, source_names, window_start, window_end))
+        except Exception:
+            # 主赛果源仍可结算；补充源失败不中断整批发布。
+            continue
+    return results
+
+
 def find_result(fixture: dict, league: dict, max_day_difference: int = 3) -> dict | None:
     fixture_date = datetime.fromisoformat(fixture["kickoff_beijing"]).date()
     candidates = []
@@ -769,9 +823,12 @@ def find_result(fixture: dict, league: dict, max_day_difference: int = 3) -> dic
     return candidates[0][2]
 
 
-def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict, now: datetime) -> dict:
+def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict, now: datetime,
+                              result_fixtures: list[dict] | None = None) -> dict:
     """已锁定预测永不重写；只补充赛程元数据和真实赛果。"""
     now = now.astimezone(UTC)
+    espn_results = {result_identity(fixture): fixture["actual"] for fixture in (result_fixtures or [])
+                    if fixture.get("actual")}
     archive.setdefault("version", 1)
     archive.setdefault("matches", {})
     leagues = {l["id"]: l for l in dataset["leagues"]}
@@ -827,10 +884,16 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
             record["opening_1x2"] = fixture["opening_1x2"]
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
         result = find_result(fixture, league)
-        if result:
-            record["actual"] = {"date": result["date"], "home_goals": result["home_goals"],
-                                "away_goals": result["away_goals"],
-                                "outcome": outcome(result["home_goals"], result["away_goals"])}
+        espn_actual = espn_results.get(result_identity(fixture))
+        if result or espn_actual:
+            if result:
+                actual = {"date": result["date"], "home_goals": result["home_goals"],
+                          "away_goals": result["away_goals"],
+                          "outcome": outcome(result["home_goals"], result["away_goals"]),
+                          "source": "football-data"}
+            else:
+                actual = dict(espn_actual)
+            record["actual"] = actual
             record["status"] = "finished" if record["predictions"] else "finished_untracked"
         elif record["predictions"]:
             record["status"] = "scheduled" if datetime.fromisoformat(fixture["kickoff_utc"]) > now else "awaiting_result"
@@ -960,7 +1023,7 @@ def build_market_tracking(finished: list[dict]) -> dict:
         "recommendation_rule": "15 条规则逐场独立评估；A 级 4 条为重点观察，B/C 级为覆盖与观察，全部独立结算。",
         "market_handicap_rule": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；双方赛前均需满7轮。",
         "integrated_rule": "A 级规则只作重点标记，不构成收益保证；赛前冻结后不根据赛果改写方向。",
-        "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；20:00和次日02:00只同步赛果。",
+        "schedule": "北京时间每日12:00结算未完结旧样本并生成当日12:00至次日12:00预测；其余整点每小时只同步真实赛果。",
     }
     for key in ["asian_handicap", "recommendation", "integrated"]:
         rows = [r["market_settlement"][key] for r in finished
@@ -1106,7 +1169,7 @@ def build_research_data(archive: dict, research: dict, featured_model_id: str, n
 def main() -> None:
     parser = argparse.ArgumentParser(description="生成12小时制预测窗口或仅同步已冻结比赛的赛果")
     parser.add_argument("--settle-only", action="store_true",
-                        help="只读取当前周期已冻结比赛并同步赛果，不抓取或新增预测")
+                        help="只读取当前周期已冻结比赛并同步赛果，不新增预测")
     args = parser.parse_args()
     now = datetime.now(UTC)
     dataset_path = ROOT / "data" / "leagues.json"
@@ -1121,11 +1184,14 @@ def main() -> None:
         previous = json.loads(public_path.read_text(encoding="utf-8")) if public_path.exists() else {}
         fixtures = archived_window_fixtures(archive, now)
         coverage = previous.get("coverage", [])
+        # 仍读取公开赛程接口的完场状态，但不把新比赛加入当前预测周期。
+        result_fixtures = load_result_fixtures(dataset, now, fixtures)
         run_mode = "settle_only"
     else:
         fixtures, coverage = load_daily_fixtures(dataset, now)
+        result_fixtures = [*fixtures, *load_result_fixtures(dataset, now, fixtures)]
         run_mode = "full"
-    archive = update_prediction_archive(archive, fixtures, dataset, now)
+    archive = update_prediction_archive(archive, fixtures, dataset, now, result_fixtures=result_fixtures)
     public = build_public_dataset(dataset, archive, fixtures, coverage, now, run_mode)
     research, research_report = build_research_data(archive, research, public["featured_model_id"], now)
     public["market_tracking"]["research_summary"] = research_report["optimization"]
