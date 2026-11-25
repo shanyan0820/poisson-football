@@ -458,6 +458,8 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("模型盘口", html)
         self.assertIn("机构盘口", html)
         self.assertIn("Market Signal Model", html)
+        self.assertIn('<option value="SIGNAL">模型信号</option>', html)
+        self.assertIn("status==='SIGNAL'", html)
         self.assertIn("grid-template-columns:repeat(3,minmax(0,1fr))", html)
         self.assertNotIn("盘口规则与验证口径", html)
         self.assertNotIn("15条", html)
