@@ -1,15 +1,15 @@
-"""39 条融合规则：联赛专档 + 深浅差 + 十五刻度，S/A/B/C 分级。"""
+"""融合规则：联赛专档 + 深浅差 + 十五刻度，S/A/B/C 分级，源数据清洗版。"""
 from __future__ import annotations
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
-PATTERN_VERSION = "fusion-39-sabc-quarter-v2"
 BIG7 = {"E0", "SP1", "D1", "I1", "F1", "D2", "E1"}
 try:
     RULES = json.loads((ROOT / "data" / "fusion_rules.json").read_text(encoding="utf-8"))
 except (OSError, ValueError):
     RULES = []
+PATTERN_VERSION = f"fusion-{len(RULES)}-sabc-quarter-v3-source-clean"
 BY_LEAGUE = {}
 for rule in RULES:
     BY_LEAGUE.setdefault(rule["league"], []).append(rule)
@@ -20,7 +20,7 @@ def league_gate(league_id: str | None) -> dict:
     return {"league_id": league_id, "status": "active" if supported else "paused",
             "level": "SABC", "recommend_enabled": supported,
             "pattern_enabled": supported, "t1_enabled": league_id in {"T1", "I1", "F2", "E0", "P1", "SP1"},
-            "reason": "已接入39条融合规则，按S/A/B/C分级推荐。" if supported else "该联赛暂无已验证的融合规则，暂停推荐。"}
+            "reason": f"已接入{len(RULES)}条源数据清洗后的融合规则，按S/A/B/C分级推荐。" if supported else "该联赛暂无已验证的融合规则，暂停推荐。"}
 
 
 def _hit(rule, model, line):
@@ -46,7 +46,7 @@ def evaluate_pattern(league_id: str | None, model_handicap: float | None,
     candidates = BY_LEAGUE.get(league_id or "", []) + (BY_LEAGUE.get("BIG7", []) if league_id in BIG7 else [])
     hits = [r for r in candidates if _hit(r, model_handicap, institution_line)]
     if not hits:
-        return {**base, "reason": "本场未触发39条融合规则。"}
+        return {**base, "reason": f"本场未触发{len(RULES)}条融合规则。"}
     sides = {r["side"] for r in hits}
     if len(sides) > 1:
         return {**base, "reason": "不同规则方向冲突，本场不推荐。", "rule_count": len(hits)}
