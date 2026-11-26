@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Market Signal Model">
 <link rel="icon" href="data:,">
-<meta name="description" content="Market Signal Model：A/B/C 分档赛前样本、赛后结算与历史回测">
+<meta name="description" content="Market Signal Model：S/A/B/C 分档赛前样本、赛后结算与历史回测">
 <title>Market Signal Model · 赛后统计</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#c92f35;--red-soft:#fff1f1}
@@ -16,13 +16,13 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">A/B/C 分档统计</span></div><p>正式赛前样本与历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">S/A/B/C 分档统计</span></div><p>正式赛前样本与历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 正式赛前样本</div><h2 class="section-title">选择联赛与统计档位</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
+    <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="S">S级</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
   </div>
   <p class="hint">这里只累计网站上已经赛前冻结并完成结算的正式样本；历史回看数据不混入。A/B/C 为综合信号分级，不展示具体参数。</p>
   <div class="error" id="error"></div>
@@ -42,25 +42,15 @@
   <div class="empty" id="empty">当前筛选暂无符合口径的已结算样本。</div>
   <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走盘、赢输各半及其他结果不计入分子或分母；ROI分母包含全部赔率后结算场次。</div>
 </section>
-<section class="card">
-  <div class="step">03 / 分档实时统计</div><h2 class="section-title">A/B/C 分档赛后表现</h2>
-  <div class="table-scroll"><table class="rule-table"><thead><tr><th>档位</th><th>场次</th><th>全赢</th><th>全输</th><th>半赢</th><th>半输</th><th>胜率</th><th>ROI</th><th>净胜场</th></tr></thead><tbody id="rule-rows"></tbody></table></div>
-  <p class="hint">点击任一档位可查看该档详情。净胜场 = 全赢＋0.5×半赢－全输－0.5×半输；正数为净胜，负数为净负。</p>
-</section>
-<section class="card">
-  <div class="step">04 / 历史回测</div><h2 class="section-title">五季合并训练（2021-22—2025-26）与2026-27样本外</h2>
-  <div class="backtest-meta" id="backtest-meta"></div>
-  <div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>2026-27</th><th>五季训练</th></tr></thead><tbody id="backtest-rows"></tbody></table></div>
-  <p class="hint">每格依次显示信号场次、等效胜率、ROI。五季训练结果为历史回看；2026-27 是未参与模型定参的半季样本外。A/B/C 按相同口径独立汇总。</p>
-  <div class="warning" id="backtest-warning">历史回测不等于网站前瞻实盘；A/B/C 分档不构成收益保证。</div>
-</section>
+<section class="card"><div class="step">03 / 本赛季实跑</div><h2 class="section-title">2026-27 截至11月24日</h2><div class="table-scroll"><table class="rule-table"><thead><tr><th>档位</th><th>注数</th><th>胜率</th><th>ROI</th></tr></thead><tbody id="rule-rows"></tbody></table></div><p class="hint">16个已有真实盘口数据的联赛，共306注；逐场按赛前盘口与赔率结算。</p></section>
+<section class="card"><div class="step">04 / 五季融合回测</div><h2 class="section-title">2021-22—2025-26</h2><div class="backtest-meta" id="backtest-meta"></div><div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>五季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div><p class="hint">每格显示注数、胜率与ROI。十五刻度仅用于五大联赛、德乙和英冠；双确认为S级。</p><div class="warning">历史回测不等于收益保证；本赛季A级和S级样本仍较少。</div></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后真实结算</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);let DATA=null,BACKTEST=null;
-const GRADES=['A','B','C'];
-const modelNames={ALL:'全部档位',A:'A级',B:'B级',C:'C级'};
+const GRADES=['S','A','B','C'];
+const modelNames={ALL:'全部档位',S:'S级',A:'A级',B:'B级',C:'C级'};
 const gradeDescriptions={A:'重点观察',B:'综合信号',C:'综合信号'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(2)+'%';
@@ -93,12 +83,7 @@ function renderRules(){
  document.querySelectorAll('[data-grade]').forEach(row=>row.addEventListener('click',()=>{$('model').value=row.dataset.grade;render();window.scrollTo({top:0,behavior:'smooth'})}));
 }
 function backtestCell(summary){return`<td class="season-cell"><b>${summary?.n||0}场</b><span>${pct(summary?.effective_win_rate)}</span><span>${roi(summary?.roi)}</span></td>`}
-function renderBacktest(){
- if(!BACKTEST)return;
- $('backtest-meta').innerHTML=`<span>训练样本 ${BACKTEST.combined.valid_samples} 场</span><span>五季信号 ${BACKTEST.combined.overall.n} 场</span><span>2026-27 样本外 ${BACKTEST.full_holdout.overall.n} 场</span><span>Market Signal Model</span>`;
- $('backtest-rows').innerHTML=GRADES.map(grade=>`<tr class="${grade==='A'?'featured-rule':''}"><td><span class="rule-id">${grade}级</span><span class="rule-name">${gradeDescriptions[grade]}</span></td>${Object.values(BACKTEST.seasons).map(season=>backtestCell(season.grades[grade])).join('')}${backtestCell(BACKTEST.combined.grades[grade])}</tr>`).join('');
- $('backtest-warning').textContent=`历史回测不等于网站前瞻实盘。留一赛季 ROI 为 ${roi(BACKTEST.loso?.roi)}；A/B/C 分档不构成收益保证。`;
-}
+function renderBacktest(){if(!BACKTEST)return;$('backtest-meta').innerHTML=`<span>42条融合规则</span><span>五季 ${BACKTEST.overall.n} 注</span><span>胜率 ${pct(BACKTEST.overall.effective_win_rate)} · ROI ${roi(BACKTEST.overall.roi)}</span>`;$('rule-rows').innerHTML=['S','A','B','C'].map(id=>{const r=BACKTEST.grades[id],x=r.current;return `<tr><td><span class="rule-id">${id}</span><span class="rule-name">${r.name}</span></td><td>${x.n}</td><td>${pct(x.effective_win_rate)}</td><td>${roi(x.roi)}</td></tr>`}).join('')+`<tr><td><b>合计</b></td><td>${BACKTEST.current.n}</td><td><b>${pct(BACKTEST.current.effective_win_rate)}</b></td><td><b>${roi(BACKTEST.current.roi)}</b></td></tr>`;$('backtest-rows').innerHTML=['S','A','B','C'].map(id=>`<tr><td><span class="rule-id">${id}</span><span class="rule-name">${BACKTEST.grades[id].name}</span></td>${Object.values(BACKTEST.seasons).map(s=>backtestCell(s.grades[id])).join('')}${backtestCell(BACKTEST.grades[id].overall)}</tr>`).join('')}
 function render(){
  const stats=currentStats(),c=stats.counts;
  $('accuracy').textContent=pct(stats.accuracy);$('trigger-count').textContent=stats.triggers;$('roi').textContent=roi(stats.roi);keys.forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
@@ -106,7 +91,7 @@ function render(){
  $('scope-title').textContent=`${leagueName} · ${modelNames[model.value]}`;$('empty').classList.toggle('hidden',stats.triggers>0);renderRules();
 }
 async function init(){try{
- const [response,backtestResponse]=await Promise.all([fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'}),fetch(`data/market_signal_backtest.json?v=${Date.now()}`,{cache:'no-store'})]);
+ const [response,backtestResponse]=await Promise.all([fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'}),fetch(`data/fusion_report.json?v=${Date.now()}`,{cache:'no-store'})]);
  if(!response.ok)throw new Error(`赛前数据 HTTP ${response.status}`);if(!backtestResponse.ok)throw new Error(`回测数据 HTTP ${backtestResponse.status}`);
  DATA=await response.json();BACKTEST=await backtestResponse.json();
  const names={};if(DATA.stat_leagues)DATA.stat_leagues.forEach(r=>names[r.league_id]=r.league_name);else records().forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
