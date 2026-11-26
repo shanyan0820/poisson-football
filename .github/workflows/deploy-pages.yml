@@ -150,7 +150,7 @@ jobs:
         run: |
           mkdir -p _site/data
           cp index.html predictions.html research.html _site/
-          cp data/leagues.json data/public_predictions.json data/research_archive.json data/research_report.json data/market_signal_backtest.json data/fusion_report.json _site/data/
+          cp data/leagues.json data/public_predictions.json data/research_archive.json data/research_report.json data/market_signal_backtest.json data/fusion_report.json data/fusion_rules.json _site/data/
           touch _site/.nojekyll
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
