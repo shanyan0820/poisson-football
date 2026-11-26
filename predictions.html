@@ -16,23 +16,23 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">S/A/B/C 分档统计</span></div><p>正式赛前样本与历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">S/A/B/C 分档统计</span></div><p>本赛季实跑与五季历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
-  <div class="step">01 / 正式赛前样本</div><h2 class="section-title">选择联赛与统计档位</h2>
+  <div class="step">01 / 本赛季实跑</div><h2 class="section-title" id="current-title">2026-27 · 选择联赛与统计档位</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
     <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="S">S级</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
   </div>
-  <p class="hint">这里只累计网站上已经赛前冻结并完成结算的正式样本；历史回看数据不混入。A/B/C 为综合信号分级，不展示具体参数。</p>
+  <p class="hint" id="current-hint">真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。按联赛或档位筛选后，下方成绩同步变化。</p>
   <div class="error" id="error"></div>
 </section>
-<div class="loading" id="loading">正在读取真实结算与历史回测…</div>
+<div class="loading" id="loading">正在读取本赛季真实结算与历史回测…</div>
 <div id="content" class="hidden">
 <section class="card">
   <div class="step">02 / 分档准确率</div><h2 class="section-title" id="scope-title">全部联赛 · 全部档位</h2>
   <div class="accuracy-box"><strong id="accuracy">—</strong><span>等效正确 ÷ 四类结果的等效有效判定</span></div>
-  <div class="live-metrics"><div class="live-metric"><b id="trigger-count">0</b><span>赔率后结算场次（含走盘）</span></div><div class="live-metric"><b id="roi">—</b><span>单位投注ROI</span></div></div>
+  <div class="live-metrics"><div class="live-metric"><b id="trigger-count">0</b><span>本赛季实跑注数（含走盘）</span></div><div class="live-metric"><b id="roi">—</b><span>单位投注ROI</span></div></div>
   <div class="outcomes">
     <div class="outcome good"><b id="full-win">0</b><span>全赢</span><small>计 1 次正确</small></div>
     <div class="outcome bad"><b id="full-loss">0</b><span>全输</span><small>计 1 次错误</small></div>
@@ -40,10 +40,10 @@
     <div class="outcome bad"><b id="half-loss">0</b><span>输一半</span><small>计 0.5 次错误</small></div>
   </div>
   <div class="empty" id="empty">当前筛选暂无符合口径的已结算样本。</div>
-  <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走盘、赢输各半及其他结果不计入分子或分母；ROI分母包含全部赔率后结算场次。</div>
+  <div class="table-scroll" style="margin-top:14px"><table class="rule-table"><thead><tr><th>档位</th><th>注数</th><th>胜率</th><th>ROI</th></tr></thead><tbody id="rule-rows"></tbody></table></div>
+  <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走盘、赢输各半及其他结果不计入分子或分母；ROI分母包含全部实跑注数。</div>
 </section>
-<section class="card"><div class="step">03 / 本赛季实跑</div><h2 class="section-title">2026-27 截至11月24日</h2><div class="table-scroll"><table class="rule-table"><thead><tr><th>档位</th><th>注数</th><th>胜率</th><th>ROI</th></tr></thead><tbody id="rule-rows"></tbody></table></div><p class="hint">真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。本赛季实跑共306注。</p></section>
-<section class="card"><div class="step">04 / 五季融合回测</div><h2 class="section-title">2021-22—2025-26</h2><div class="backtest-meta" id="backtest-meta"></div><div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>五季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div><p class="hint">每格显示注数、胜率与ROI。十五刻度仅用于五大联赛、德乙和英冠；双确认为S级。</p><div class="warning">历史回测不等于收益保证；本赛季A级和S级样本仍较少。</div></section>
+<section class="card"><div class="step">03 / 五季融合回测</div><h2 class="section-title">2021-22—2025-26</h2><div class="backtest-meta" id="backtest-meta"></div><div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>五季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div><p class="hint">每格显示注数、胜率与ROI。十五刻度仅用于五大联赛、德乙和英冠；双确认为S级。</p><div class="warning">历史回测不等于收益保证；本赛季A级和S级样本仍较少。</div></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后真实结算</footer>
 </main>
@@ -51,39 +51,38 @@
 const $=id=>document.getElementById(id);let DATA=null,BACKTEST=null;
 const GRADES=['S','A','B','C'];
 const modelNames={ALL:'全部档位',S:'S级',A:'A级',B:'B级',C:'C级'};
-const gradeDescriptions={A:'重点观察',B:'综合信号',C:'综合信号'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(2)+'%';
 const roi=v=>v==null?'—':(Number(v)>0?'+':'')+(Number(v)*100).toFixed(2)+'%';
 const keys=['full_win','full_loss','half_win','half_loss'];
-function records(){const unique=new Map();[...DATA.history,...DATA.fixtures].forEach(r=>unique.set(r.key,r));return[...unique.values()]}
-function combineSummaries(summaries){
- const combined={n:0,unit_profit:0};keys.forEach(k=>combined[k]=0);
- summaries.filter(Boolean).forEach(summary=>{combined.n+=Number(summary.n)||0;combined.unit_profit+=Number(summary.unit_profit)||0;keys.forEach(k=>combined[k]+=Number(summary[k])||0)});
- const effectiveBase=combined.full_win+combined.full_loss+.5*combined.half_win+.5*combined.half_loss;
- const effectiveWins=combined.full_win+.5*combined.half_win;
- combined.effective_win_rate=effectiveBase>0?effectiveWins/effectiveBase:null;
- combined.roi=combined.n>0?combined.unit_profit/combined.n:null;
- return combined;
-}
 function gradeSummary(grade){
- const league=$('league').value,market=DATA.market_tracking?.grades?.[grade];
- return league==='ALL'?market?.overall:market?.by_league?.[league];
+ const league=$('league').value,current=BACKTEST.grades?.[grade]?.current;
+ return league==='ALL'?current:current?.by_league?.[league];
 }
-function summaryFor(grade){return grade==='ALL'?combineSummaries(GRADES.map(gradeSummary)):gradeSummary(grade)}
-function statsFrom(summary){const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};if(summary)keys.forEach(k=>counts[k]=summary[k]||0);const n=Object.values(counts).reduce((a,b)=>a+b,0);return{n,triggers:summary?.n||0,accuracy:summary?.effective_win_rate??null,roi:summary?.roi??null,counts}}
-function netWins(stats){const c=stats.counts;return c.full_win+.5*c.half_win-c.full_loss-.5*c.half_loss}
-const signedNet=v=>(v>0?'+':'')+Number(v.toFixed(1));
+function summaryFor(grade){
+ const league=$('league').value;
+ if(grade!=='ALL')return gradeSummary(grade);
+ return league==='ALL'?BACKTEST.current:BACKTEST.current.by_league[league];
+}
+function statsFrom(summary){
+ const counts={full_win:0,full_loss:0,half_win:0,half_loss:0};
+ if(summary)keys.forEach(k=>counts[k]=summary[k]||0);
+ return{triggers:summary?.n||0,accuracy:summary?.effective_win_rate??null,roi:summary?.roi??null,counts};
+}
 function currentStats(){return statsFrom(summaryFor($('model').value))}
 function renderRules(){
  $('rule-rows').innerHTML=GRADES.map(grade=>{
-  const s=statsFrom(summaryFor(grade)),featured=grade==='A',net=netWins(s);
-  return`<tr class="clickable ${featured?'featured-rule':''}" data-grade="${grade}"><td><span class="rule-id">${grade}级</span><span class="rule-name">${gradeDescriptions[grade]}</span></td><td>${s.triggers}</td><td>${s.counts.full_win}</td><td>${s.counts.full_loss}</td><td>${s.counts.half_win}</td><td>${s.counts.half_loss}</td><td><b>${pct(s.accuracy)}</b></td><td>${roi(s.roi)}</td><td><span class="net-value ${net>0?'net-win':net<0?'net-loss':''}">${signedNet(net)}</span></td></tr>`;
- }).join('');
+  const s=statsFrom(gradeSummary(grade)),r=BACKTEST.grades[grade];
+  return`<tr class="clickable" data-grade="${grade}"><td><span class="rule-id">${grade}级</span><span class="rule-name">${r.name}</span></td><td>${s.triggers}</td><td><b>${pct(s.accuracy)}</b></td><td>${roi(s.roi)}</td></tr>`;
+ }).join('')+`<tr><td><b>合计</b></td><td>${currentStats().triggers}</td><td><b>${pct(currentStats().accuracy)}</b></td><td><b>${roi(currentStats().roi)}</b></td></tr>`;
  document.querySelectorAll('[data-grade]').forEach(row=>row.addEventListener('click',()=>{$('model').value=row.dataset.grade;render();window.scrollTo({top:0,behavior:'smooth'})}));
 }
 function backtestCell(summary){return`<td class="season-cell"><b>${summary?.n||0}场</b><span>${pct(summary?.effective_win_rate)}</span><span>${roi(summary?.roi)}</span></td>`}
-function renderBacktest(){if(!BACKTEST)return;$('backtest-meta').innerHTML=`<span>42条融合规则</span><span>五季 ${BACKTEST.overall.n} 注</span><span>胜率 ${pct(BACKTEST.overall.effective_win_rate)} · ROI ${roi(BACKTEST.overall.roi)}</span>`;$('rule-rows').innerHTML=['S','A','B','C'].map(id=>{const r=BACKTEST.grades[id],x=r.current;return `<tr><td><span class="rule-id">${id}</span><span class="rule-name">${r.name}</span></td><td>${x.n}</td><td>${pct(x.effective_win_rate)}</td><td>${roi(x.roi)}</td></tr>`}).join('')+`<tr><td><b>合计</b></td><td>${BACKTEST.current.n}</td><td><b>${pct(BACKTEST.current.effective_win_rate)}</b></td><td><b>${roi(BACKTEST.current.roi)}</b></td></tr>`;$('backtest-rows').innerHTML=['S','A','B','C'].map(id=>`<tr><td><span class="rule-id">${id}</span><span class="rule-name">${BACKTEST.grades[id].name}</span></td>${Object.values(BACKTEST.seasons).map(s=>backtestCell(s.grades[id])).join('')}${backtestCell(BACKTEST.grades[id].overall)}</tr>`).join('')}
+function renderBacktest(){
+ if(!BACKTEST)return;
+ $('backtest-meta').innerHTML=`<span>42条融合规则</span><span>五季 ${BACKTEST.overall.n} 注</span><span>胜率 ${pct(BACKTEST.overall.effective_win_rate)} · ROI ${roi(BACKTEST.overall.roi)}</span>`;
+ $('backtest-rows').innerHTML=GRADES.map(id=>`<tr><td><span class="rule-id">${id}</span><span class="rule-name">${BACKTEST.grades[id].name}</span></td>${Object.values(BACKTEST.seasons).map(s=>backtestCell(s.grades[id])).join('')}${backtestCell(BACKTEST.grades[id].overall)}</tr>`).join('');
+}
 function render(){
  const stats=currentStats(),c=stats.counts;
  $('accuracy').textContent=pct(stats.accuracy);$('trigger-count').textContent=stats.triggers;$('roi').textContent=roi(stats.roi);keys.forEach(key=>$(key.replaceAll('_','-')).textContent=c[key]);
@@ -94,8 +93,10 @@ async function init(){try{
  const [response,backtestResponse]=await Promise.all([fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'}),fetch(`data/fusion_report.json?v=${Date.now()}`,{cache:'no-store'})]);
  if(!response.ok)throw new Error(`赛前数据 HTTP ${response.status}`);if(!backtestResponse.ok)throw new Error(`回测数据 HTTP ${backtestResponse.status}`);
  DATA=await response.json();BACKTEST=await backtestResponse.json();
- const names={};if(DATA.stat_leagues)DATA.stat_leagues.forEach(r=>names[r.league_id]=r.league_name);else records().forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
+ const names=BACKTEST.current.league_names||{},ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
+ $('current-title').textContent=`2026-27 · 截至${BACKTEST.cutoff}`;
+ $('current-hint').textContent=`真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。本赛季共${BACKTEST.current.n}注，按联赛或档位筛选后，下方成绩同步变化。`;
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();renderBacktest();
  }catch(e){$('error').textContent='统计数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
 $('league').addEventListener('change',render);$('model').addEventListener('change',render);init();
