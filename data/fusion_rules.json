@@ -1,0 +1,562 @@
+[
+  {
+    "id": "ARG|{\"m\": 0.5}",
+    "league": "ARG",
+    "kind": "model",
+    "side": "home",
+    "params": {
+      "m": 0.5
+    },
+    "grade": "A",
+    "n": 263,
+    "wr": 55.0,
+    "roi": 8.34
+  },
+  {
+    "id": "AUT|{\"d\": 0.25}",
+    "league": "AUT",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.25
+    },
+    "grade": "C",
+    "n": 392,
+    "wr": 52.6,
+    "roi": 2.89
+  },
+  {
+    "id": "B1|{\"l\": 0.75}",
+    "league": "B1",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "B",
+    "n": 358,
+    "wr": 56.0,
+    "roi": 7.41
+  },
+  {
+    "id": "BRA|{\"l\": 0.75}",
+    "league": "BRA",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "B",
+    "n": 606,
+    "wr": 54.6,
+    "roi": 7.66
+  },
+  {
+    "id": "D2|{\"l\": 0.75}",
+    "league": "D2",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "C",
+    "n": 272,
+    "wr": 53.4,
+    "roi": 3.08
+  },
+  {
+    "id": "DNK|{\"d\": 0.25}",
+    "league": "DNK",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.25
+    },
+    "grade": "C",
+    "n": 401,
+    "wr": 53.0,
+    "roi": 3.66
+  },
+  {
+    "id": "E1|{\"l\": 0.75}",
+    "league": "E1",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "B",
+    "n": 520,
+    "wr": 55.3,
+    "roi": 6.95
+  },
+  {
+    "id": "F1|{\"m\": 0.25}",
+    "league": "F1",
+    "kind": "model",
+    "side": "away",
+    "params": {
+      "m": 0.25
+    },
+    "grade": "C",
+    "n": 440,
+    "wr": 53.1,
+    "roi": 3.35
+  },
+  {
+    "id": "F2|{\"l\": 0.5}",
+    "league": "F2",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.5
+    },
+    "grade": "B",
+    "n": 502,
+    "wr": 56.0,
+    "roi": 7.44
+  },
+  {
+    "id": "FIN|{\"l\": 0.25}",
+    "league": "FIN",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 444,
+    "wr": 54.4,
+    "roi": 7.14
+  },
+  {
+    "id": "G1|{\"d\": 0.375}",
+    "league": "G1",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.375
+    },
+    "grade": "C",
+    "n": 343,
+    "wr": 55.2,
+    "roi": 4.48
+  },
+  {
+    "id": "I2|{\"l\": 0.75}",
+    "league": "I2",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "A",
+    "n": 268,
+    "wr": 62.4,
+    "roi": 18.96
+  },
+  {
+    "id": "JPN|{\"l\": 0.25}",
+    "league": "JPN",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 881,
+    "wr": 53.6,
+    "roi": 6.43
+  },
+  {
+    "id": "MEX|{\"l\": 0.5}",
+    "league": "MEX",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.5
+    },
+    "grade": "B",
+    "n": 747,
+    "wr": 53.2,
+    "roi": 6.07
+  },
+  {
+    "id": "N1|{\"d\": 0.375}",
+    "league": "N1",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.375
+    },
+    "grade": "B",
+    "n": 499,
+    "wr": 55.9,
+    "roi": 6.51
+  },
+  {
+    "id": "NOR|{\"l\": 0.25}",
+    "league": "NOR",
+    "kind": "inst",
+    "side": "away",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "A",
+    "n": 272,
+    "wr": 54.5,
+    "roi": 8.3
+  },
+  {
+    "id": "P1|{\"l\": 0.75}",
+    "league": "P1",
+    "kind": "inst",
+    "side": "away",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "A",
+    "n": 202,
+    "wr": 57.2,
+    "roi": 8.97
+  },
+  {
+    "id": "POL|{\"l\": 0.5}",
+    "league": "POL",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.5
+    },
+    "grade": "B",
+    "n": 567,
+    "wr": 53.9,
+    "roi": 7.05
+  },
+  {
+    "id": "ROU|{\"l\": 0.25}",
+    "league": "ROU",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 879,
+    "wr": 53.8,
+    "roi": 6.0
+  },
+  {
+    "id": "RUS|{\"l\": 0.25}",
+    "league": "RUS",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 667,
+    "wr": 54.3,
+    "roi": 7.43
+  },
+  {
+    "id": "SC0|{\"l\": 0.25}",
+    "league": "SC0",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 536,
+    "wr": 55.2,
+    "roi": 6.15
+  },
+  {
+    "id": "SP2|{\"m\": 0.25}",
+    "league": "SP2",
+    "kind": "model",
+    "side": "home",
+    "params": {
+      "m": 0.25
+    },
+    "grade": "B",
+    "n": 580,
+    "wr": 56.1,
+    "roi": 6.93
+  },
+  {
+    "id": "SWE|{\"l\": 0.5}",
+    "league": "SWE",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.5
+    },
+    "grade": "B",
+    "n": 507,
+    "wr": 54.1,
+    "roi": 7.33
+  },
+  {
+    "id": "SWZ|{\"d\": 0.375}",
+    "league": "SWZ",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.375
+    },
+    "grade": "C",
+    "n": 398,
+    "wr": 53.6,
+    "roi": 4.95
+  },
+  {
+    "id": "T1|{\"l\": 0.25}",
+    "league": "T1",
+    "kind": "inst",
+    "side": "away",
+    "params": {
+      "l": 0.25
+    },
+    "grade": "B",
+    "n": 318,
+    "wr": 56.3,
+    "roi": 7.64
+  },
+  {
+    "id": "USA|{\"l\": 0.75}",
+    "league": "USA",
+    "kind": "inst",
+    "side": "home",
+    "params": {
+      "l": 0.75
+    },
+    "grade": "A",
+    "n": 867,
+    "wr": 54.5,
+    "roi": 8.23
+  },
+  {
+    "id": "D|I1|0.625|away",
+    "league": "I1",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.625
+    },
+    "grade": "C",
+    "n": 214,
+    "wr": 55.1,
+    "roi": 4.42
+  },
+  {
+    "id": "D|SWZ|0.500|away",
+    "league": "SWZ",
+    "kind": "div",
+    "side": "away",
+    "params": {
+      "d": 0.5
+    },
+    "grade": "B",
+    "n": 282,
+    "wr": 54.1,
+    "roi": 6.07
+  },
+  {
+    "id": "A01",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": -1.75,
+      "threshold": -0.95
+    },
+    "grade": "A",
+    "n": 126,
+    "wr": 61.6,
+    "roi": 18.08
+  },
+  {
+    "id": "A02",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": -0.25,
+      "threshold": -0.2
+    },
+    "grade": "C",
+    "n": 508,
+    "wr": 52.7,
+    "roi": 1.59
+  },
+  {
+    "id": "A03",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "home",
+    "params": {
+      "line": -0.25,
+      "threshold": 0.5
+    },
+    "grade": "B",
+    "n": 171,
+    "wr": 54.9,
+    "roi": 7.44
+  },
+  {
+    "id": "A04",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": 1.5,
+      "threshold": 2.05
+    },
+    "grade": "C",
+    "n": 88,
+    "wr": 55.7,
+    "roi": 8.62
+  },
+  {
+    "id": "B01",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": -1.5,
+      "threshold": -0.75
+    },
+    "grade": "A",
+    "n": 249,
+    "wr": 57.4,
+    "roi": 10.35
+  },
+  {
+    "id": "B02",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "home",
+    "params": {
+      "line": -1.25,
+      "threshold": -0.5
+    },
+    "grade": "A",
+    "n": 144,
+    "wr": 60.7,
+    "roi": 16.92
+  },
+  {
+    "id": "B03",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "home",
+    "params": {
+      "line": -1.0,
+      "threshold": -0.7
+    },
+    "grade": "C",
+    "n": 426,
+    "wr": 52.8,
+    "roi": 2.94
+  },
+  {
+    "id": "B04",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "home",
+    "params": {
+      "line": -0.75,
+      "threshold": 0.0
+    },
+    "grade": "A",
+    "n": 104,
+    "wr": 58.5,
+    "roi": 12.92
+  },
+  {
+    "id": "B05",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": -0.5,
+      "threshold": -0.65
+    },
+    "grade": "A",
+    "n": 185,
+    "wr": 57.3,
+    "roi": 11.49
+  },
+  {
+    "id": "B06",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": 0.5,
+      "threshold": 0.35
+    },
+    "grade": "C",
+    "n": 163,
+    "wr": 52.1,
+    "roi": 2.64
+  },
+  {
+    "id": "B07",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": 1.0,
+      "threshold": 0.8
+    },
+    "grade": "C",
+    "n": 57,
+    "wr": 56.4,
+    "roi": 7.95
+  },
+  {
+    "id": "C02",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": 0.25,
+      "threshold": 0.5
+    },
+    "grade": "C",
+    "n": 785,
+    "wr": 52.3,
+    "roi": 3.13
+  },
+  {
+    "id": "C03",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "away",
+    "params": {
+      "line": 0.75,
+      "threshold": 0.5
+    },
+    "grade": "C",
+    "n": 145,
+    "wr": 54.2,
+    "roi": 4.98
+  },
+  {
+    "id": "C04",
+    "league": "BIG7",
+    "kind": "exact",
+    "side": "home",
+    "params": {
+      "line": 1.25,
+      "threshold": 1.1
+    },
+    "grade": "C",
+    "n": 96,
+    "wr": 57.6,
+    "roi": 9.03
+  }
+]
