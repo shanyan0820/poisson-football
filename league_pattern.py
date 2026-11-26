@@ -9,7 +9,7 @@ try:
     RULES = json.loads((ROOT / "data" / "fusion_rules.json").read_text(encoding="utf-8"))
 except (OSError, ValueError):
     RULES = []
-PATTERN_VERSION = f"fusion-{len(RULES)}-sabc-quarter-v4-big7-consistent"
+PATTERN_VERSION = f"fusion-{len(RULES)}-sabc-quarter-v5-full-unified"
 BY_LEAGUE = {}
 for rule in RULES:
     BY_LEAGUE.setdefault(rule["league"], []).append(rule)
