@@ -104,7 +104,7 @@ async function init(){try{
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
  $('current-title').textContent=`2026-27 · 截至${BACKTEST.cutoff}`;
  $('current-hint').textContent=`真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。本赛季共${BACKTEST.current.n}注，按联赛或档位筛选后，下方成绩和比赛明细同步变化。`;
- const quality=BACKTEST.data_quality||{};$('source-quality-note').textContent=`源数据审计：统一研究样本 ${quality.unified_rows??'—'} 场，排除 ${quality.excluded_count??0} 场明确开盘字段异常；不以收盘盘口替换开盘，其余样本未按赛果删改。`;
+ const quality=BACKTEST.data_quality||{};$('source-quality-note').textContent=`源数据审计：统一研究样本 ${quality.unified_rows??'—'} 场，排除 ${quality.excluded_count??0} 场明确开盘字段异常；不以收盘盘口替换开盘，其余样本未按赛果删改。BIG7十五刻度已重新寻优，五季统一使用同一套阈值。`;
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();renderBacktest();
  }catch(e){$('error').textContent='统计数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
 $('league').addEventListener('change',render);$('model').addEventListener('change',render);init();
