@@ -1,35 +1,35 @@
 {
-  "version": "fusion-39-sabc-quarter-v3-source-clean",
+  "version": "fusion-39-sabc-quarter-v4-big7-consistent",
   "settlement_version": "asian-official-table-v3",
   "cutoff": "2026-11-24",
   "rules": 39,
   "overall": {
-    "n": 11970,
-    "wins": 5705.0,
-    "losses": 4748.0,
-    "unit_profit": 701.2499999999998,
-    "full_win": 5238,
-    "full_loss": 4307,
-    "half_win": 934,
-    "half_loss": 882,
-    "push": 609,
-    "effective_win_rate": 0.5457763321534488,
-    "roi": 0.058583959899749356,
-    "profit": 701.2499999999998
+    "n": 12209,
+    "wins": 5824.5,
+    "losses": 4842.0,
+    "unit_profit": 718.3149999999998,
+    "full_win": 5347,
+    "full_loss": 4397,
+    "half_win": 955,
+    "half_loss": 890,
+    "push": 620,
+    "effective_win_rate": 0.5460554071157362,
+    "roi": 0.05883487591121302,
+    "profit": 718.3149999999998
   },
   "current": {
-    "n": 291,
-    "wins": 148.0,
-    "losses": 111.5,
-    "unit_profit": 24.439999999999994,
-    "full_win": 140,
+    "n": 298,
+    "wins": 154.5,
+    "losses": 111.0,
+    "unit_profit": 30.894999999999996,
+    "full_win": 146,
     "full_loss": 102,
-    "half_win": 16,
-    "half_loss": 19,
-    "push": 14,
-    "effective_win_rate": 0.5703275529865125,
-    "roi": 0.08398625429553262,
-    "profit": 24.439999999999994,
+    "half_win": 17,
+    "half_loss": 18,
+    "push": 15,
+    "effective_win_rate": 0.5819209039548022,
+    "roi": 0.10367449664429529,
+    "profit": 30.894999999999996,
     "by_league": {
       "B1": {
         "n": 16,
@@ -88,18 +88,18 @@
         "profit": 0.0499999999999996
       },
       "E1": {
-        "n": 35,
+        "n": 32,
         "wins": 14.5,
-        "losses": 16.5,
-        "unit_profit": -2.610000000000001,
+        "losses": 13.5,
+        "unit_profit": 0.3899999999999989,
         "full_win": 14,
-        "full_loss": 15,
+        "full_loss": 12,
         "half_win": 1,
         "half_loss": 3,
         "push": 2,
-        "effective_win_rate": 0.46774193548387094,
-        "roi": -0.07457142857142861,
-        "profit": -2.610000000000001
+        "effective_win_rate": 0.5178571428571429,
+        "roi": 0.012187499999999966,
+        "profit": 0.3899999999999989
       },
       "F1": {
         "n": 25,
@@ -144,18 +144,18 @@
         "profit": -1.19
       },
       "I1": {
-        "n": 21,
-        "wins": 12.0,
-        "losses": 7.5,
-        "unit_profit": 4.219999999999999,
-        "full_win": 12,
-        "full_loss": 7,
-        "half_win": 0,
-        "half_loss": 1,
-        "push": 1,
-        "effective_win_rate": 0.6153846153846154,
-        "roi": 0.2009523809523809,
-        "profit": 4.219999999999999
+        "n": 31,
+        "wins": 18.5,
+        "losses": 10.0,
+        "unit_profit": 7.674999999999999,
+        "full_win": 18,
+        "full_loss": 10,
+        "half_win": 1,
+        "half_loss": 0,
+        "push": 2,
+        "effective_win_rate": 0.6491228070175439,
+        "roi": 0.24758064516129027,
+        "profit": 7.674999999999999
       },
       "I2": {
         "n": 9,
@@ -429,7 +429,7 @@
         "date": "2026-11-22",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "S",
         "home": "亚特兰大",
         "away": "国际米兰",
         "home_source": "Atalanta",
@@ -714,7 +714,7 @@
         "date": "2026-11-21",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "S",
         "home": "帕尔马",
         "away": "罗马",
         "home_source": "Parma",
@@ -804,22 +804,37 @@
         "date": "2026-11-21",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "B",
-        "home": "西汉姆联",
-        "away": "普雷斯顿",
-        "home_source": "West Ham",
-        "away_source": "Preston",
-        "home_line": -2.0,
-        "selection": "home",
-        "selection_line": -2.0,
-        "score": "1-1",
+        "grade": "A",
+        "home": "狼队",
+        "away": "查尔顿",
+        "home_source": "Wolves",
+        "away_source": "Charlton",
+        "home_line": -1.5,
+        "selection": "away",
+        "selection_line": 1.5,
+        "score": "2-1",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-11-21",
+        "league": "E1",
+        "league_name": "英冠",
+        "grade": "A",
+        "home": "南安普顿",
+        "away": "德比郡",
+        "home_source": "Southampton",
+        "away_source": "Derby",
+        "home_line": -1.5,
+        "selection": "away",
+        "selection_line": 1.5,
+        "score": "2-0",
         "outcome": "全输"
       },
       {
         "date": "2026-11-21",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "谢菲尔德联",
         "away": "沃特福德",
         "home_source": "Sheffield United",
@@ -834,7 +849,7 @@
         "date": "2026-11-21",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "A",
         "home": "米德尔斯堡",
         "away": "布里斯托尔城",
         "home_source": "Middlesbrough",
@@ -1239,21 +1254,6 @@
         "date": "2026-11-08",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "B",
-        "home": "那不勒斯",
-        "away": "拉齐奥",
-        "home_source": "Napoli",
-        "away_source": "Lazio",
-        "home_line": -0.25,
-        "selection": "home",
-        "selection_line": -0.25,
-        "score": "1-1",
-        "outcome": "输一半"
-      },
-      {
-        "date": "2026-11-08",
-        "league": "I1",
-        "league_name": "意甲",
         "grade": "C",
         "home": "蒙扎",
         "away": "亚特兰大",
@@ -1264,6 +1264,36 @@
         "selection_line": -0.5,
         "score": "0-1",
         "outcome": "全赢"
+      },
+      {
+        "date": "2026-11-08",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "热那亚",
+        "away": "AC米兰",
+        "home_source": "Genoa",
+        "away_source": "Milan",
+        "home_line": 0.5,
+        "selection": "away",
+        "selection_line": -0.5,
+        "score": "1-2",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-11-08",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "佛罗伦萨",
+        "away": "尤文图斯",
+        "home_source": "Fiorentina",
+        "away_source": "Juventus",
+        "home_line": 0.5,
+        "selection": "away",
+        "selection_line": -0.5,
+        "score": "2-2",
+        "outcome": "全输"
       },
       {
         "date": "2026-11-08",
@@ -1642,6 +1672,36 @@
       },
       {
         "date": "2026-11-07",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "帕尔马",
+        "away": "博洛尼亚",
+        "home_source": "Parma",
+        "away_source": "Bologna",
+        "home_line": 0.5,
+        "selection": "away",
+        "selection_line": -0.5,
+        "score": "1-2",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-11-07",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "卡利亚里",
+        "away": "弗罗西诺内",
+        "home_source": "Cagliari",
+        "away_source": "Frosinone",
+        "home_line": 0.0,
+        "selection": "away",
+        "selection_line": -0.0,
+        "score": "1-0",
+        "outcome": "全输"
+      },
+      {
+        "date": "2026-11-07",
         "league": "G1",
         "league_name": "希腊超",
         "grade": "C",
@@ -1788,6 +1848,21 @@
         "selection": "away",
         "selection_line": -1.5,
         "score": "1-2",
+        "outcome": "全输"
+      },
+      {
+        "date": "2026-11-06",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "威尼斯",
+        "away": "乌迪内斯",
+        "home_source": "Venezia",
+        "away_source": "Udinese",
+        "home_line": -0.25,
+        "selection": "away",
+        "selection_line": 0.25,
+        "score": "2-1",
         "outcome": "全输"
       },
       {
@@ -2319,7 +2394,22 @@
         "date": "2026-10-31",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "B",
+        "home": "乌迪内斯",
+        "away": "罗马",
+        "home_source": "Udinese",
+        "away_source": "Roma",
+        "home_line": 1.0,
+        "selection": "away",
+        "selection_line": -1.0,
+        "score": "2-5",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-10-31",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "S",
         "home": "AC米兰",
         "away": "国际米兰",
         "home_source": "Milan",
@@ -2349,7 +2439,7 @@
         "date": "2026-10-31",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "西汉姆联",
         "away": "西布罗姆维奇",
         "home_source": "West Ham",
@@ -2364,7 +2454,7 @@
         "date": "2026-10-31",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "诺维奇",
         "away": "沃特福德",
         "home_source": "Norwich",
@@ -2374,21 +2464,6 @@
         "selection_line": -1.0,
         "score": "3-2",
         "outcome": "走盘"
-      },
-      {
-        "date": "2026-10-31",
-        "league": "E1",
-        "league_name": "英冠",
-        "grade": "B",
-        "home": "米德尔斯堡",
-        "away": "查尔顿",
-        "home_source": "Middlesbrough",
-        "away_source": "Charlton",
-        "home_line": -1.75,
-        "selection": "home",
-        "selection_line": -1.75,
-        "score": "3-0",
-        "outcome": "全赢"
       },
       {
         "date": "2026-10-31",
@@ -2721,6 +2796,21 @@
         "outcome": "全赢"
       },
       {
+        "date": "2026-10-29",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "佛罗伦萨",
+        "away": "亚特兰大",
+        "home_source": "Fiorentina",
+        "away_source": "Atalanta",
+        "home_line": -0.25,
+        "selection": "away",
+        "selection_line": 0.25,
+        "score": "2-2",
+        "outcome": "赢一半"
+      },
+      {
         "date": "2026-10-28",
         "league": "SC0",
         "league_name": "苏超",
@@ -2769,7 +2859,7 @@
         "date": "2026-10-28",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "S",
         "home": "威尼斯",
         "away": "国际米兰",
         "home_source": "Venezia",
@@ -2799,7 +2889,7 @@
         "date": "2026-10-28",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "S",
         "home": "热那亚",
         "away": "尤文图斯",
         "home_source": "Genoa",
@@ -2829,7 +2919,7 @@
         "date": "2026-10-27",
         "league": "I1",
         "league_name": "意甲",
-        "grade": "C",
+        "grade": "S",
         "home": "都灵",
         "away": "科莫",
         "home_source": "Torino",
@@ -2838,6 +2928,21 @@
         "selection": "away",
         "selection_line": -0.75,
         "score": "1-3",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-10-27",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "萨索洛",
+        "away": "拉齐奥",
+        "home_source": "Sassuolo",
+        "away_source": "Lazio",
+        "home_line": 0.5,
+        "selection": "away",
+        "selection_line": -0.5,
+        "score": "2-6",
         "outcome": "全赢"
       },
       {
@@ -3004,6 +3109,36 @@
         "selection_line": -1.25,
         "score": "2-1",
         "outcome": "输一半"
+      },
+      {
+        "date": "2026-10-25",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "乌迪内斯",
+        "away": "AC米兰",
+        "home_source": "Udinese",
+        "away_source": "Milan",
+        "home_line": 0.75,
+        "selection": "away",
+        "selection_line": -0.75,
+        "score": "0-2",
+        "outcome": "全赢"
+      },
+      {
+        "date": "2026-10-25",
+        "league": "I1",
+        "league_name": "意甲",
+        "grade": "B",
+        "home": "莱切",
+        "away": "尤文图斯",
+        "home_source": "Lecce",
+        "away_source": "Juventus",
+        "home_line": 1.25,
+        "selection": "away",
+        "selection_line": -1.25,
+        "score": "0-2",
+        "outcome": "全赢"
       },
       {
         "date": "2026-10-25",
@@ -3384,6 +3519,21 @@
         "date": "2026-10-24",
         "league": "I1",
         "league_name": "意甲",
+        "grade": "B",
+        "home": "那不勒斯",
+        "away": "罗马",
+        "home_source": "Napoli",
+        "away_source": "Roma",
+        "home_line": 0.0,
+        "selection": "away",
+        "selection_line": -0.0,
+        "score": "3-3",
+        "outcome": "走盘"
+      },
+      {
+        "date": "2026-10-24",
+        "league": "I1",
+        "league_name": "意甲",
         "grade": "A",
         "home": "科莫",
         "away": "萨索洛",
@@ -3438,21 +3588,6 @@
         "selection": "home",
         "selection_line": -0.5,
         "score": "1-2",
-        "outcome": "全输"
-      },
-      {
-        "date": "2026-10-24",
-        "league": "E1",
-        "league_name": "英冠",
-        "grade": "B",
-        "home": "狼队",
-        "away": "沃特福德",
-        "home_source": "Wolves",
-        "away_source": "Watford",
-        "home_line": -1.5,
-        "selection": "home",
-        "selection_line": -1.5,
-        "score": "1-0",
         "outcome": "全输"
       },
       {
@@ -3654,7 +3789,7 @@
         "date": "2026-10-20",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "狼队",
         "away": "朴茨茅斯",
         "home_source": "Wolves",
@@ -3939,22 +4074,7 @@
         "date": "2026-10-17",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "B",
-        "home": "南安普顿",
-        "away": "博尔顿",
-        "home_source": "Southampton",
-        "away_source": "Bolton",
-        "home_line": -1.25,
-        "selection": "home",
-        "selection_line": -1.25,
-        "score": "0-0",
-        "outcome": "全输"
-      },
-      {
-        "date": "2026-10-17",
-        "league": "E1",
-        "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "米德尔斯堡",
         "away": "卡迪夫城",
         "home_source": "Middlesbrough",
@@ -4044,21 +4164,6 @@
         "date": "2026-10-13",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "B",
-        "home": "狼队",
-        "away": "博尔顿",
-        "home_source": "Wolves",
-        "away_source": "Bolton",
-        "home_line": -1.25,
-        "selection": "home",
-        "selection_line": -1.25,
-        "score": "1-3",
-        "outcome": "全输"
-      },
-      {
-        "date": "2026-10-13",
-        "league": "E1",
-        "league_name": "英冠",
         "grade": "C",
         "home": "斯托克城",
         "away": "米德尔斯堡",
@@ -4074,7 +4179,7 @@
         "date": "2026-10-13",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "伯明翰",
         "away": "普雷斯顿",
         "home_source": "Birmingham",
@@ -4224,7 +4329,7 @@
         "date": "2026-10-11",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "南安普顿",
         "away": "朴茨茅斯",
         "home_source": "Southampton",
@@ -4509,7 +4614,7 @@
         "date": "2026-10-09",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "A",
         "home": "西汉姆联",
         "away": "女王公园巡游者",
         "home_source": "West Ham",
@@ -4584,7 +4689,7 @@
         "date": "2026-09-20",
         "league": "E1",
         "league_name": "英冠",
-        "grade": "S",
+        "grade": "C",
         "home": "诺维奇",
         "away": "博尔顿",
         "home_source": "Norwich",
@@ -4646,47 +4751,33 @@
     "S": {
       "name": "双确认",
       "overall": {
-        "n": 456,
-        "wins": 226.0,
-        "losses": 173.0,
-        "unit_profit": 45.03499999999999,
-        "full_win": 218,
-        "full_loss": 159,
-        "half_win": 16,
-        "half_loss": 28,
-        "push": 35,
-        "effective_win_rate": 0.5664160401002506,
-        "roi": 0.09876096491228067,
-        "profit": 45.03499999999999
+        "n": 492,
+        "wins": 246.0,
+        "losses": 186.0,
+        "unit_profit": 50.36999999999999,
+        "full_win": 234,
+        "full_loss": 165,
+        "half_win": 24,
+        "half_loss": 42,
+        "push": 27,
+        "effective_win_rate": 0.5694444444444444,
+        "roi": 0.10237804878048778,
+        "profit": 50.36999999999999
       },
       "current": {
-        "n": 11,
+        "n": 7,
         "wins": 3.0,
-        "losses": 6.0,
-        "unit_profit": -3.27,
+        "losses": 4.0,
+        "unit_profit": -1.26,
         "full_win": 3,
-        "full_loss": 6,
+        "full_loss": 4,
         "half_win": 0,
         "half_loss": 0,
-        "push": 2,
-        "effective_win_rate": 0.3333333333333333,
-        "roi": -0.2972727272727273,
-        "profit": -3.27,
+        "push": 0,
+        "effective_win_rate": 0.42857142857142855,
+        "roi": -0.18,
+        "profit": -1.26,
         "by_league": {
-          "E1": {
-            "n": 10,
-            "wins": 3.0,
-            "losses": 5.0,
-            "unit_profit": -2.27,
-            "full_win": 3,
-            "full_loss": 5,
-            "half_win": 0,
-            "half_loss": 0,
-            "push": 2,
-            "effective_win_rate": 0.375,
-            "roi": -0.227,
-            "profit": -2.27
-          },
           "F1": {
             "n": 1,
             "wins": 0.0,
@@ -4700,6 +4791,20 @@
             "effective_win_rate": 0.0,
             "roi": -1.0,
             "profit": -1.0
+          },
+          "I1": {
+            "n": 6,
+            "wins": 3.0,
+            "losses": 3.0,
+            "unit_profit": -0.26,
+            "full_win": 3,
+            "full_loss": 3,
+            "half_win": 0,
+            "half_loss": 0,
+            "push": 0,
+            "effective_win_rate": 0.5,
+            "roi": -0.043333333333333335,
+            "profit": -0.26
           }
         }
       }
@@ -4707,32 +4812,32 @@
     "A": {
       "name": "高收益",
       "overall": {
-        "n": 2511,
-        "wins": 1290.0,
-        "losses": 947.5,
-        "unit_profit": 280.40999999999997,
-        "full_win": 1191,
-        "full_loss": 872,
+        "n": 2572,
+        "wins": 1321.0,
+        "losses": 974.5,
+        "unit_profit": 282.15,
+        "full_win": 1222,
+        "full_loss": 896,
         "half_win": 198,
-        "half_loss": 151,
+        "half_loss": 157,
         "push": 99,
-        "effective_win_rate": 0.576536312849162,
-        "roi": 0.11167264038231779,
-        "profit": 280.40999999999997
+        "effective_win_rate": 0.5754737529949902,
+        "roi": 0.10970062208398133,
+        "profit": 282.15
       },
       "current": {
-        "n": 60,
-        "wins": 35.0,
-        "losses": 17.5,
-        "unit_profit": 13.979999999999999,
-        "full_win": 33,
-        "full_loss": 16,
+        "n": 64,
+        "wins": 37.0,
+        "losses": 19.5,
+        "unit_profit": 13.709999999999999,
+        "full_win": 35,
+        "full_loss": 18,
         "half_win": 4,
         "half_loss": 3,
         "push": 4,
-        "effective_win_rate": 0.6666666666666666,
-        "roi": 0.23299999999999998,
-        "profit": 13.979999999999999,
+        "effective_win_rate": 0.6548672566371682,
+        "roi": 0.21421874999999999,
+        "profit": 13.709999999999999,
         "by_league": {
           "D1": {
             "n": 1,
@@ -4763,18 +4868,18 @@
             "profit": 0.0
           },
           "E1": {
-            "n": 1,
-            "wins": 1.0,
-            "losses": 0.0,
-            "unit_profit": 0.8799999999999999,
-            "full_win": 1,
-            "full_loss": 0,
+            "n": 5,
+            "wins": 3.0,
+            "losses": 2.0,
+            "unit_profit": 0.6099999999999999,
+            "full_win": 3,
+            "full_loss": 2,
             "half_win": 0,
             "half_loss": 0,
             "push": 0,
-            "effective_win_rate": 1.0,
-            "roi": 0.8799999999999999,
-            "profit": 0.8799999999999999
+            "effective_win_rate": 0.6,
+            "roi": 0.12199999999999997,
+            "profit": 0.6099999999999999
           },
           "I1": {
             "n": 4,
@@ -4852,32 +4957,32 @@
     "B": {
       "name": "稳健",
       "overall": {
-        "n": 2189,
-        "wins": 1036.5,
-        "losses": 862.0,
-        "unit_profit": 150.43499999999995,
-        "full_win": 954,
-        "full_loss": 785,
-        "half_win": 165,
-        "half_loss": 154,
-        "push": 131,
-        "effective_win_rate": 0.545957334737951,
-        "roi": 0.06872316126084968,
-        "profit": 150.43499999999995
+        "n": 2378,
+        "wins": 1129.5,
+        "losses": 936.0,
+        "unit_profit": 163.65999999999994,
+        "full_win": 1036,
+        "full_loss": 857,
+        "half_win": 187,
+        "half_loss": 158,
+        "push": 140,
+        "effective_win_rate": 0.5468409586056645,
+        "roi": 0.0688225399495374,
+        "profit": 163.65999999999994
       },
       "current": {
-        "n": 11,
-        "wins": 4.0,
-        "losses": 6.5,
-        "unit_profit": -3.04,
-        "full_win": 4,
-        "full_loss": 6,
-        "half_win": 0,
-        "half_loss": 1,
-        "push": 0,
-        "effective_win_rate": 0.38095238095238093,
-        "roi": -0.27636363636363637,
-        "profit": -3.04,
+        "n": 16,
+        "wins": 9.5,
+        "losses": 5.0,
+        "unit_profit": 3.5149999999999997,
+        "full_win": 9,
+        "full_loss": 5,
+        "half_win": 1,
+        "half_loss": 0,
+        "push": 1,
+        "effective_win_rate": 0.6551724137931034,
+        "roi": 0.21968749999999998,
+        "profit": 3.5149999999999997,
         "by_league": {
           "E0": {
             "n": 1,
@@ -4893,33 +4998,19 @@
             "roi": 0.8300000000000001,
             "profit": 0.8300000000000001
           },
-          "E1": {
-            "n": 5,
-            "wins": 1.0,
-            "losses": 4.0,
-            "unit_profit": -3.1,
-            "full_win": 1,
-            "full_loss": 4,
-            "half_win": 0,
-            "half_loss": 0,
-            "push": 0,
-            "effective_win_rate": 0.2,
-            "roi": -0.62,
-            "profit": -3.1
-          },
           "I1": {
-            "n": 1,
-            "wins": 0.0,
-            "losses": 0.5,
-            "unit_profit": -0.5,
-            "full_win": 0,
-            "full_loss": 0,
-            "half_win": 0,
-            "half_loss": 1,
-            "push": 0,
-            "effective_win_rate": 0.0,
-            "roi": -0.5,
-            "profit": -0.5
+            "n": 11,
+            "wins": 6.5,
+            "losses": 3.0,
+            "unit_profit": 2.9549999999999996,
+            "full_win": 6,
+            "full_loss": 3,
+            "half_win": 1,
+            "half_loss": 0,
+            "push": 1,
+            "effective_win_rate": 0.6842105263157895,
+            "roi": 0.2686363636363636,
+            "profit": 2.9549999999999996
           },
           "P1": {
             "n": 4,
@@ -4941,32 +5032,32 @@
     "C": {
       "name": "覆盖",
       "overall": {
-        "n": 6814,
-        "wins": 3152.5,
-        "losses": 2765.5,
-        "unit_profit": 225.3699999999999,
-        "full_win": 2875,
-        "full_loss": 2491,
-        "half_win": 555,
-        "half_loss": 549,
-        "push": 344,
-        "effective_win_rate": 0.5326968570462994,
-        "roi": 0.033074552392133826,
-        "profit": 225.3699999999999
+        "n": 6767,
+        "wins": 3128.0,
+        "losses": 2745.5,
+        "unit_profit": 222.1349999999999,
+        "full_win": 2855,
+        "full_loss": 2479,
+        "half_win": 546,
+        "half_loss": 533,
+        "push": 354,
+        "effective_win_rate": 0.532561505065123,
+        "roi": 0.032826215457366616,
+        "profit": 222.1349999999999
       },
       "current": {
-        "n": 209,
-        "wins": 106.0,
-        "losses": 81.5,
-        "unit_profit": 16.769999999999996,
-        "full_win": 100,
-        "full_loss": 74,
+        "n": 211,
+        "wins": 105.0,
+        "losses": 82.5,
+        "unit_profit": 14.929999999999996,
+        "full_win": 99,
+        "full_loss": 75,
         "half_win": 12,
         "half_loss": 15,
-        "push": 8,
-        "effective_win_rate": 0.5653333333333334,
-        "roi": 0.08023923444976075,
-        "profit": 16.769999999999996,
+        "push": 10,
+        "effective_win_rate": 0.56,
+        "roi": 0.07075829383886253,
+        "profit": 14.929999999999996,
         "by_league": {
           "B1": {
             "n": 16,
@@ -5025,18 +5116,18 @@
             "profit": -0.7800000000000005
           },
           "E1": {
-            "n": 19,
-            "wins": 9.5,
-            "losses": 7.5,
-            "unit_profit": 1.879999999999999,
-            "full_win": 9,
-            "full_loss": 6,
+            "n": 27,
+            "wins": 11.5,
+            "losses": 11.5,
+            "unit_profit": -0.22000000000000097,
+            "full_win": 11,
+            "full_loss": 10,
             "half_win": 1,
             "half_loss": 3,
-            "push": 0,
-            "effective_win_rate": 0.5588235294117647,
-            "roi": 0.09894736842105258,
-            "profit": 1.879999999999999
+            "push": 2,
+            "effective_win_rate": 0.5,
+            "roi": -0.008148148148148184,
+            "profit": -0.22000000000000097
           },
           "F1": {
             "n": 24,
@@ -5081,18 +5172,18 @@
             "profit": -1.19
           },
           "I1": {
-            "n": 16,
-            "wins": 9.0,
-            "losses": 6.0,
-            "unit_profit": 2.7299999999999995,
-            "full_win": 9,
-            "full_loss": 6,
+            "n": 10,
+            "wins": 6.0,
+            "losses": 3.0,
+            "unit_profit": 2.9899999999999993,
+            "full_win": 6,
+            "full_loss": 3,
             "half_win": 0,
             "half_loss": 0,
             "push": 1,
-            "effective_win_rate": 0.6,
-            "roi": 0.17062499999999997,
-            "profit": 2.7299999999999995
+            "effective_win_rate": 0.6666666666666666,
+            "roi": 0.29899999999999993,
+            "profit": 2.9899999999999993
           },
           "SC0": {
             "n": 22,
@@ -5143,371 +5234,371 @@
   "seasons": {
     "2021-22": {
       "overall": {
-        "n": 2738,
-        "wins": 1285.0,
-        "losses": 1107.5,
-        "unit_profit": 118.21499999999996,
-        "full_win": 1182,
-        "full_loss": 994,
+        "n": 2748,
+        "wins": 1290.0,
+        "losses": 1110.0,
+        "unit_profit": 120.09499999999996,
+        "full_win": 1187,
+        "full_loss": 998,
         "half_win": 206,
-        "half_loss": 227,
-        "push": 129,
-        "effective_win_rate": 0.5370950888192267,
-        "roi": 0.04317567567567566,
-        "profit": 118.21499999999996
+        "half_loss": 224,
+        "push": 133,
+        "effective_win_rate": 0.5375,
+        "roi": 0.04370269286754001,
+        "profit": 120.09499999999996
       },
       "grades": {
         "S": {
-          "n": 106,
-          "wins": 61.5,
-          "losses": 34.5,
-          "unit_profit": 24.895,
-          "full_win": 59,
-          "full_loss": 29,
-          "half_win": 5,
-          "half_loss": 11,
+          "n": 148,
+          "wins": 78.5,
+          "losses": 52.5,
+          "unit_profit": 22.724999999999998,
+          "full_win": 73,
+          "full_loss": 43,
+          "half_win": 11,
+          "half_loss": 19,
           "push": 2,
-          "effective_win_rate": 0.640625,
-          "roi": 0.23485849056603772,
-          "profit": 24.895
+          "effective_win_rate": 0.5992366412213741,
+          "roi": 0.15354729729729727,
+          "profit": 22.724999999999998
         },
         "A": {
-          "n": 559,
-          "wins": 295.0,
-          "losses": 207.0,
-          "unit_profit": 71.75999999999999,
-          "full_win": 275,
-          "full_loss": 192,
+          "n": 571,
+          "wins": 302.0,
+          "losses": 211.5,
+          "unit_profit": 73.80999999999999,
+          "full_win": 282,
+          "full_loss": 196,
           "half_win": 40,
-          "half_loss": 30,
+          "half_loss": 31,
           "push": 22,
-          "effective_win_rate": 0.5876494023904383,
-          "roi": 0.1283720930232558,
-          "profit": 71.75999999999999
+          "effective_win_rate": 0.5881207400194742,
+          "roi": 0.12926444833625217,
+          "profit": 73.80999999999999
         },
         "B": {
-          "n": 445,
-          "wins": 205.0,
-          "losses": 176.5,
-          "unit_profit": 22.214999999999993,
-          "full_win": 189,
-          "full_loss": 156,
+          "n": 451,
+          "wins": 207.0,
+          "losses": 179.0,
+          "unit_profit": 21.63499999999999,
+          "full_win": 191,
+          "full_loss": 160,
           "half_win": 32,
-          "half_loss": 41,
-          "push": 27,
-          "effective_win_rate": 0.5373525557011796,
-          "roi": 0.04992134831460673,
-          "profit": 22.214999999999993
+          "half_loss": 38,
+          "push": 30,
+          "effective_win_rate": 0.5362694300518135,
+          "roi": 0.0479711751662971,
+          "profit": 21.63499999999999
         },
         "C": {
-          "n": 1628,
-          "wins": 723.5,
-          "losses": 689.5,
-          "unit_profit": -0.6550000000000205,
-          "full_win": 659,
-          "full_loss": 617,
-          "half_win": 129,
-          "half_loss": 145,
-          "push": 78,
-          "effective_win_rate": 0.5120311394196745,
-          "roi": -0.0004023341523341649,
-          "profit": -0.6550000000000205
+          "n": 1578,
+          "wins": 702.5,
+          "losses": 667.0,
+          "unit_profit": 1.924999999999981,
+          "full_win": 641,
+          "full_loss": 599,
+          "half_win": 123,
+          "half_loss": 136,
+          "push": 79,
+          "effective_win_rate": 0.5129609346476817,
+          "roi": 0.0012198986058301526,
+          "profit": 1.924999999999981
         }
       }
     },
     "2022-23": {
       "overall": {
-        "n": 2344,
-        "wins": 1140.5,
-        "losses": 920.0,
-        "unit_profit": 172.79499999999996,
-        "full_win": 1046,
-        "full_loss": 847,
-        "half_win": 189,
-        "half_loss": 146,
-        "push": 116,
-        "effective_win_rate": 0.5535064304780393,
-        "roi": 0.07371800341296926,
-        "profit": 172.79499999999996
+        "n": 2399,
+        "wins": 1170.5,
+        "losses": 944.0,
+        "unit_profit": 177.48999999999998,
+        "full_win": 1074,
+        "full_loss": 870,
+        "half_win": 193,
+        "half_loss": 148,
+        "push": 114,
+        "effective_win_rate": 0.5535587609363916,
+        "roi": 0.07398499374739474,
+        "profit": 177.48999999999998
       },
       "grades": {
         "S": {
-          "n": 73,
-          "wins": 32.5,
-          "losses": 32.0,
-          "unit_profit": -0.7100000000000002,
-          "full_win": 31,
-          "full_loss": 30,
-          "half_win": 3,
-          "half_loss": 4,
-          "push": 5,
-          "effective_win_rate": 0.5038759689922481,
-          "roi": -0.009726027397260277,
-          "profit": -0.7100000000000002
+          "n": 76,
+          "wins": 37.5,
+          "losses": 30.5,
+          "unit_profit": 5.355,
+          "full_win": 35,
+          "full_loss": 28,
+          "half_win": 5,
+          "half_loss": 5,
+          "push": 3,
+          "effective_win_rate": 0.5514705882352942,
+          "roi": 0.07046052631578947,
+          "profit": 5.355
         },
         "A": {
-          "n": 491,
-          "wins": 256.0,
-          "losses": 185.0,
-          "unit_profit": 61.50499999999999,
-          "full_win": 235,
-          "full_loss": 175,
+          "n": 495,
+          "wins": 258.0,
+          "losses": 187.0,
+          "unit_profit": 61.42499999999999,
+          "full_win": 237,
+          "full_loss": 177,
           "half_win": 42,
           "half_loss": 20,
           "push": 19,
-          "effective_win_rate": 0.5804988662131519,
-          "roi": 0.12526476578411402,
-          "profit": 61.50499999999999
+          "effective_win_rate": 0.5797752808988764,
+          "roi": 0.12409090909090907,
+          "profit": 61.42499999999999
         },
         "B": {
-          "n": 413,
-          "wins": 210.5,
-          "losses": 152.0,
-          "unit_profit": 53.84499999999999,
-          "full_win": 193,
-          "full_loss": 141,
-          "half_win": 35,
-          "half_loss": 22,
-          "push": 22,
-          "effective_win_rate": 0.5806896551724138,
-          "roi": 0.13037530266343825,
-          "profit": 53.84499999999999
+          "n": 462,
+          "wins": 236.5,
+          "losses": 175.0,
+          "unit_profit": 56.084999999999994,
+          "full_win": 218,
+          "full_loss": 163,
+          "half_win": 37,
+          "half_loss": 24,
+          "push": 20,
+          "effective_win_rate": 0.574726609963548,
+          "roi": 0.12139610389610388,
+          "profit": 56.084999999999994
         },
         "C": {
-          "n": 1367,
-          "wins": 641.5,
-          "losses": 551.0,
-          "unit_profit": 58.15499999999999,
-          "full_win": 587,
-          "full_loss": 501,
+          "n": 1366,
+          "wins": 638.5,
+          "losses": 551.5,
+          "unit_profit": 54.624999999999986,
+          "full_win": 584,
+          "full_loss": 502,
           "half_win": 109,
-          "half_loss": 100,
-          "push": 70,
-          "effective_win_rate": 0.5379454926624738,
-          "roi": 0.042542062911485,
-          "profit": 58.15499999999999
+          "half_loss": 99,
+          "push": 72,
+          "effective_win_rate": 0.5365546218487395,
+          "roi": 0.03998901903367495,
+          "profit": 54.624999999999986
         }
       }
     },
     "2023-24": {
       "overall": {
-        "n": 2356,
-        "wins": 1111.0,
-        "losses": 937.5,
-        "unit_profit": 131.88499999999996,
-        "full_win": 1013,
-        "full_loss": 845,
-        "half_win": 196,
+        "n": 2421,
+        "wins": 1145.0,
+        "losses": 962.5,
+        "unit_profit": 137.47999999999996,
+        "full_win": 1045,
+        "full_loss": 870,
+        "half_win": 200,
         "half_loss": 185,
-        "push": 117,
-        "effective_win_rate": 0.5423480595557725,
-        "roi": 0.055978353140916794,
-        "profit": 131.88499999999996
+        "push": 121,
+        "effective_win_rate": 0.5432977461447213,
+        "roi": 0.05678645187938867,
+        "profit": 137.47999999999996
       },
       "grades": {
         "S": {
-          "n": 100,
-          "wins": 46.5,
-          "losses": 36.5,
-          "unit_profit": 9.134999999999998,
-          "full_win": 44,
-          "full_loss": 34,
+          "n": 86,
+          "wins": 39.5,
+          "losses": 33.5,
+          "unit_profit": 5.054999999999998,
+          "full_win": 37,
+          "full_loss": 31,
           "half_win": 5,
           "half_loss": 5,
-          "push": 12,
-          "effective_win_rate": 0.5602409638554217,
-          "roi": 0.09134999999999999,
-          "profit": 9.134999999999998
+          "push": 8,
+          "effective_win_rate": 0.541095890410959,
+          "roi": 0.058779069767441836,
+          "profit": 5.054999999999998
         },
         "A": {
-          "n": 478,
-          "wins": 238.5,
-          "losses": 182.5,
-          "unit_profit": 45.504999999999995,
-          "full_win": 216,
-          "full_loss": 167,
+          "n": 503,
+          "wins": 253.5,
+          "losses": 191.5,
+          "unit_profit": 50.35499999999999,
+          "full_win": 231,
+          "full_loss": 175,
           "half_win": 45,
-          "half_loss": 31,
+          "half_loss": 33,
           "push": 19,
-          "effective_win_rate": 0.5665083135391924,
-          "roi": 0.09519874476987447,
-          "profit": 45.504999999999995
+          "effective_win_rate": 0.5696629213483146,
+          "roi": 0.10010934393638168,
+          "profit": 50.35499999999999
         },
         "B": {
-          "n": 448,
-          "wins": 224.0,
-          "losses": 173.0,
-          "unit_profit": 47.36999999999999,
-          "full_win": 207,
-          "full_loss": 161,
-          "half_win": 34,
-          "half_loss": 24,
-          "push": 22,
-          "effective_win_rate": 0.5642317380352645,
-          "roi": 0.10573660714285713,
-          "profit": 47.36999999999999
+          "n": 492,
+          "wins": 244.5,
+          "losses": 191.5,
+          "unit_profit": 47.16999999999999,
+          "full_win": 225,
+          "full_loss": 180,
+          "half_win": 39,
+          "half_loss": 23,
+          "push": 25,
+          "effective_win_rate": 0.5607798165137615,
+          "roi": 0.09587398373983737,
+          "profit": 47.16999999999999
         },
         "C": {
-          "n": 1330,
-          "wins": 602.0,
-          "losses": 545.5,
-          "unit_profit": 29.874999999999975,
-          "full_win": 546,
-          "full_loss": 483,
-          "half_win": 112,
-          "half_loss": 125,
-          "push": 64,
-          "effective_win_rate": 0.5246187363834423,
-          "roi": 0.022462406015037576,
-          "profit": 29.874999999999975
+          "n": 1340,
+          "wins": 607.5,
+          "losses": 546.0,
+          "unit_profit": 34.89999999999998,
+          "full_win": 552,
+          "full_loss": 484,
+          "half_win": 111,
+          "half_loss": 124,
+          "push": 69,
+          "effective_win_rate": 0.5266579973992198,
+          "roi": 0.02604477611940297,
+          "profit": 34.89999999999998
         }
       }
     },
     "2024-25": {
       "overall": {
-        "n": 2300,
-        "wins": 1087.5,
-        "losses": 921.0,
-        "unit_profit": 119.45499999999996,
-        "full_win": 1000,
-        "full_loss": 836,
-        "half_win": 175,
-        "half_loss": 170,
-        "push": 119,
-        "effective_win_rate": 0.5414488424197162,
-        "roi": 0.05193695652173911,
-        "profit": 119.45499999999996
+        "n": 2361,
+        "wins": 1118.5,
+        "losses": 944.0,
+        "unit_profit": 126.28999999999996,
+        "full_win": 1025,
+        "full_loss": 857,
+        "half_win": 187,
+        "half_loss": 174,
+        "push": 118,
+        "effective_win_rate": 0.5423030303030303,
+        "roi": 0.05349004659042777,
+        "profit": 126.28999999999996
       },
       "grades": {
         "S": {
-          "n": 82,
-          "wins": 36.5,
-          "losses": 35.5,
-          "unit_profit": -0.23000000000000087,
-          "full_win": 36,
+          "n": 88,
+          "wins": 40.5,
+          "losses": 37.0,
+          "unit_profit": 2.2499999999999982,
+          "full_win": 40,
           "full_loss": 33,
           "half_win": 1,
-          "half_loss": 5,
-          "push": 7,
-          "effective_win_rate": 0.5069444444444444,
-          "roi": -0.0028048780487804985,
-          "profit": -0.23000000000000087
+          "half_loss": 8,
+          "push": 6,
+          "effective_win_rate": 0.5225806451612903,
+          "roi": 0.0255681818181818,
+          "profit": 2.2499999999999982
         },
         "A": {
-          "n": 488,
-          "wins": 254.5,
-          "losses": 182.5,
-          "unit_profit": 59.39999999999999,
-          "full_win": 237,
-          "full_loss": 167,
+          "n": 497,
+          "wins": 258.5,
+          "losses": 187.0,
+          "unit_profit": 58.55999999999999,
+          "full_win": 241,
+          "full_loss": 171,
           "half_win": 35,
-          "half_loss": 31,
+          "half_loss": 32,
           "push": 18,
-          "effective_win_rate": 0.5823798627002288,
-          "roi": 0.12172131147540982,
-          "profit": 59.39999999999999
+          "effective_win_rate": 0.5802469135802469,
+          "roi": 0.11782696177062371,
+          "profit": 58.55999999999999
         },
         "B": {
-          "n": 451,
-          "wins": 198.0,
-          "losses": 186.5,
-          "unit_profit": 7.809999999999991,
-          "full_win": 181,
-          "full_loss": 171,
-          "half_win": 34,
-          "half_loss": 31,
-          "push": 34,
-          "effective_win_rate": 0.5149544863459038,
-          "roi": 0.017317073170731688,
-          "profit": 7.809999999999991
+          "n": 499,
+          "wins": 223.0,
+          "losses": 203.0,
+          "unit_profit": 15.654999999999989,
+          "full_win": 200,
+          "full_loss": 186,
+          "half_win": 46,
+          "half_loss": 34,
+          "push": 33,
+          "effective_win_rate": 0.5234741784037559,
+          "roi": 0.03137274549098194,
+          "profit": 15.654999999999989
         },
         "C": {
-          "n": 1279,
-          "wins": 598.5,
-          "losses": 516.5,
-          "unit_profit": 52.47499999999998,
-          "full_win": 546,
-          "full_loss": 465,
+          "n": 1277,
+          "wins": 596.5,
+          "losses": 517.0,
+          "unit_profit": 49.82499999999998,
+          "full_win": 544,
+          "full_loss": 467,
           "half_win": 105,
-          "half_loss": 103,
-          "push": 60,
-          "effective_win_rate": 0.5367713004484305,
-          "roi": 0.04102814698983579,
-          "profit": 52.47499999999998
+          "half_loss": 100,
+          "push": 61,
+          "effective_win_rate": 0.5356982487651549,
+          "roi": 0.03901722787783867,
+          "profit": 49.82499999999998
         }
       }
     },
     "2025-26": {
       "overall": {
-        "n": 2232,
-        "wins": 1081.0,
-        "losses": 862.0,
-        "unit_profit": 158.89999999999995,
-        "full_win": 997,
-        "full_loss": 785,
-        "half_win": 168,
-        "half_loss": 154,
-        "push": 128,
-        "effective_win_rate": 0.5563561502830674,
-        "roi": 0.07119175627240142,
-        "profit": 158.89999999999995
+        "n": 2280,
+        "wins": 1100.5,
+        "losses": 881.5,
+        "unit_profit": 156.95999999999995,
+        "full_win": 1016,
+        "full_loss": 802,
+        "half_win": 169,
+        "half_loss": 159,
+        "push": 134,
+        "effective_win_rate": 0.555247225025227,
+        "roi": 0.06884210526315787,
+        "profit": 156.95999999999995
       },
       "grades": {
         "S": {
-          "n": 95,
-          "wins": 49.0,
-          "losses": 34.5,
-          "unit_profit": 11.944999999999997,
-          "full_win": 48,
-          "full_loss": 33,
+          "n": 94,
+          "wins": 50.0,
+          "losses": 32.5,
+          "unit_profit": 14.984999999999998,
+          "full_win": 49,
+          "full_loss": 30,
           "half_win": 2,
-          "half_loss": 3,
-          "push": 9,
-          "effective_win_rate": 0.5868263473053892,
-          "roi": 0.12573684210526312,
-          "profit": 11.944999999999997
+          "half_loss": 5,
+          "push": 8,
+          "effective_win_rate": 0.6060606060606061,
+          "roi": 0.15941489361702124,
+          "profit": 14.984999999999998
         },
         "A": {
-          "n": 495,
-          "wins": 246.0,
-          "losses": 190.5,
-          "unit_profit": 42.23999999999999,
-          "full_win": 228,
-          "full_loss": 171,
+          "n": 506,
+          "wins": 249.0,
+          "losses": 197.5,
+          "unit_profit": 37.99999999999999,
+          "full_win": 231,
+          "full_loss": 177,
           "half_win": 36,
-          "half_loss": 39,
+          "half_loss": 41,
           "push": 21,
-          "effective_win_rate": 0.563573883161512,
-          "roi": 0.0853333333333333,
-          "profit": 42.23999999999999
+          "effective_win_rate": 0.5576707726763718,
+          "roi": 0.075098814229249,
+          "profit": 37.99999999999999
         },
         "B": {
-          "n": 432,
-          "wins": 199.0,
-          "losses": 174.0,
-          "unit_profit": 19.19499999999999,
-          "full_win": 184,
-          "full_loss": 156,
-          "half_win": 30,
-          "half_loss": 36,
-          "push": 26,
-          "effective_win_rate": 0.5335120643431636,
-          "roi": 0.044432870370370345,
-          "profit": 19.19499999999999
+          "n": 474,
+          "wins": 218.5,
+          "losses": 187.5,
+          "unit_profit": 23.11499999999999,
+          "full_win": 202,
+          "full_loss": 168,
+          "half_win": 33,
+          "half_loss": 39,
+          "push": 32,
+          "effective_win_rate": 0.5381773399014779,
+          "roi": 0.048765822784810106,
+          "profit": 23.11499999999999
         },
         "C": {
-          "n": 1210,
-          "wins": 587.0,
-          "losses": 463.0,
-          "unit_profit": 85.51999999999998,
-          "full_win": 537,
-          "full_loss": 425,
-          "half_win": 100,
-          "half_loss": 76,
-          "push": 72,
-          "effective_win_rate": 0.559047619047619,
-          "roi": 0.07067768595041321,
-          "profit": 85.51999999999998
+          "n": 1206,
+          "wins": 583.0,
+          "losses": 464.0,
+          "unit_profit": 80.85999999999999,
+          "full_win": 534,
+          "full_loss": 427,
+          "half_win": 98,
+          "half_loss": 74,
+          "push": 73,
+          "effective_win_rate": 0.556829035339064,
+          "roi": 0.06704809286898838,
+          "profit": 80.85999999999999
         }
       }
     }
@@ -5542,6 +5633,481 @@
     "policy": "仅排除明确异常；开盘AHh与收盘AHCh不得混用；其余记录不因赛果而删除。",
     "unified_rows": 43294,
     "real_asian_rows": 22458,
-    "equivalent_1x2_rows": 20836
+    "equivalent_1x2_rows": 20836,
+    "big7_rediscovery": {
+      "status": "PASS",
+      "version": "big7-five-season-grid-v4",
+      "rediscovered_rule_count": 15,
+      "rediscovered_definitions_exactly_match_frozen": true,
+      "rediscovered_selections_exactly_match_frozen": true,
+      "mixed_2021_old_threshold_file_removed": true,
+      "consistent_rule_source": "data/research/merged-five-season-threshold-cut/report.json",
+      "consistent_seasons": [
+        "2021-22",
+        "2022-23",
+        "2023-24",
+        "2024-25",
+        "2025-26"
+      ],
+      "big7_coverage_before": {
+        "E0": {
+          "tier": "B",
+          "layer": "X",
+          "rule": "",
+          "n": 567,
+          "wr": 52.8,
+          "roi": 3.2,
+          "lb": -1.63,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              158,
+              -1.7
+            ],
+            "2022-23": [
+              98,
+              2.2
+            ],
+            "2023-24": [
+              100,
+              8.7
+            ],
+            "2024-25": [
+              120,
+              4.5
+            ],
+            "2025-26": [
+              91,
+              4.9
+            ]
+          }
+        },
+        "SP1": {
+          "tier": "A",
+          "layer": "X",
+          "rule": "",
+          "n": 488,
+          "wr": 60.9,
+          "roi": 16.72,
+          "lb": 11.7,
+          "pos": 5,
+          "seasons": {
+            "2021-22": [
+              168,
+              8.8
+            ],
+            "2022-23": [
+              76,
+              9.7
+            ],
+            "2023-24": [
+              78,
+              29.0
+            ],
+            "2024-25": [
+              80,
+              21.7
+            ],
+            "2025-26": [
+              86,
+              22.6
+            ]
+          }
+        },
+        "D1": {
+          "tier": "A",
+          "layer": "X",
+          "rule": "",
+          "n": 422,
+          "wr": 54.8,
+          "roi": 6.19,
+          "lb": 0.58,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              132,
+              2.0
+            ],
+            "2022-23": [
+              72,
+              12.3
+            ],
+            "2023-24": [
+              86,
+              -4.3
+            ],
+            "2024-25": [
+              82,
+              11.0
+            ],
+            "2025-26": [
+              50,
+              18.6
+            ]
+          }
+        },
+        "I1": {
+          "tier": "A",
+          "layer": "X",
+          "rule": "",
+          "n": 583,
+          "wr": 55.0,
+          "roi": 6.47,
+          "lb": 1.81,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              203,
+              4.4
+            ],
+            "2022-23": [
+              96,
+              1.2
+            ],
+            "2023-24": [
+              83,
+              -5.1
+            ],
+            "2024-25": [
+              100,
+              13.4
+            ],
+            "2025-26": [
+              101,
+              18.3
+            ]
+          }
+        },
+        "F1": {
+          "tier": "B",
+          "layer": "L",
+          "rule": "偏差 ≥+0.25 → 买客",
+          "n": 642,
+          "wr": 53.4,
+          "roi": 2.67,
+          "lb": -1.81,
+          "pos": 3,
+          "seasons": {
+            "2021-22": [
+              149,
+              -0.0
+            ],
+            "2022-23": [
+              159,
+              3.7
+            ],
+            "2023-24": [
+              111,
+              2.7
+            ],
+            "2024-25": [
+              118,
+              7.6
+            ],
+            "2025-26": [
+              105,
+              -0.6
+            ]
+          }
+        },
+        "D2": {
+          "tier": "C",
+          "layer": "X",
+          "rule": "",
+          "n": 399,
+          "wr": 52.8,
+          "roi": 1.78,
+          "lb": -3.89,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              151,
+              1.7
+            ],
+            "2022-23": [
+              55,
+              4.7
+            ],
+            "2023-24": [
+              61,
+              0.5
+            ],
+            "2024-25": [
+              68,
+              -6.1
+            ],
+            "2025-26": [
+              64,
+              9.1
+            ]
+          }
+        },
+        "E1": {
+          "tier": "B",
+          "layer": "L",
+          "rule": "机构 ≤-1.00 让球 → 买主",
+          "n": 258,
+          "wr": 54.4,
+          "roi": 5.38,
+          "lb": -1.74,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              52,
+              13.3
+            ],
+            "2022-23": [
+              35,
+              -1.8
+            ],
+            "2023-24": [
+              74,
+              6.5
+            ],
+            "2024-25": [
+              46,
+              4.2
+            ],
+            "2025-26": [
+              51,
+              1.7
+            ]
+          }
+        }
+      },
+      "big7_coverage_after": {
+        "E0": {
+          "tier": "B",
+          "layer": "X",
+          "rule": "",
+          "n": 557,
+          "wr": 53.3,
+          "roi": 3.75,
+          "lb": -1.07,
+          "pos": 3,
+          "seasons": {
+            "2021-22": [
+              107,
+              8.1
+            ],
+            "2022-23": [
+              107,
+              -3.2
+            ],
+            "2023-24": [
+              116,
+              12.6
+            ],
+            "2024-25": [
+              118,
+              3.0
+            ],
+            "2025-26": [
+              109,
+              -2.3
+            ]
+          }
+        },
+        "SP1": {
+          "tier": "A",
+          "layer": "X",
+          "rule": "",
+          "n": 477,
+          "wr": 59.3,
+          "roi": 13.79,
+          "lb": 8.72,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              116,
+              11.1
+            ],
+            "2022-23": [
+              93,
+              -0.2
+            ],
+            "2023-24": [
+              84,
+              23.6
+            ],
+            "2024-25": [
+              94,
+              18.8
+            ],
+            "2025-26": [
+              90,
+              17.4
+            ]
+          }
+        },
+        "D1": {
+          "tier": "A",
+          "layer": "X",
+          "rule": "",
+          "n": 395,
+          "wr": 55.5,
+          "roi": 7.23,
+          "lb": 1.51,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              85,
+              13.0
+            ],
+            "2022-23": [
+              86,
+              9.5
+            ],
+            "2023-24": [
+              81,
+              -6.6
+            ],
+            "2024-25": [
+              83,
+              5.9
+            ],
+            "2025-26": [
+              60,
+              16.3
+            ]
+          }
+        },
+        "I1": {
+          "tier": "A",
+          "layer": "L",
+          "rule": "模型 ≥+0.25 → 买客",
+          "n": 512,
+          "wr": 55.5,
+          "roi": 6.82,
+          "lb": 1.82,
+          "pos": 4,
+          "seasons": {
+            "2021-22": [
+              112,
+              6.1
+            ],
+            "2022-23": [
+              104,
+              11.6
+            ],
+            "2023-24": [
+              97,
+              5.0
+            ],
+            "2024-25": [
+              102,
+              11.2
+            ],
+            "2025-26": [
+              97,
+              -0.3
+            ]
+          }
+        },
+        "F1": {
+          "tier": "B",
+          "layer": "L",
+          "rule": "偏差 ≥+0.25 → 买客",
+          "n": 642,
+          "wr": 53.4,
+          "roi": 2.67,
+          "lb": -1.81,
+          "pos": 3,
+          "seasons": {
+            "2021-22": [
+              149,
+              -0.0
+            ],
+            "2022-23": [
+              159,
+              3.7
+            ],
+            "2023-24": [
+              111,
+              2.7
+            ],
+            "2024-25": [
+              118,
+              7.6
+            ],
+            "2025-26": [
+              105,
+              -0.6
+            ]
+          }
+        },
+        "D2": {
+          "tier": "D",
+          "layer": "X",
+          "rule": "",
+          "n": 396,
+          "wr": 49.4,
+          "roi": -3.98,
+          "lb": -9.66,
+          "pos": 2,
+          "seasons": {
+            "2021-22": [
+              102,
+              -10.8
+            ],
+            "2022-23": [
+              71,
+              7.0
+            ],
+            "2023-24": [
+              76,
+              -5.0
+            ],
+            "2024-25": [
+              75,
+              -10.1
+            ],
+            "2025-26": [
+              72,
+              2.3
+            ]
+          }
+        },
+        "E1": {
+          "tier": "B",
+          "layer": "X",
+          "rule": "",
+          "n": 736,
+          "wr": 52.7,
+          "roi": 2.73,
+          "lb": -1.48,
+          "pos": 3,
+          "seasons": {
+            "2021-22": [
+              136,
+              0.8
+            ],
+            "2022-23": [
+              140,
+              -3.5
+            ],
+            "2023-24": [
+              159,
+              12.0
+            ],
+            "2024-25": [
+              138,
+              -5.6
+            ],
+            "2025-26": [
+              163,
+              7.7
+            ]
+          }
+        }
+      },
+      "final_rules_removed": [
+        "E1|{\"l\": 1.0}"
+      ],
+      "final_rules_added": [
+        "I1|{\"m\": 0.25}"
+      ],
+      "note": "旧候选曾拼接2021-22旧阈值和后续赛季新阈值；现五季均由统一原始样本和同一15条规则生成。"
+    }
   }
 }
