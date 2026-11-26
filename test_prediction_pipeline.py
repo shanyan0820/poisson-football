@@ -578,8 +578,10 @@ class LeaguePatternTests(unittest.TestCase):
         from league_pattern import league_gate
         self.assertEqual(league_gate("TEST")["status"], "paused")
         self.assertFalse(league_gate("TEST")["recommend_enabled"])
-        self.assertEqual(league_gate("DNK")["status"], "display_only")
-        self.assertFalse(league_gate("DNK")["recommend_enabled"])
+        self.assertEqual(league_gate("NOR")["status"], "display_only")
+        self.assertFalse(league_gate("NOR")["recommend_enabled"])
+        self.assertEqual(league_gate("JPN")["status"], "paused")
+        self.assertFalse(league_gate("JPN")["pattern_enabled"])
         self.assertEqual(league_gate("P1")["status"], "t1_only")
         self.assertTrue(league_gate("P1")["recommend_enabled"])
         self.assertFalse(league_gate("P1")["pattern_enabled"])
@@ -587,7 +589,7 @@ class LeaguePatternTests(unittest.TestCase):
         self.assertTrue(league_gate("D2")["pattern_enabled"])
 
     def test_pattern_hit_and_miss(self):
-        from league_pattern import evaluate_pattern
+        from league_pattern import evaluate_pattern, league_gate
         hit = evaluate_pattern("D2", 1.20, 0.50)
         self.assertEqual(hit["status"], "candidate")
         self.assertEqual(hit["side"], "home")
@@ -596,6 +598,7 @@ class LeaguePatternTests(unittest.TestCase):
         self.assertEqual(miss["status"], "skip")
         wrong_tier = evaluate_pattern("D2", 1.20, -0.50)
         self.assertEqual(wrong_tier["status"], "skip")
-        blocked = evaluate_pattern("DNK", -0.30, -0.50)
-        self.assertEqual(blocked["status"], "observe")
-        self.assertIn("只给方向", blocked["reason"])
+        stopped = evaluate_pattern("DNK", -0.30, -0.50)
+        self.assertEqual(stopped["status"], "skip")
+        display = league_gate("NOR")
+        self.assertEqual(display["status"], "display_only")

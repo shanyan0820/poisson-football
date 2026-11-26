@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from generate_data import TEAM_ZH, fetch_csv, standings
 from league_pattern import PATTERN_VERSION, evaluate_pattern, league_gate
+from odds_to_asian import convert as convert_asian_odds
 from model import Match, analyze, _poisson_matrix
 from recommendation_rules import (
     FEATURED_RULE_IDS, RULE_DEFINITIONS, RULE_IDS, RULE_VERSION,
@@ -1136,23 +1137,35 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     model_line = (expected["away"] - expected["home"]) if expected else (
         -handicap["model_goal_difference"] if handicap and handicap.get("model_goal_difference") is not None else None)
     asian = record.get("asian_handicap") or {}
-    institution_line = asian.get("home_line")
-    if institution_line is None and handicap:
-        institution_line = handicap.get("market_line")
+    converted = convert_asian_odds(record.get("opening_1x2"))
+    asian_complete = (asian.get("home_line") is not None
+                      and asian.get("bet365_home_odds") and asian.get("bet365_away_odds"))
+    if asian_complete:
+        institution_line, handicap_source = asian.get("home_line"), "asian"
+    elif converted:
+        institution_line, handicap_source = converted["home_line"], "1x2_converted"
+    else:
+        institution_line, handicap_source = asian.get("home_line"), "asian"
+        if institution_line is None and handicap:
+            institution_line, handicap_source = handicap.get("market_line"), "model"
     result["pattern_selection"] = evaluate_pattern(record.get("league_id"), model_line, institution_line)
     pattern = result["pattern_selection"]
-    if pattern.get("status") == "candidate":
-        side_odds = (handicap.get(f"{pattern['side']}_metrics") or {}).get("odds") if handicap else None
-        if side_odds is None:
-            side_odds = asian.get("bet365_home_odds" if pattern["side"] == "home" else "bet365_away_odds")
+    pattern["handicap_source"] = handicap_source
+    pattern["institution_line"] = institution_line
+    if pattern.get("status") in ("candidate", "observe"):
+        side = pattern["side"]
+        if handicap_source == "1x2_converted":
+            side_odds = converted[f"{side}_odds"]
+        elif handicap_source == "asian":
+            side_odds = (asian.get("bet365_home_odds" if side == "home" else "bet365_away_odds"))
+            if side_odds is None and handicap:
+                side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
+        else:
+            side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds") if handicap else None
         pattern["odds"] = side_odds
-        if side_odds is None:
-            if pattern.get("data_source") == "等效口径":
-                pattern["status"] = "observe"
-                pattern["reason"] = "该联赛没有公开亚盘赔率，只给方向参考，不计入注码与收益统计。"
-            else:
-                pattern["status"] = "skip"
-                pattern["reason"] = "本场缺少真实亚盘赔率，不输出推荐。"
+        if side_odds is None and pattern.get("status") == "candidate":
+            pattern["status"] = "skip"
+            pattern["reason"] = "本场没有可用的真实盘口赔率，不输出推荐。"
     derived_recommendation = choose_recommendation(handicap, record.get("ranking"), rules)
     if not gate["recommend_enabled"]:
         derived_recommendation = {**derived_recommendation, "status": "skip", "candidate_count": 0,

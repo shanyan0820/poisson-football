@@ -56,6 +56,14 @@ def league_gate(league_id: str | None) -> dict:
                 "reason": "该联赛暂无五季验证的规律，暂停推荐，仅展示赛前数据。"}
     level = pattern["level"]
     t1_ok = league_id in T1_POSITIVE
+    if level == "C":
+        return {"league_id": league_id, "status": "paused", "level": level,
+                "recommend_enabled": False, "t1_enabled": False, "pattern_enabled": False,
+                "reason": "该联赛规律在五季真实盘口口径下后 2 季未通过验证，暂停推荐。",
+                "tier": pattern["tier"], "side": pattern["side"],
+                "threshold": pattern["threshold"], "source": pattern["source"],
+                "n_all": pattern["n_all"], "wr_all": pattern["wr_all"],
+                "roi_all": pattern.get("roi_all")}
     pattern_ok = level in ("S", "A")
     if pattern_ok:
         status = "active"

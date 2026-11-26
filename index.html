@@ -77,12 +77,6 @@
 <div id="content" class="hidden">
   <div class="section-head"><div><div class="step">02 / 让球预测</div><h2 class="section-title">本周期比赛列表</h2></div><p class="hint" id="fixture-count"></p></div>
   <div id="fixtures"></div>
-  <details class="method card"><summary>推荐方法与联赛准入说明</summary>
-    <p><b>两层推荐并行。</b>① 联赛规律：每个联赛只用前 3 季发现、后 2 季盲验，真实亚盘 16 个联赛五季 1518 注收益 +15.8%，2026-27 样本外 50 注 +20.4%。② 原有规则：只保留五季真实收益为正的联赛（土超、意甲、法乙、英超、葡超、西甲），其余联赛停用改走规律。</p>
-    <p><b>按表现定级与停推。</b>规律按后 2 季真实收益分 S/A/B 级：S 级 3 单位、A 级 2 单位、B 级只展示不给注码。没有五季验证的联赛（如俄超、墨超）暂停推荐，只展示赛前数据。</p>
-    <p><b>无赔率不给注码。</b>日本J1、巴甲、阿甲等没有公开亚盘赔率的联赛，命中只标“方向参考”，不计入下注与收益统计。</p>
-    <p class="warning">以上为历史回测结果，不代表未来收益；请结合临场阵容与盘口变化审慎参考。</p>
-  </details>
   <section class="source"><b>数据来源</b><p>赛果、主赛程、让球盘口：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；补充赛程：ESPN。联赛排名由开球前真实赛果计算。</p></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后结算</footer>
@@ -127,7 +121,7 @@ function professionalReason(s){
  const gradeText={A:'A级重点观察',B:'B级综合信号',C:'C级综合信号'}[grade]||'综合信号';
  return`${gradeText}。基于主客场表现、预期进球、联赛排名与盘口定价的综合评估，${side}方向的比赛画像更具关注度。赔率用于衡量潜在回报，不单独决定方向；请结合临场阵容与市场变化审慎参考。`;
 }
-function patternText(p){const n=p.n_all||0,wr=p.wr_all,r=p.roi_all;return `该联赛五季 ${n} 注 · 胜率 ${wr==null?'—':(wr*100).toFixed(1)+'%'}${r==null?' · 等效口径只报方向':` · 收益 ${(r*100).toFixed(1)}%`}`}
+function patternText(p){const n=p.n_all||0,wr=p.wr_all,r=p.roi_all,src=p.handicap_source==='1x2_converted'?'1X2折算盘口':'亚盘盘口';return `五季 ${n} 注 · 胜率 ${wr==null?'—':(wr*100).toFixed(1)+'%'}${r==null?'':` · 收益 ${(r*100).toFixed(1)}%`} · ${src}`}
 function recommendationHtml(r){
  const base=r.recommendation_selection,gate=r.league_gate||{},pattern=r.pattern_selection||{};
  const selected=base?.status==='candidate',retrospective=base?.tracking_eligible===false,gradeA=selected&&base.grade==='A';

@@ -31,7 +31,7 @@ SETTLEMENT_FIELDS = (
 )
 PATTERN_FIELDS = (
     "rule_version", "status", "matched", "side", "line", "odds", "level", "tier",
-    "n_all", "wr_all", "roi_all", "reason", "tracking_eligible",
+    "n_all", "wr_all", "roi_all", "reason", "tracking_eligible", "handicap_source",
 )
 GATE_FIELDS = (
     "status", "level", "recommend_enabled", "pattern_enabled", "t1_enabled",
