@@ -1,6 +1,6 @@
 {
-  "version": "fusion-39-sabc-quarter-v2",
-  "settlement_version": "asian-quarter-v2",
+  "version": "fusion-39-sabc-quarter-v3-source-clean",
+  "settlement_version": "asian-official-table-v3",
   "cutoff": "2026-11-24",
   "rules": 39,
   "overall": {
@@ -5511,5 +5511,37 @@
         }
       }
     }
+  },
+  "data_quality": {
+    "version": "asian-source-audit-v1",
+    "raw_ah_rows": 27803,
+    "excluded_count": 1,
+    "exclusions": [
+      {
+        "key": "2022-23|G1|2023-01-15|AEK|Panetolikos",
+        "season": "2022-23",
+        "league": "G1",
+        "date": "2023-01-15",
+        "home": "AEK",
+        "away": "Panetolikos",
+        "score": "4-1",
+        "AHh": 2.5,
+        "AHCh": -2.0,
+        "AvgH": 1.14,
+        "AvgA": 18.29,
+        "B365AHH": 1.65,
+        "B365AHA": 2.2,
+        "reasons": [
+          "亚盘2.5球及六组赔率与大小球2.5字段完全重复",
+          "AHh符号与1X2强弱方向相反"
+        ],
+        "source_file": "data/research/full15-16leagues-2022-26/csv/2223/G1.csv",
+        "action": "排除；不以AHCh替换AHh，不混用开盘和收盘"
+      }
+    ],
+    "policy": "仅排除明确异常；开盘AHh与收盘AHCh不得混用；其余记录不因赛果而删除。",
+    "unified_rows": 43294,
+    "real_asian_rows": 22458,
+    "equivalent_1x2_rows": 20836
   }
 }
