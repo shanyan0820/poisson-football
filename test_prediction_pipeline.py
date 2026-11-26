@@ -567,7 +567,7 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("输赢结果", predictions)
         self.assertIn("BACKTEST.current.matches", predictions)
         self.assertIn("overflow-y:auto", predictions)
-        self.assertIn("双确认为S级", predictions)
+        self.assertIn("叠加不自动升S", predictions)
         self.assertIn("table-layout:fixed", predictions)
         self.assertIn("五季融合回测", predictions)
         self.assertIn("data/public_predictions.json", predictions)
@@ -598,6 +598,25 @@ class LeaguePatternTests(unittest.TestCase):
         self.assertEqual(hit["status"], "candidate")
         self.assertEqual(hit["side"], "away")
         self.assertEqual(hit["line"], -0.50)
-        self.assertIn(hit["level"], {"S", "A", "B", "C"})
+        self.assertIn(hit["level"], {"A", "B", "C"})
         self.assertEqual(evaluate_pattern("D2", 0.30, -0.50)["status"], "skip")
         self.assertEqual(evaluate_pattern("TEST", -0.30, -0.50)["status"], "skip")
+
+    def test_big7_and_fixed_five_overlap_is_retained_without_auto_s(self):
+        from league_pattern import evaluate_pattern
+        hit = evaluate_pattern("E0", -0.70, -0.50)
+        self.assertEqual(hit["status"], "candidate")
+        self.assertEqual(hit["side"], "away")
+        self.assertEqual(hit["rule_count"], 2)
+        self.assertIn("B05", hit["rule_ids"])
+        self.assertIn("F05_AWAY", hit["rule_ids"])
+        self.assertNotEqual(hit["level"], "S")
+        self.assertIn("不自动升S", hit["reason"])
+
+    def test_t1_institution_rule_is_not_duplicated(self):
+        import json
+        from pathlib import Path
+        rules = json.loads(Path(__file__).with_name("data").joinpath("fusion_rules.json").read_text())
+        hits = [r for r in rules if r["league"] == "T1" and r["kind"] == "inst" and r["side"] == "away" and r["params"].get("l") == .5]
+        self.assertEqual(len(hits), 1)
+        self.assertEqual(hits[0]["id"], 'T1|{"l": 0.5}')
