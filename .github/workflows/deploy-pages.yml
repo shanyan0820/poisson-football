@@ -2,14 +2,8 @@ name: Update data and deploy GitHub Pages
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - predictions.html
-      - data/fusion_report.json
-      - .github/workflows/deploy-pages.yml
   schedule:
-    # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成主源周期，13:00（UTC 05:00）补ESPN及等效盘口推荐，其余整点只同步赛果。
+    # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成主源周期，13:00（UTC 05:00）补ESPN并优先读取真实让球初盘，其余整点只同步赛果。
     - cron: '0 * * * *'
 
 permissions:
@@ -122,12 +116,12 @@ jobs:
           print(f"Daily fixtures: {len(predictions['fixtures'])}; predictions: {sum(bool(f.get('featured_prediction')) for f in predictions['fixtures'])}; all recommendations: {sum(f.get('recommendation_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; featured: {sum(f.get('integrated_selection', {}).get('status') == 'candidate' for f in predictions['fixtures'])}; backtest samples: {predictions['backtest']['global'][0]['n']}.")
           public = json.loads(Path('data/public_predictions.json').read_text(encoding='utf-8'))
           public_text = json.dumps(public, ensure_ascii=False)
-          assert set(public['market_tracking']['grades']) == {'S', 'A', 'B', 'C'}
+          assert set(public['market_tracking']['grades']) == {'S', 'A', 'B'}
           for forbidden in ('rule_id', 'threshold', 'rule_evaluations', 'rule_definitions', 'exact-15-lines', 'handicap_analysis', 'elo_difference', 'home_ev'):
               assert forbidden not in public_text, forbidden
           public_backtest = json.loads(Path('data/market_signal_backtest.json').read_text(encoding='utf-8'))
-          assert {'A', 'B', 'C'} <= set(public_backtest['combined']['grades']) <= {'S', 'A', 'B', 'C'}
-          assert {'A', 'B', 'C'} <= set(public_backtest['full_holdout']['grades']) <= {'S', 'A', 'B', 'C'}
+          assert {'A', 'B'} <= set(public_backtest['combined']['grades']) <= {'S', 'A', 'B'}
+          assert {'A', 'B'} <= set(public_backtest['full_holdout']['grades']) <= {'S', 'A', 'B'}
           for page_name in ('index.html', 'predictions.html'):
               page = Path(page_name).read_text(encoding='utf-8')
               for forbidden in ('rule_id', 'threshold', '盘口规则与验证口径', '15条精确', 'exact15_backtest', 'data/predictions.json'):
