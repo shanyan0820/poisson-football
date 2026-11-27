@@ -48,6 +48,8 @@ jobs:
         run: python prediction_pipeline.py ${{ steps.mode.outputs.args }}
       - name: Build public presentation data
         run: python public_site_data.py --predictions data/predictions.json --public-output data/public_predictions.json
+      - name: Update full-season fusion results through latest noon
+        run: python public_site_data.py --update-fusion-current
       - name: Validate model inputs
         run: |
           python - <<'PY'
@@ -136,7 +138,7 @@ jobs:
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add data/predictions.json data/public_predictions.json data/prediction_archive.json data/research_archive.json data/research_report.json data/market_signal_backtest.json
+          git add data/predictions.json data/public_predictions.json data/prediction_archive.json data/research_archive.json data/research_report.json data/market_signal_backtest.json data/fusion_report.json
           if git diff --cached --quiet; then
             printf 'Prediction archive is already up to date.\n'
           else
