@@ -10,8 +10,8 @@ from prediction_pipeline import (
     freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
     parse_main_fixtures, parse_espn_opening_1x2, parse_espn_opening_asian_handicap, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
-    main_fixture_source_freshness, merge_fixture_sources, load_daily_fixtures,
-    settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
+    main_fixture_source_freshness, merge_fixture_sources, load_daily_fixtures, archived_window_fixtures,
+    dedupe_fixture_records, settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
 )
 
 
@@ -253,6 +253,35 @@ class FixtureParserTests(unittest.TestCase):
         self.assertEqual(len(result), 2)
         alpha = next(x for x in result if x["home_source"] == "Alpha")
         self.assertEqual(alpha["source"], "football-data fixtures.csv")
+
+    def test_real_f1_e0_i1_duplicates_keep_only_primary_source(self):
+        cases = [
+            ("F1", "Brest", "Paris FC", "2026-11-27T19:45:00+00:00", "401876392"),
+            ("I1", "Venezia", "Bologna", "2026-11-27T19:45:00+00:00", "401875004"),
+            ("E0", "Nott'm Forest", "Chelsea", "2026-11-27T20:00:00+00:00", "401879225"),
+        ]
+        for league_id, home, away, kickoff_text, event_id in cases:
+            with self.subTest(league_id=league_id):
+                league = {"id": league_id, "name": league_id}
+                kickoff = datetime.fromisoformat(kickoff_text)
+                primary = base_fixture(league, home, away, kickoff, "football-data fixtures.csv")
+                espn = base_fixture(league, home, away, kickoff, "ESPN scoreboard", event_id)
+                # 同时验证补源合并，以及归档中两个旧ID再次读出时的去重。
+                self.assertEqual(len(merge_fixture_sources([primary], [espn])), 1)
+                result = dedupe_fixture_records([espn, primary])
+                self.assertEqual(len(result), 1)
+                self.assertEqual(result[0]["source"], "football-data fixtures.csv")
+                self.assertEqual(result[0]["source_event_id"], "")
+
+    def test_settle_only_archive_read_deduplicates_two_source_ids(self):
+        league = {"id": "E0", "name": "英超"}
+        kickoff = datetime.fromisoformat("2026-11-27T20:00:00+00:00")
+        primary = base_fixture(league, "Nott'm Forest", "Chelsea", kickoff, "football-data fixtures.csv")
+        espn = base_fixture(league, "Nott'm Forest", "Chelsea", kickoff, "ESPN scoreboard", "401879225")
+        archive = {"matches": {"espn:401879225": espn, "fd:duplicate": primary}}
+        result = archived_window_fixtures(archive, datetime(2026, 11, 27, 12, 56, tzinfo=timezone.utc))
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result[0]["source"], "football-data fixtures.csv")
 
     def test_stale_main_source_is_recovered_and_reported_by_espn(self):
         league = {**sample_league(), "id": "E0"}
