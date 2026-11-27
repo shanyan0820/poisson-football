@@ -235,7 +235,7 @@ class FixtureParserTests(unittest.TestCase):
              patch("prediction_pipeline.ESPN_LEAGUES", {}), \
              patch("prediction_pipeline.fetch_csv", return_value=old_csv), \
              patch("prediction_pipeline.fetch_json", return_value=payload):
-            fixtures, coverage = load_daily_fixtures({"leagues": [league]}, datetime(2026, 11, 23, 4, tzinfo=timezone.utc))
+            fixtures, coverage = load_daily_fixtures({"leagues": [league]}, datetime(2026, 11, 23, 5, tzinfo=timezone.utc))
         self.assertEqual(len(fixtures), 1)
         self.assertEqual(fixtures[0]["source_event_id"], "evt-new")
         self.assertEqual(fixtures[0]["prediction_window_start"], "2026-11-23T12:00:00+08:00")
@@ -243,6 +243,21 @@ class FixtureParserTests(unittest.TestCase):
         self.assertTrue(main["primary_stale"])
         self.assertEqual(main["supplemented_fixtures"], 1)
         self.assertIn("warning", main)
+
+    def test_main_espn_supplement_waits_until_beijing_13(self):
+        league = {**sample_league(), "id": "E0"}
+        old_csv = "Div,Date,Time,HomeTeam,AwayTeam\r\nE0,22/11/2026,05:00,Alpha,Beta\r\n"
+        with patch("prediction_pipeline.MAIN_FIXTURE_LEAGUES", {"E0"}), \
+             patch("prediction_pipeline.MAIN_ESPN_LEAGUES", {"E0": "eng.1"}), \
+             patch("prediction_pipeline.ESPN_LEAGUES", {}), \
+             patch("prediction_pipeline.fetch_csv", return_value=old_csv), \
+             patch("prediction_pipeline.fetch_json", side_effect=AssertionError("13点前不应请求主联赛ESPN补源")):
+            fixtures, coverage = load_daily_fixtures({"leagues": [league]}, datetime(2026, 11, 23, 4, tzinfo=timezone.utc))
+        self.assertEqual(fixtures, [])
+        main = next(x for x in coverage if x["league_id"] == "E0")
+        self.assertTrue(main["primary_stale"])
+        self.assertEqual(main["supplemented_fixtures"], 0)
+        self.assertIn("13点后", main["warning"])
 
 
 class MarketModelTests(unittest.TestCase):
@@ -513,25 +528,31 @@ class ArchiveTests(unittest.TestCase):
         self.assertTrue(record["asian_handicap"]["captured_at"].endswith("+00:00"))
         self.assertNotIn("total_market", record)
 
-    def test_espn_without_real_handicap_has_no_simulated_market_or_recommendation(self):
+    def test_espn_simulated_handicap_and_recommendation_open_at_beijing_13(self):
         fixture = copy.deepcopy(self.fixture)
+        fixture["source"] = "ESPN scoreboard"
         fixture["opening_1x2"] = {"home": 1.50, "draw": 4.20, "away": 6.50, "source": "ESPN test"}
         archive = update_prediction_archive({"version": 1, "matches": {}}, [fixture], self.dataset, self.now)
         key = next(iter(archive["matches"]))
         original = copy.deepcopy(archive["matches"][key]["predictions"])
-        self.assertEqual(archive["matches"][key]["handicap_source"], "simulated")
-        espn_fixture = {**fixture, "source": "ESPN scoreboard"}
-        archive = update_prediction_archive(archive, [espn_fixture], self.dataset, self.now + timedelta(minutes=1))
+        before = archive["matches"][key]
+        self.assertTrue(before["require_real_handicap"])
+        self.assertEqual(before["handicap_source"], "unavailable")
+        public_record(before, "stable", self.now)
+        self.assertIn("integrated_selection", before)
+        after_13 = self.now + timedelta(hours=5)  # 08:00 -> 13:00 北京时间
+        archive = update_prediction_archive(archive, [fixture], self.dataset, after_13)
         record = archive["matches"][key]
         self.assertEqual(record["predictions"], original)
-        self.assertTrue(record["require_real_handicap"])
-        self.assertEqual(record["handicap_source"], "unavailable")
-        self.assertIsNone(record.get("asian_handicap"))
-        public = public_record(record, "stable", self.now + timedelta(minutes=1))
-        self.assertEqual(public["integrated_selection"]["status"], "skip")
-        self.assertEqual(public["recommendation_selection"]["status"], "skip")
-        self.assertEqual(public["pattern_selection"]["status"], "skip")
-        self.assertNotEqual(public["pattern_selection"].get("handicap_source"), "1x2_converted")
+        self.assertFalse(record["require_real_handicap"])
+        self.assertEqual(record["handicap_source"], "simulated")
+        self.assertTrue(record["asian_handicap"]["source"].startswith("等效换算"))
+        self.assertNotIn("integrated_selection", record)
+        self.assertNotIn("recommendation_selection", record)
+        public = public_record(record, "stable", after_13)
+        self.assertEqual(public["pattern_selection"].get("handicap_source"), "1x2_converted")
+        self.assertNotIn("没有真实亚盘赔率", public["integrated_selection"].get("reason", ""))
+        self.assertNotIn("没有真实亚盘赔率", public["recommendation_selection"].get("reason", ""))
 
     def test_ranking_uses_only_matches_before_kickoff_date(self):
         before = ranking_snapshot(self.fixture, self.league)
