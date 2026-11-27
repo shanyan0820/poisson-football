@@ -9,7 +9,7 @@ on:
       - data/fusion_report.json
       - .github/workflows/deploy-pages.yml
   schedule:
-    # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成新周期，其余整点只同步赛果。
+    # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成主源周期，13:00（UTC 05:00）补ESPN及等效盘口推荐，其余整点只同步赛果。
     - cron: '0 * * * *'
 
 permissions:
@@ -39,7 +39,7 @@ jobs:
       - name: Select full prediction or result-only mode
         id: mode
         run: |
-          if [[ "${{ github.event_name }}" == "schedule" && "$(date -u +%H)" != "04" ]]; then
+          if [[ "${{ github.event_name }}" == "schedule" && "$(date -u +%H)" != "04" && "$(date -u +%H)" != "05" ]]; then
             echo "args=--settle-only" >> "$GITHUB_OUTPUT"
           else
             echo "args=" >> "$GITHUB_OUTPUT"
