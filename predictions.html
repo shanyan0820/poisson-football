@@ -8,7 +8,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Market Signal Model">
 <link rel="icon" href="data:,">
-<meta name="description" content="Market Signal Model：A/B/C 分档、同向叠加观察、赛后结算与历史回测">
+<meta name="description" content="Market Signal Model：磐石S级与A/B/C分档、赛后结算与历史回测">
 <title>Market Signal Model · 赛后统计</title>
 <style>
 :root{--bg:#f2f5f2;--ink:#14221d;--muted:#68766f;--card:#fff;--green:#0d7a55;--line:#dfe6e1;--dark:#0b1f1a;--amber:#9b630f;--soft:#edf7f1;--red:#c92f35;--red-soft:#fff1f1}
@@ -16,13 +16,13 @@
 </style>
 </head>
 <body>
-<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">A/B/C＋叠加观察</span></div><p>本赛季实跑与五季历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
+<header class="hero"><div class="hero-inner"><div class="brand"><h1>Market Signal Model</h1><span class="live">磐石S级＋A/B/C</span></div><p>本赛季实跑与五季历史回测分开呈现；所有信号按真实赛前赔率结算。</p><div class="hero-meta"><span class="updated" id="updated">正在检查数据版本…</span><span class="nav-links"><a class="nav" href="index.html">今日比赛 →</a></span></div></div></header>
 <main class="wrap">
 <section class="card setup">
   <div class="step">01 / 本赛季实跑</div><h2 class="section-title" id="current-title">2026-27 · 选择联赛与统计档位</h2>
   <div class="controls">
     <div class="field"><label for="league">联赛范围</label><select id="league"><option value="ALL">全部联赛</option></select></div>
-    <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
+    <div class="field"><label for="model">统计档位</label><select id="model"><option value="ALL">全部档位</option><option value="S">S级·磐石</option><option value="A">A级</option><option value="B">B级</option><option value="C">C级</option></select></div>
   </div>
   <p class="hint" id="current-hint">真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。按联赛或档位筛选后，下方成绩同步变化。</p>
   <div class="error" id="error"></div>
@@ -46,14 +46,14 @@
   <div class="formula"><b>准确率口径：</b>（全赢＋0.5 × 赢一半）÷（全赢＋全输＋0.5 × 赢一半＋0.5 × 输一半）。走盘、赢输各半及其他结果不计入分子或分母；ROI分母包含全部实跑注数。</div>
   <p class="match-note" id="source-quality-note">正在读取源数据审计结果…</p>
 </section>
-<section class="card"><div class="step">03 / 五季融合回测</div><h2 class="section-title">2021-22—2025-26</h2><div class="backtest-meta" id="backtest-meta"></div><div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>五季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div><p class="hint" id="overlap-note">每格显示注数、胜率与ROI。BIG7全部保留并叠加固定候选，同向只结算一次，不自动升S。</p><div class="warning">历史回测不等于收益保证；本赛季部分A级规则样本仍较少。C为保留覆盖档，可能包含负ROI规则。</div></section>
+<section class="card"><div class="step">03 / 五季融合回测</div><h2 class="section-title">2021-22—2025-26</h2><div class="backtest-meta" id="backtest-meta"></div><div class="table-scroll"><table class="rule-table backtest-table"><thead><tr><th>档位</th><th>2021-22</th><th>2022-23</th><th>2023-24</th><th>2024-25</th><th>2025-26</th><th>五季合计</th></tr></thead><tbody id="backtest-rows"></tbody></table></div><p class="hint" id="overlap-note">每格显示注数、胜率与ROI。磐石是唯一S级，同向只结算一次，方向冲突不推荐。</p><div class="warning">历史回测不等于收益保证；磐石Elo阈值属于回溯分档。S级历史含研究对照，正式线上仅真实亚盘及真实赔率可触发。</div></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后真实结算</footer>
 </main>
 <script>
 const $=id=>document.getElementById(id);let DATA=null,BACKTEST=null;
-const GRADES=['A','B','C'];
-const modelNames={ALL:'全部档位',A:'A级',B:'B级',C:'C级'};
+const GRADES=['S','A','B','C'];
+const modelNames={ALL:'全部档位',S:'S级·磐石',A:'A级',B:'B级',C:'C级'};
 const esc=v=>String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
 const pct=v=>v==null?'—':(Number(v)*100).toFixed(2)+'%';
 const roi=v=>v==null?'—':(Number(v)>0?'+':'')+(Number(v)*100).toFixed(2)+'%';
@@ -77,7 +77,7 @@ function signedLine(value){const n=Number(value);return(n>0?'+':'')+n.toFixed(2)
 function resultClass(outcome){if(outcome==='全赢')return'result-win';if(outcome==='全输')return'result-loss';if(outcome==='走盘')return'result-push';return'result-half'}
 function matchHtml(match){
  const selection=match.selection==='home'?'主队':'客队';
- const badge=`${match.grade}级${match.rule_count>1?` · ${match.rule_count}条同向`:''}`;
+ const badge=match.grade==='S'?`S级·磐石${match.rule_count>1?` · ${match.rule_count}条同向`:''}`:`${match.grade}级${match.rule_count>1?` · ${match.rule_count}条同向`:''}`;
  return`<article class="match-item"><div class="match-top"><span>${esc(match.date)} · ${esc(match.league_name)}</span><span class="match-grade">${esc(badge)}</span></div><div class="match-teams"><span class="match-home">${esc(match.home)}</span><span class="match-vs">VS</span><span class="match-away">${esc(match.away)}</span></div><div class="match-score">实际比分 ${esc(match.score)}</div><div class="match-meta"><div><span>机构让球</span><b>主队 ${signedLine(match.home_line)}</b></div><div><span>推荐方向</span><b>${selection} ${signedLine(match.selection_line)}</b></div><div><span>输赢结果</span><b class="${resultClass(match.outcome)}">${esc(match.outcome)}</b></div></div></article>`;
 }
 function renderMatches(){
@@ -88,10 +88,10 @@ function renderMatches(){
 function backtestCell(summary){return`<td class="season-cell"><b>${summary?.n||0}场</b><span>${pct(summary?.effective_win_rate)}</span><span>${roi(summary?.roi)}</span></td>`}
 function renderBacktest(){
  if(!BACKTEST)return;
- $('backtest-meta').innerHTML=`<span>${BACKTEST.rules}条融合规则</span><span>五季 ${BACKTEST.overall.n} 注</span><span>胜率 ${pct(BACKTEST.overall.effective_win_rate)} · ROI ${roi(BACKTEST.overall.roi)}</span>`;
+ $('backtest-meta').innerHTML=`<span>${BACKTEST.rules}条原规则＋磐石S级</span><span>五季 ${BACKTEST.overall.n} 注</span><span>胜率 ${pct(BACKTEST.overall.effective_win_rate)} · ROI ${roi(BACKTEST.overall.roi)}</span>`;
  $('backtest-rows').innerHTML=GRADES.map(id=>`<tr><td><span class="rule-id">${id}</span><span class="rule-name">${BACKTEST.grades[id].name}</span></td>${Object.values(BACKTEST.seasons).map(s=>backtestCell(s.grades[id])).join('')}${backtestCell(BACKTEST.grades[id].overall)}</tr>`).join('');
- const overlap=BACKTEST.data_quality?.big_new_overlap?.history?.SAME_DIRECTION?.overall,big=BACKTEST.data_quality?.big_new_overlap?.history?.BIG_ONLY?.overall;
- $('overlap-note').textContent=overlap&&big?`BIG7全部保留并叠加五大固定7条；同向叠加 ${overlap.n} 注，胜率 ${pct(overlap.win_rate)}、ROI ${roi(overlap.roi)}；BIG单独命中胜率 ${pct(big.win_rate)}、ROI ${roi(big.roi)}。同向只结算一次，叠加不自动升S。`:'BIG7全部保留并叠加固定候选，同向只结算一次，不自动升S。';
+ const p=BACKTEST.data_quality?.panshi_release,ph=p?.panshi_history_overall,real=p?.panshi_history_real_asian;
+ $('overlap-note').textContent=p?`磐石S级五季 ${ph.n} 注，胜率 ${pct(ph.win_rate)}、ROI ${roi(ph.roi)}；其中真实亚盘 ${real.n} 注，胜率 ${pct(real.win_rate)}、ROI ${roi(real.roi)}。与47条同向合并、冲突剔除，不重复结算。`:'磐石是唯一S级，同向只结算一次，方向冲突不推荐。';
 }
 function render(){
  const stats=currentStats(),c=stats.counts;
@@ -106,8 +106,8 @@ async function init(){try{
  const names=BACKTEST.current.league_names||{},ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
  $('current-title').textContent=`2026-27 · 截至${BACKTEST.cutoff}`;
- $('current-hint').textContent=`真实亚盘优先；无真实亚盘时使用赛前欧赔换算等效盘口。本赛季共${BACKTEST.current.n}注，按联赛或档位筛选后，下方成绩和比赛明细同步变化。`;
- const quality=BACKTEST.data_quality||{};$('source-quality-note').textContent=`源数据审计：统一研究样本 ${quality.unified_rows??'—'} 场，排除 ${quality.excluded_count??0} 场明确开盘字段异常；不以收盘盘口替换开盘。当前 ${BACKTEST.rules} 条规则保留全部BIG7，新增五大固定7条及意甲机构0.5；土超0.5沿用原规则，不重复新增。`;
+ $('current-hint').textContent=`47条原规则沿用原口径；磐石S级仅真实亚盘及真实赔率可触发。本赛季共${BACKTEST.current.n}注，同场同向只结算一次，方向冲突不推荐。`;
+ const quality=BACKTEST.data_quality||{};$('source-quality-note').textContent=`源数据审计：统一研究样本 ${quality.unified_rows??'—'} 场，排除 ${quality.excluded_count??0} 场明确开盘字段异常；不以收盘盘口替换开盘。原${BACKTEST.rules}条规则阈值不变，磐石为唯一新增S级。`;
  $('updated').textContent=`数据更新：${DATA.generated_at.replace('T',' ').replace('+00:00',' UTC')}`;$('content').classList.remove('hidden');render();renderBacktest();
  }catch(e){$('error').textContent='统计数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
 $('league').addEventListener('change',render);$('model').addEventListener('change',render);init();

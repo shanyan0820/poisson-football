@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 DISPLAY_NAME = "Market Signal Model"
-GRADES = ("A", "B", "C")
+GRADES = ("S", "A", "B", "C")
 COUNT_FIELDS = (
     "n", "unit_profit", "full_win", "half_win", "push",
     "half_loss", "full_loss", "win_loss",
@@ -31,6 +31,7 @@ SETTLEMENT_FIELDS = (
 )
 PATTERN_FIELDS = (
     "rule_version", "status", "matched", "side", "line", "odds", "level", "tier",
+    "rule_name",
     "n_all", "wr_all", "roi_all", "reason", "tracking_eligible", "handicap_source",
     "rule_count", "confirmation_count",
 )

@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 
 from generate_data import TEAM_ZH, fetch_csv, standings
 from league_pattern import PATTERN_VERSION, evaluate_pattern, league_gate
+from panshi import build_elo_maps, freeze_elo
 from odds_to_asian import convert as convert_asian_odds
 from model import Match, analyze, _poisson_matrix
 from recommendation_rules import (
@@ -834,6 +835,7 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
     archive.setdefault("version", 1)
     archive.setdefault("matches", {})
     leagues = {l["id"]: l for l in dataset["leagues"]}
+    elo_maps = build_elo_maps(dataset)
     for saved in archive["matches"].values():
         saved.pop("total_market", None)
         saved.pop("total_market_history", None)
@@ -882,6 +884,7 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
                 if fixture.get(field) is not None:
                     record[field] = fixture[field]
         record["ranking"] = fixture["ranking"]
+        freeze_elo(record, fixture, elo_maps.get(fixture["league_id"], {}), now)
         if fixture.get("opening_1x2") and not record.get("opening_1x2") and datetime.fromisoformat(record["kickoff_utc"]) > now:
             record["opening_1x2"] = fixture["opening_1x2"]
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
@@ -1148,7 +1151,12 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
         institution_line, handicap_source = asian.get("home_line"), "asian"
         if institution_line is None and handicap:
             institution_line, handicap_source = handicap.get("market_line"), "model"
-    result["pattern_selection"] = evaluate_pattern(record.get("league_id"), model_line, institution_line)
+    result["pattern_selection"] = evaluate_pattern(
+        record.get("league_id"), model_line, institution_line,
+        elo_difference=record.get("elo_difference"),
+        home_ev=(handicap.get("home_metrics") or {}).get("ev") if handicap else None,
+        real_asian=bool(asian_complete and record.get("handicap_source") == "real"),
+    )
     pattern = result["pattern_selection"]
     pattern["handicap_source"] = handicap_source
     pattern["institution_line"] = institution_line

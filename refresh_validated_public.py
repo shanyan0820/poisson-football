@@ -40,7 +40,12 @@ def refresh(record):
         institution_line, source = asian.get("home_line"), "asian"
         if institution_line is None and handicap:
             institution_line, source = handicap.get("market_line"), "model"
-    pattern = evaluate_pattern(record.get("league_id"), model_line, institution_line)
+    pattern = evaluate_pattern(
+        record.get("league_id"), model_line, institution_line,
+        elo_difference=record.get("elo_difference"),
+        home_ev=(handicap.get("home_metrics") or {}).get("ev") if handicap else None,
+        real_asian=bool(asian_complete and record.get("handicap_source") == "real"),
+    )
     pattern["handicap_source"] = source; pattern["institution_line"] = institution_line
     if pattern.get("status") == "candidate":
         side = pattern["side"]
@@ -76,7 +81,7 @@ def main():
         for record in raw.get(collection, []):
             refresh(record); count += 1
             assert record["pattern_selection"]["rule_version"] == PATTERN_VERSION
-            assert record["pattern_selection"].get("level") in {None, "A", "B", "C"}
+            assert record["pattern_selection"].get("level") in {None, "S", "A", "B", "C"}
     PATH.write_text(json.dumps(raw, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     public = build_public_predictions(raw)
     PUBLIC.write_text(json.dumps(public, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")

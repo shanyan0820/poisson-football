@@ -2,6 +2,7 @@
 from __future__ import annotations
 import json
 from pathlib import Path
+from panshi import evaluate_panshi
 
 ROOT = Path(__file__).resolve().parent
 FIVE = {"E0", "SP1", "D1", "I1", "F1"}
@@ -10,7 +11,7 @@ try:
     RULES = json.loads((ROOT / "data" / "fusion_rules.json").read_text(encoding="utf-8"))
 except (OSError, ValueError):
     RULES = []
-PATTERN_VERSION = f"fusion-{len(RULES)}-big7-plus-fixed5-i1-v6"
+PATTERN_VERSION = f"fusion-{len(RULES)}-plus-panshi-s-v7"
 BY_LEAGUE = {}
 for rule in RULES:
     BY_LEAGUE.setdefault(rule["league"], []).append(rule)
@@ -19,9 +20,9 @@ for rule in RULES:
 def league_gate(league_id: str | None) -> dict:
     supported = bool(BY_LEAGUE.get(league_id) or league_id in BIG7)
     return {"league_id": league_id, "status": "active" if supported else "paused",
-            "level": "ABC+confirm", "recommend_enabled": supported,
+            "level": "S/A/B/C", "recommend_enabled": supported,
             "pattern_enabled": supported, "t1_enabled": league_id in {"T1", "I1", "F2", "E0", "P1", "SP1"},
-            "reason": f"已接入{len(RULES)}条规则；保留BIG7并叠加固定候选，同向命中仅作观察标签。" if supported else "该联赛暂无已验证的融合规则，暂停推荐。"}
+            "reason": f"已接入{len(RULES)}条原规则及磐石S级；同向只结算一次，方向冲突不推荐。" if supported else "该联赛暂无已验证的融合规则，暂停推荐。"}
 
 
 def _hit(rule, model, line):
@@ -38,7 +39,8 @@ def _hit(rule, model, line):
 
 
 def evaluate_pattern(league_id: str | None, model_handicap: float | None,
-                     institution_line: float | None) -> dict:
+                     institution_line: float | None, elo_difference: float | None = None,
+                     home_ev: float | None = None, real_asian: bool = False) -> dict:
     base = {"rule_version": PATTERN_VERSION, "status": "skip", "league_id": league_id,
             "side": None, "line": None, "level": None, "reason": None, "matched": False,
             "data_source": "五季固定阈值与BIG7叠加验证"}
@@ -50,11 +52,20 @@ def evaluate_pattern(league_id: str | None, model_handicap: float | None,
     if league_id in FIVE:
         candidates += BY_LEAGUE.get("FIVE", [])
     hits = [r for r in candidates if _hit(r, model_handicap, institution_line)]
-    if not hits:
-        return {**base, "reason": f"本场未触发{len(RULES)}条融合规则。"}
+    panshi = evaluate_panshi(model_handicap, institution_line, home_ev, elo_difference, real_asian)
+    if not hits and not panshi:
+        return {**base, "reason": f"本场未触发{len(RULES)}条融合规则或磐石S级。"}
     sides = {r["side"] for r in hits}
-    if len(sides) > 1:
-        return {**base, "reason": "不同规则方向冲突，本场不推荐。", "rule_count": len(hits)}
+    if len(sides) > 1 or (panshi and sides and sides != {"home"}):
+        return {**base, "reason": "不同规则方向冲突，本场不推荐。", "rule_count": len(hits) + int(bool(panshi))}
+    if panshi:
+        return {**base, "status": "candidate", "matched": True, "side": "home",
+                "line": institution_line, "institution_line": institution_line,
+                "level": "S", "rule_id": panshi["rule_id"], "rule_name": panshi["rule_name"],
+                "rule_count": len(hits) + 1, "confirmation_count": 1,
+                "rule_ids": [panshi["rule_id"]] + [r["id"] for r in hits],
+                "n_all": panshi["n_all"], "wr_all": panshi["wr_all"], "roi_all": panshi["roi_all"],
+                "reason": panshi["reason"] + " 五季178注，等效胜率59.61%，ROI +15.41%。"}
     rank = {"A": 3, "B": 2, "C": 1}
     top = max(hits, key=lambda r: (rank[r["grade"]], r["n"]))
     level = top["grade"]

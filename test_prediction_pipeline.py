@@ -567,7 +567,7 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("输赢结果", predictions)
         self.assertIn("BACKTEST.current.matches", predictions)
         self.assertIn("overflow-y:auto", predictions)
-        self.assertIn("叠加不自动升S", predictions)
+        self.assertIn("磐石是唯一S级", predictions)
         self.assertIn("table-layout:fixed", predictions)
         self.assertIn("五季融合回测", predictions)
         self.assertIn("data/public_predictions.json", predictions)
