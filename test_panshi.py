@@ -90,6 +90,14 @@ class FusionDailyCurrentTest(unittest.TestCase):
         again=update_fusion_report(updated,[fusion_daily_record()],now)
         self.assertEqual(again['current'],updated['current']);self.assertEqual(again['current']['n'],2)
         self.assertEqual(updated['overall'],base['overall']);self.assertEqual(updated['double'],base['double'])
+    def test_all_current_match_names_are_chinese(self):
+        from public_site_data import update_fusion_report
+        base=fusion_daily_base();base['current']['matches'][0]['home']='Levante';base['current']['matches'][0]['away']='Elche'
+        live=fusion_daily_record();live['home']='Arsenal';live['away']='Chelsea'
+        updated=update_fusion_report(base,[live],datetime.fromisoformat('2026-11-27T11:00:00+00:00'))
+        self.assertEqual((updated['current']['matches'][0]['home'],updated['current']['matches'][0]['away']),('阿森纳','切尔西'))
+        self.assertEqual((updated['current']['matches'][1]['home'],updated['current']['matches'][1]['away']),('莱万特','埃尔切'))
+        self.assertEqual((updated['current']['n'],updated['current']['net_wins']),(2,2))
     def test_after_noon_and_unfinished_are_excluded(self):
         from public_site_data import update_fusion_report
         now=datetime.fromisoformat('2026-11-27T11:00:00+00:00')
