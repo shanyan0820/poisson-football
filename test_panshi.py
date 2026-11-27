@@ -28,7 +28,7 @@ class PanshiRuleTest(unittest.TestCase):
         home={'id':'H','league':'TEST','side':'home','kind':'exact','params':{'line':-1,'threshold':-2},'grade':'A','n':10,'wr':50,'roi':10}
         with patch('league_pattern.BY_LEAGUE',{'TEST':[home]}):
             result=evaluate_pattern('TEST',-1.2,-1,200,.1,True)
-        self.assertEqual(result['level'],'S');self.assertEqual(result['side'],'home');self.assertEqual(result['rule_count'],2);self.assertEqual(result['confirmation_count'],1)
+        self.assertEqual(result['level'],'S');self.assertEqual(result['side'],'home');self.assertEqual(result['rule_count'],2);self.assertEqual(result['confirmation_count'],2)
 
 class PanshiEloTest(unittest.TestCase):
     def bootstrap(self):return {'leagues':{'TEST':{'ratings':{'H':2000,'A':1000}}}}
@@ -45,7 +45,8 @@ class PanshiEloTest(unittest.TestCase):
     def test_public_fields_do_not_expose_private_inputs(self):
         self.assertNotIn('elo_difference',PATTERN_FIELDS);self.assertNotIn('home_ev',PATTERN_FIELDS)
         report=json.loads((Path(__file__).parent/'data/fusion_report.json').read_text())
-        self.assertEqual(report['grades']['S']['overall']['n'],177);self.assertEqual(report['version'],'fusion-47-plus-panshi-s-v7')
-        self.assertEqual(report['data_quality']['panshi_release']['history']['same_direction_merged'],69)
-        self.assertEqual(report['data_quality']['panshi_release']['history']['direction_conflicts_removed'],1)
+        self.assertEqual(report['grades']['S']['overall']['n'],2105);self.assertEqual(report['version'],'fusion-panshi-35-7-v8')
+        self.assertEqual(report['double']['n'],1954)
+        self.assertEqual(report['triple']['n'],10)
+        self.assertEqual(report['current']['net_wins'],29)
 if __name__=='__main__':unittest.main()
