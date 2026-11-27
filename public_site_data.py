@@ -8,7 +8,7 @@ from collections import defaultdict
 from pathlib import Path
 
 DISPLAY_NAME = "Market Signal Model"
-GRADES = ("S", "A", "B", "C")
+GRADES = ("S", "A", "B")
 COUNT_FIELDS = (
     "n", "unit_profit", "full_win", "half_win", "push",
     "half_loss", "full_loss", "win_loss",
@@ -203,7 +203,7 @@ def build_public_backtest(raw, selections):
             },
         },
         "loso": raw.get("loso"),
-        "warning": "历史回测不等于网站前瞻实盘；A/B/C 分档仅用于研究与观察，不构成收益保证。",
+        "warning": "历史回测不等于网站前瞻实盘；S/A/B 分档仅用于研究与观察，不构成收益保证。",
     }
 
 
