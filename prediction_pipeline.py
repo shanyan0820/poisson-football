@@ -1,4 +1,73 @@
+
 """每日赛前预测、赛后核对与无未来数据泄漏的滚动回测。"""
+from __future__ import annotations
+
+
+import argparse
+import csv
+import hashlib
+import io
+import json
+import math
+import time
+import unicodedata
+import urllib.parse
+import urllib.request
+from datetime import date, datetime, time as dt_time, timedelta, timezone
+from pathlib import Path
+from zoneinfo import ZoneInfo
+
+
+from generate_data import TEAM_ZH, fetch_csv, standings
+from league_pattern import PATTERN_VERSION, evaluate_pattern, league_gate
+from panshi import build_elo_maps, freeze_elo
+from odds_to_asian import convert as convert_asian_odds
+from model import Match, analyze, _poisson_matrix
+from recommendation_rules import (
+    FEATURED_RULE_IDS, RULE_DEFINITIONS, RULE_IDS, RULE_VERSION,
+    evaluate_rules, strength_band,
+)
+
+
+ROOT = Path(__file__).resolve().parent
+UTC = timezone.utc
+BEIJING = ZoneInfo("Asia/Shanghai")
+LONDON = ZoneInfo("Europe/London")
+FIXTURES_URL = "https://www.football-data.co.uk/fixtures.csv"
+USER_AGENT = "laoyang-football-lab/2.0 (+https://github.com/shanyan0820/poisson-football)"
+MIN_HISTORY_MATCHES = 30
+HANDICAP_EDGE_THRESHOLD = 0.15
+INTEGRATED_RULE_VERSION = "exact-15-lines-v1-grade-a"
+RECOMMENDATION_RULE_VERSION = RULE_VERSION
+PRIMARY_RULE_ORDER = RULE_IDS
+QUALIFIED_RULE_IDS: set[str] = set(FEATURED_RULE_IDS)
+
+
+MAIN_FIXTURE_LEAGUES = {
+    "E0", "SP1", "I1", "D1", "F1", "N1", "B1", "SC0", "T1", "G1",
+    "E1", "SP2", "I2", "D2", "F2",
+}
+ESPN_LEAGUES = {
+    "P1": "por.1", "SWE": "swe.1", "SWZ": "sui.1", "JPN": "jpn.1",
+    "AUT": "aut.1", "RUS": "rus.1", "NOR": "nor.1", "BRA": "bra.1",
+    "ARG": "arg.1", "DNK": "den.1", "FIN": "fin.1", "ROU": "rou.1",
+    "MEX": "mex.1", "USA": "usa.1",
+}
+# 主赛程仍由 football-data 提供；ESPN 只补充终场状态和真实全场比分。
+ESPN_RESULT_LEAGUES = {
+    **ESPN_LEAGUES,
+    "E0": "eng.1", "E1": "eng.2", "SP1": "esp.1", "SP2": "esp.2",
+    "I1": "ita.1", "I2": "ita.2", "D1": "ger.1", "D2": "ger.2",
+    "F1": "fra.1", "F2": "fra.2", "N1": "ned.1", "B1": "bel.1",
+    "SC0": "sco.1", "T1": "tur.1", "G1": "gre.1",
+}
+MAIN_ESPN_LEAGUES = {code: ESPN_RESULT_LEAGUES[code] for code in MAIN_FIXTURE_LEAGUES}
+
+
+MODEL_CONFIGS = [
+    {"id": "baseline", "name": "联赛均值基准", "description": "每场均使用截至赛前的联赛主、客队进球均值。", "baseline_only": True},
+    {"id": "current", "name": "当前 50/40/10", "description": "主客场50%、全部40%、近3场10%，5场先验。", "weights": {"venue": .50, "all": .40, "recent": .10}, "prior_matches": 5.0, "recent_matches": 3},
+    {"id": "stable", "name": "稳健主客场", "description": "主客场60%、全部35%、近3场5%，8场先验。", "weights": {"venue": .60, "all": .35, "recent": .05}, "prior_matches": 8.0, "recent_matches": 3},"""每日赛前预测、赛后核对与无未来数据泄漏的滚动回测。"""
 from __future__ import annotations
 
 import argparse
@@ -699,7 +768,7 @@ def archived_window_fixtures(archive: dict, now: datetime) -> list[dict]:
             fixtures.append({**record,
                              "prediction_window_start": start.isoformat(timespec="seconds"),
                              "prediction_window_end": end.isoformat(timespec="seconds")})
-    return sorted(fixtures, key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"]))
+    return dedupe_fixture_records(fixtures)
 
 
 def parse_main_fixtures(csv_text: str, leagues: dict, window_start: datetime | date,
@@ -821,14 +890,13 @@ def main_fixture_source_freshness(csv_text: str, window_start: datetime) -> dict
 
 
 def merge_fixture_sources(primary: list[dict], supplemental: list[dict]) -> list[dict]:
-    """主源优先；ESPN只补同联赛、同球队、同北京日期中不存在的比赛。"""
+    """主源优先；主源内部和ESPN补源都按比赛身份去重，不依赖来源事件ID。"""
     def matchup_key(item):
         return (item["league_id"], item["home_source"], item["away_source"], item["kickoff_beijing"][:10])
 
-    merged = list(primary)
-    keys = {matchup_key(item) for item in primary}
+    merged, keys = [], set()
     primary_leagues = {item["league_id"] for item in primary}
-    for item in supplemental:
+    for item in [*primary, *supplemental]:
         if item.get("mapping_error") and item["league_id"] in primary_leagues:
             continue
         key = matchup_key(item) if not item.get("mapping_error") else ("espn", fixture_key(item))
@@ -837,6 +905,12 @@ def merge_fixture_sources(primary: list[dict], supplemental: list[dict]) -> list
         keys.add(key)
         merged.append(item)
     return sorted(merged, key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"]))
+
+
+def dedupe_fixture_records(records: list[dict]) -> list[dict]:
+    """归档可能同时存在fd/ESPN两个ID；读取时始终优先football-data主源。"""
+    ordered = sorted(records, key=lambda item: 0 if item.get("source") == "football-data fixtures.csv" else 1)
+    return merge_fixture_sources(ordered, [])
 
 
 def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[dict]]:
