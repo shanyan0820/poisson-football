@@ -98,6 +98,18 @@ class FusionDailyCurrentTest(unittest.TestCase):
         self.assertEqual((updated['current']['matches'][0]['home'],updated['current']['matches'][0]['away']),('阿森纳','切尔西'))
         self.assertEqual((updated['current']['matches'][1]['home'],updated['current']['matches'][1]['away']),('莱万特','埃尔切'))
         self.assertEqual((updated['current']['n'],updated['current']['net_wins']),(2,2))
+    def test_chinese_names_preserve_baseline_order_and_stats(self):
+        from public_site_data import update_fusion_report
+        base=fusion_daily_base();first=base['current']['matches'][0]
+        first.update(home='Levante',away='Elche',key='base-1')
+        second=dict(first);second.update(home='Arsenal',away='Chelsea',key='base-2',unit_profit=.85)
+        base['current']['matches']=[first,second]
+        now=datetime.fromisoformat('2026-11-27T11:00:00+00:00')
+        updated=update_fusion_report(base,[],now)
+        self.assertEqual([row['home'] for row in updated['current']['matches']],['莱万特','阿森纳'])
+        self.assertNotIn('_sort_home',updated['current']['matches'][0])
+        again=update_fusion_report(updated,[],now)
+        self.assertEqual(again['current'],updated['current'])
     def test_after_noon_and_unfinished_are_excluded(self):
         from public_site_data import update_fusion_report
         now=datetime.fromisoformat('2026-11-27T11:00:00+00:00')
