@@ -2,6 +2,12 @@ name: Update data and deploy GitHub Pages
 
 on:
   workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - predictions.html
+      - data/fusion_report.json
+      - .github/workflows/deploy-pages.yml
   schedule:
     # 每小时 UTC 00 分同步；北京时间12:00（UTC 04:00）生成主源周期，13:00（UTC 05:00）补ESPN并优先读取真实让球初盘，其余整点只同步赛果。
     - cron: '0 * * * *'
