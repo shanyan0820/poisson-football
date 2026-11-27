@@ -1297,7 +1297,7 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
         record.get("league_id"), model_line, institution_line,
         elo_difference=record.get("elo_difference"),
         home_ev=(handicap.get("home_metrics") or {}).get("ev") if handicap else None,
-        real_asian=bool(asian_complete and record.get("handicap_source") == "real"),
+        real_asian=bool(asian_complete),
     )
     pattern = result["pattern_selection"]
     pattern["handicap_source"] = handicap_source
