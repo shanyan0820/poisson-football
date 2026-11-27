@@ -4,6 +4,7 @@
 import argparse
 import copy
 import json
+import math
 from collections import defaultdict
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
@@ -230,7 +231,7 @@ def fusion_summary(rows):
     n = len(rows)
     keys = ("full_win", "full_loss", "half_win", "half_loss", "push")
     counts = {key: sum(row["result"] == key for row in rows) for key in keys}
-    profit = sum(row["profit"] for row in rows)
+    profit = math.fsum(row["profit"] for row in rows)
     return {
         "n": n, "wins": round(wins, 4), "losses": round(losses, 4),
         "unit_profit": round(profit, 2),
