@@ -1,9 +1,10 @@
-"""用47条保留BIG7叠加版刷新现有赛前档案与公开数据，不重新抓取或改赛果。"""
+"""用磐石＋35条＋7组合刷新现有赛前档案与公开数据，不重新抓取或改赛果。"""
 from __future__ import annotations
 import json
 from pathlib import Path
 from league_pattern import evaluate_pattern, league_gate, PATTERN_VERSION
 from odds_to_asian import convert as convert_asian_odds
+from prediction_pipeline import market_side_odds
 from public_site_data import build_public_predictions
 
 ROOT = Path(__file__).resolve().parent
@@ -31,30 +32,34 @@ def refresh(record):
     model_line = expected["away"] - expected["home"] if expected else (-handicap["model_goal_difference"] if handicap.get("model_goal_difference") is not None else None)
     asian = record.get("asian_handicap") or {}
     converted = convert_asian_odds(record.get("opening_1x2"))
-    asian_complete = asian.get("home_line") is not None and asian.get("bet365_home_odds") and asian.get("bet365_away_odds")
-    if asian_complete:
-        institution_line, source = asian["home_line"], "asian"
+    asian_complete = (asian.get("home_line") is not None
+                      and market_side_odds(asian, "home") and market_side_odds(asian, "away"))
+    selection_market = asian
+    if asian.get("home_line") is not None:
+        institution_line = asian["home_line"]
+        source = "1x2_converted" if record.get("handicap_source") == "simulated" else "asian"
     elif converted:
         institution_line, source = converted["home_line"], "1x2_converted"
+        selection_market = converted
     else:
-        institution_line, source = asian.get("home_line"), "asian"
-        if institution_line is None and handicap:
+        institution_line, source = None, "asian"
+        if handicap:
             institution_line, source = handicap.get("market_line"), "model"
     pattern = evaluate_pattern(
         record.get("league_id"), model_line, institution_line,
         elo_difference=record.get("elo_difference"),
         home_ev=(handicap.get("home_metrics") or {}).get("ev") if handicap else None,
-        real_asian=bool(asian_complete and record.get("handicap_source") == "real"),
+        real_asian=bool(asian_complete),
     )
     pattern["handicap_source"] = source; pattern["institution_line"] = institution_line
     if pattern.get("status") == "candidate":
         side = pattern["side"]
-        if source == "1x2_converted": odds = converted[f"{side}_odds"]
-        elif source == "asian": odds = asian.get("bet365_home_odds" if side == "home" else "bet365_away_odds")
-        else: odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
-        pattern["odds"] = odds
-        if odds is None:
-            pattern["status"] = "skip"; pattern["reason"] = "本场没有可用的真实盘口赔率，不输出推荐。"
+        side_odds = market_side_odds(selection_market, side)
+        if side_odds is None and handicap:
+            side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
+        pattern["odds"] = side_odds
+        if side_odds is None:
+            pattern["status"] = "skip"; pattern["reason"] = "本场没有可用的真实盘口赔率或等效水位，不输出推荐。"
     record["pattern_selection"] = pattern
     record["league_gate"] = league_gate(record.get("league_id"))
     settlement = record.get("market_settlement") or {}
@@ -81,7 +86,7 @@ def main():
         for record in raw.get(collection, []):
             refresh(record); count += 1
             assert record["pattern_selection"]["rule_version"] == PATTERN_VERSION
-            assert record["pattern_selection"].get("level") in {None, "S", "A", "B", "C"}
+            assert record["pattern_selection"].get("level") in {None, "S", "A", "B"}
     PATH.write_text(json.dumps(raw, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
     public = build_public_predictions(raw)
     PUBLIC.write_text(json.dumps(public, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
