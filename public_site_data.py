@@ -8,6 +8,8 @@ from collections import defaultdict
 from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 
+from generate_data import TEAM_ZH
+
 UTC = timezone.utc
 BEIJING = timezone(timedelta(hours=8))
 
@@ -263,7 +265,9 @@ def fusion_live_match(record, rule_version, cutoff):
         "key": record.get("key"),
         "date": actual.get("date") or kickoff.astimezone(BEIJING).date().isoformat(),
         "kickoff_utc": kickoff_text, "league_id": record.get("league_id"),
-        "league_name": record.get("league_name"), "home": record.get("home"), "away": record.get("away"),
+        "league_name": record.get("league_name"),
+        "home": TEAM_ZH.get(record.get("home"), record.get("home")),
+        "away": TEAM_ZH.get(record.get("away"), record.get("away")),
         "score": f"{actual['home_goals']}-{actual['away_goals']}", "side": side, "line": line,
         "level": pattern.get("level"), "confirmation_count": pattern.get("confirmation_count", 1),
         "result": settled["result"], "profit": round(settled["unit_profit"], 2),
@@ -272,6 +276,9 @@ def fusion_live_match(record, rule_version, cutoff):
 
 
 def normalize_fusion_base_match(row):
+    row = dict(row)
+    row["home"] = TEAM_ZH.get(row["home"], row["home"])
+    row["away"] = TEAM_ZH.get(row["away"], row["away"])
     if row.get("result") and row.get("side"):
         return row
     outcome_map = {"全赢": "full_win", "全输": "full_loss", "赢半": "half_win", "输半": "half_loss", "走盘": "push"}
