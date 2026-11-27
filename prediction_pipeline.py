@@ -650,6 +650,11 @@ def prediction_window(now: datetime) -> tuple[datetime, datetime]:
     return start, start + timedelta(days=1)
 
 
+def espn_supplement_enabled(now: datetime) -> bool:
+    """北京时间13:00起补主联赛缺失赛程，并允许明确标注的欧赔等效盘口。"""
+    return now.astimezone(BEIJING).hour >= 13
+
+
 def in_fixture_window(kickoff: datetime, start: datetime | date, end: datetime | None = None) -> bool:
     local = kickoff.astimezone(BEIJING)
     if end is None:
@@ -822,7 +827,9 @@ def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[
     end_utc = window_end.astimezone(UTC)
     days = sorted({start_utc.date(), end_utc.date()})
     espn_errors = {}
-    for league_id, slug in {**MAIN_ESPN_LEAGUES, **ESPN_LEAGUES}.items():
+    supplement_main = espn_supplement_enabled(now)
+    espn_slugs = {**MAIN_ESPN_LEAGUES, **ESPN_LEAGUES} if supplement_main else dict(ESPN_LEAGUES)
+    for league_id, slug in espn_slugs.items():
         league = leagues[league_id]
         try:
             payloads = [fetch_json(espn_scoreboard_url(slug, day)) for day in days]
@@ -836,8 +843,11 @@ def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[
     coverage = []
     for league_id in sorted(MAIN_FIXTURE_LEAGUES):
         added = sum(f["league_id"] == league_id and f["source"] == "ESPN scoreboard" for f in fixtures)
+        main_source = ("football-data fixtures.csv + ESPN补源" if added else
+                       "football-data fixtures.csv（ESPN已核对）" if supplement_main else
+                       "football-data fixtures.csv（13点后核对ESPN）")
         item = {"league_id": league_id, "status": "supported",
-                "source": "football-data fixtures.csv + ESPN补源" if added else "football-data fixtures.csv（ESPN已核对）",
+                "source": main_source,
                 "primary_stale": freshness["stale"], "primary_latest_kickoff": freshness["latest_kickoff"],
                 "supplemented_fixtures": added}
         if primary_error:
@@ -848,7 +858,8 @@ def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[
             item["status"] = "error"
             item["reason"] = "主赛程与ESPN补源均失败"
         elif freshness["stale"]:
-            item["warning"] = "主赛程源未覆盖当前预测周期，已核对ESPN补源"
+            item["warning"] = ("主赛程源未覆盖当前预测周期，已核对ESPN补源" if supplement_main else
+                               "主赛程源未覆盖当前预测周期，将于北京时间13点后核对ESPN补源")
             if league_id in espn_errors:
                 item["status"] = "degraded"
         coverage.append(item)
@@ -976,10 +987,15 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
         freeze_elo(record, fixture, elo_maps.get(fixture["league_id"], {}), now)
         if fixture.get("opening_1x2") and not record.get("opening_1x2") and datetime.fromisoformat(record["kickoff_utc"]) > now:
             record["opening_1x2"] = fixture["opening_1x2"]
+        previous_require_real = bool(record.get("require_real_handicap"))
         if fixture.get("source") == "ESPN scoreboard" and not fixture.get("asian_handicap"):
-            record["require_real_handicap"] = True
+            record["require_real_handicap"] = not espn_supplement_enabled(now)
         elif fixture.get("asian_handicap"):
             record["require_real_handicap"] = False
+        if previous_require_real and not record["require_real_handicap"]:
+            # 13点前的“缺真实盘口”跳过记录可在补源生成点重算；既有概率预测保持不变。
+            for field in ("recommendation_selection", "integrated_selection", "rule_evaluations"):
+                record.pop(field, None)
         update_handicap_snapshot(record, fixture.get("asian_handicap"), now,
                                  allow_simulated=not record.get("require_real_handicap", False))
         result = find_result(fixture, league)
@@ -1332,7 +1348,7 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发，全部独立结算。A 级只作重点观察，不代表实盘验证通过。football-data 真实AHh初盘优先；ESPN补源没有真实亚盘时只展示赛程和模型概率，不展示模拟盘口，也不生成盘口推荐。",
+            "handicap": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发，全部独立结算。A 级只作重点观察，不代表实盘验证通过。football-data 真实AHh初盘优先；北京时间13点后由ESPN补齐缺失赛程，没有真实亚盘时使用明确标注的欧赔等效盘口，并按现有规则生成推荐。等效盘口不是真实亚盘。",
             "market_handicap": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；负数主队强，正数客队强，双方赛前均需满7轮。",
         },
         "featured_model_id": featured_model_id,
