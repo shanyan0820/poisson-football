@@ -9,7 +9,7 @@ from prediction_pipeline import (
     american_to_decimal, choose_recommendation, compare_handicap, find_result, fit_poisson_to_1x2, strength_band,
     freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
-    parse_main_fixtures, parse_espn_opening_1x2, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
+    parse_main_fixtures, parse_espn_opening_1x2, parse_espn_opening_asian_handicap, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
     main_fixture_source_freshness, merge_fixture_sources, load_daily_fixtures,
     settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
 )
@@ -72,6 +72,36 @@ class EquivalentHandicapTests(unittest.TestCase):
         self.assertAlmostEqual(espn["away"], 3.75)
         self.assertIsNone(parse_espn_opening_1x2({"odds": [None]}))
 
+    def test_espn_real_point_spread_is_used_before_1x2_conversion(self):
+        competition = {"odds": [{
+            "provider": {"name": "DraftKings"},
+            "pointSpread": {
+                "home": {"open": {"line": "+0.5", "odds": "-135"}, "close": {"line": "+0.5", "odds": "-180"}},
+                "away": {"open": {"line": "-0.5", "odds": "-110"}, "close": {"line": "-0.5", "odds": "+130"}},
+            },
+            "moneyline": {
+                "home": {"open": {"odds": "+235"}}, "draw": {"open": {"odds": "+235"}},
+                "away": {"open": {"odds": "-105"}},
+            },
+        }]}
+        real = parse_espn_opening_asian_handicap(competition)
+        self.assertEqual(real["home_line"], .5)
+        self.assertAlmostEqual(real["home_odds"], 1 + 100 / 135)
+        self.assertAlmostEqual(real["away_odds"], 1 + 100 / 110)
+        self.assertIsNone(real["bet365_home_odds"])
+        self.assertIn("pointSpread.open", real["source"])
+        converted = fit_poisson_to_1x2(parse_espn_opening_1x2(competition))
+        self.assertEqual(converted["home_line"], .25)
+        record = {
+            "league_id": "I1", "league_name": "意甲", "handicap_source": "real",
+            "predictions": {"stable": {"expected_goals": {"home": 1.0, "away": 1.4}, "forecast": forecast()}},
+            "asian_handicap": real, "opening_1x2": parse_espn_opening_1x2(competition), "ranking": {},
+        }
+        public = public_record(record)
+        self.assertEqual(public["pattern_selection"]["institution_line"], .5)
+        self.assertEqual(public["handicap_analysis"]["market_line"], .5)
+        self.assertAlmostEqual(public["handicap_analysis"]["away_metrics"]["odds"], real["away_odds"])
+
     def test_poisson_fit_has_correct_sign_and_no_invented_asian_odds(self):
         balanced = fit_poisson_to_1x2({"home": 2.0, "draw": 2.0, "away": 2.0, "source": "test"})
         self.assertEqual(balanced["home_line"], 0)
@@ -89,10 +119,14 @@ class EquivalentHandicapTests(unittest.TestCase):
         update_handicap_snapshot(record, None, now)
         self.assertEqual(record["handicap_source"], "simulated")
         self.assertLess(record["asian_handicap"]["home_line"], 0)
+        record["recommendation_selection"] = {"status": "candidate", "line": -.25}
+        record["integrated_selection"] = {"status": "candidate", "line": -.25}
         real = {"home_line": -.75, "bet365_home_odds": 1.9, "source": "football-data fixtures.csv"}
         update_handicap_snapshot(record, real, now)
         self.assertEqual(record["handicap_source"], "real")
         self.assertEqual(record["asian_handicap"]["home_line"], -.75)
+        self.assertNotIn("recommendation_selection", record)
+        self.assertNotIn("integrated_selection", record)
         self.assertEqual(record["asian_handicap_history"][0]["source"], "等效换算｜test")
         started = {"kickoff_utc": "2026-11-22T09:00:00+00:00", "opening_1x2": record["opening_1x2"]}
         update_handicap_snapshot(started, None, now)
@@ -609,6 +643,8 @@ class PageContractTests(unittest.TestCase):
         self.assertNotIn("市场让球", html)
         self.assertNotIn("排名与差值明细", html)
         self.assertNotIn("consensus_type", html)
+        self.assertNotIn("${line(p.line)}", html)
+        self.assertIn('<span class="rec-direction">${p.side===\'home\'?\'主队\':\'客队\'}</span>', html)
         self.assertNotIn("featured_class", html)
 
     def test_mobile_page_has_symmetric_metrics_and_direction_consistent_scores(self):
@@ -667,6 +703,8 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("function renderMatches", predictions)
         self.assertIn("机构让球", predictions)
         self.assertIn("推荐方向", predictions)
+        self.assertIn('<div><span>推荐方向</span><b>${selection}</b></div>', predictions)
+        self.assertNotIn('${signedLine(match.selection_line)}', predictions)
         self.assertIn("输赢结果", predictions)
         self.assertIn("BACKTEST.current.matches", predictions)
         self.assertIn("overflow-y:auto", predictions)
