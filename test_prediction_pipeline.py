@@ -10,6 +10,7 @@ from prediction_pipeline import (
     freeze_integrated_selection, freeze_recommendation_selection, global_backtest,
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
     parse_main_fixtures, parse_espn_opening_1x2, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
+    main_fixture_source_freshness, merge_fixture_sources, load_daily_fixtures,
     settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
 )
 
@@ -144,6 +145,9 @@ class FixtureParserTests(unittest.TestCase):
         names = ["Hammarby", "Malmo FF"]
         self.assertEqual(map_espn_team("Hammarby IF", names), "Hammarby")
         self.assertEqual(map_espn_team("Malmo FF", names), "Malmo FF")
+        self.assertEqual(map_espn_team("Nottingham Forest", ["Nott'm Forest", "Chelsea"]), "Nott'm Forest")
+        self.assertEqual(map_espn_team("1. FC Nürnberg", ["Nurnberg", "Bochum"]), "Nurnberg")
+        self.assertEqual(map_espn_team("KV Kortrijk", ["Kortrijk", "Oud-Heverlee Leuven"]), "Kortrijk")
         with self.assertRaises(ValueError):
             map_espn_team("Unknown FC", names)
 
@@ -197,6 +201,48 @@ class FixtureParserTests(unittest.TestCase):
         result = parse_main_fixtures(text, {"E0": league}, start, end)
         self.assertEqual(len(result), 2)
         self.assertNotIn("2026-11-23T12:00:00+08:00", {r["kickoff_beijing"] for r in result})
+
+    def test_main_source_staleness_is_detected(self):
+        start = datetime(2026, 11, 23, 4, tzinfo=timezone.utc)
+        text = "Div,Date,Time,HomeTeam,AwayTeam\r\nE0,22/11/2026,05:00,Alpha,Beta\r\n"
+        freshness = main_fixture_source_freshness(text, start)
+        self.assertTrue(freshness["stale"])
+        self.assertEqual(freshness["latest_kickoff"], "2026-11-22T13:00:00+08:00")
+
+    def test_espn_supplement_deduplicates_primary_and_adds_missing_match(self):
+        league = {**sample_league(), "id": "E0"}
+        kickoff = datetime(2026, 11, 23, 12, tzinfo=timezone.utc)
+        primary = base_fixture(league, "Alpha", "Beta", kickoff, "football-data fixtures.csv")
+        duplicate = base_fixture(league, "Alpha", "Beta", kickoff, "ESPN scoreboard", "evt1")
+        missing = base_fixture(league, "Gamma", "Delta", kickoff, "ESPN scoreboard", "evt2")
+        result = merge_fixture_sources([primary], [duplicate, missing])
+        self.assertEqual(len(result), 2)
+        alpha = next(x for x in result if x["home_source"] == "Alpha")
+        self.assertEqual(alpha["source"], "football-data fixtures.csv")
+
+    def test_stale_main_source_is_recovered_and_reported_by_espn(self):
+        league = {**sample_league(), "id": "E0"}
+        payload = {"events": [{
+            "id": "evt-new", "date": "2026-11-23T12:00Z",
+            "competitions": [{"competitors": [
+                {"homeAway": "home", "team": {"displayName": "Alpha"}},
+                {"homeAway": "away", "team": {"displayName": "Beta"}},
+            ]}],
+        }]}
+        old_csv = "Div,Date,Time,HomeTeam,AwayTeam\r\nE0,22/11/2026,05:00,Alpha,Beta\r\n"
+        with patch("prediction_pipeline.MAIN_FIXTURE_LEAGUES", {"E0"}), \
+             patch("prediction_pipeline.MAIN_ESPN_LEAGUES", {"E0": "eng.1"}), \
+             patch("prediction_pipeline.ESPN_LEAGUES", {}), \
+             patch("prediction_pipeline.fetch_csv", return_value=old_csv), \
+             patch("prediction_pipeline.fetch_json", return_value=payload):
+            fixtures, coverage = load_daily_fixtures({"leagues": [league]}, datetime(2026, 11, 23, 4, tzinfo=timezone.utc))
+        self.assertEqual(len(fixtures), 1)
+        self.assertEqual(fixtures[0]["source_event_id"], "evt-new")
+        self.assertEqual(fixtures[0]["prediction_window_start"], "2026-11-23T12:00:00+08:00")
+        main = next(x for x in coverage if x["league_id"] == "E0")
+        self.assertTrue(main["primary_stale"])
+        self.assertEqual(main["supplemented_fixtures"], 1)
+        self.assertIn("warning", main)
 
 
 class MarketModelTests(unittest.TestCase):
@@ -426,6 +472,22 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(record["status"], "untracked")
         self.assertEqual(record["predictions"], {})
 
+    def test_untracked_mapping_error_can_be_repaired_before_kickoff(self):
+        broken = base_fixture(self.league, "Alpha", "Unknown FC",
+                              datetime(2026, 11, 21, 12, tzinfo=timezone.utc), "ESPN scoreboard", "fixture-1")
+        broken["mapping_error"] = "ESPN 球队无法与赛果源对应：Unknown FC"
+        archive = update_prediction_archive({"version": 1, "matches": {}}, [broken], self.dataset, self.now)
+        key = next(iter(archive["matches"]))
+        self.assertEqual(archive["matches"][key]["status"], "untracked")
+        fixed = copy.deepcopy(self.fixture)
+        fixed["source"] = "ESPN scoreboard"
+        archive = update_prediction_archive(archive, [fixed], self.dataset, self.now + timedelta(minutes=1))
+        record = archive["matches"][key]
+        self.assertEqual(record["away_source"], "Beta")
+        self.assertEqual(record["status"], "scheduled")
+        self.assertTrue(record["predictions"])
+        self.assertNotIn("status_reason", record)
+
     def test_locked_match_waits_for_result_without_rewriting_prediction(self):
         archive = update_prediction_archive({"version": 1, "matches": {}}, [self.fixture], self.dataset, self.now)
         key = next(iter(archive["matches"]))
@@ -450,6 +512,26 @@ class ArchiveTests(unittest.TestCase):
         self.assertEqual(record["asian_handicap_history"][0]["home_line"], -.5)
         self.assertTrue(record["asian_handicap"]["captured_at"].endswith("+00:00"))
         self.assertNotIn("total_market", record)
+
+    def test_espn_without_real_handicap_has_no_simulated_market_or_recommendation(self):
+        fixture = copy.deepcopy(self.fixture)
+        fixture["opening_1x2"] = {"home": 1.50, "draw": 4.20, "away": 6.50, "source": "ESPN test"}
+        archive = update_prediction_archive({"version": 1, "matches": {}}, [fixture], self.dataset, self.now)
+        key = next(iter(archive["matches"]))
+        original = copy.deepcopy(archive["matches"][key]["predictions"])
+        self.assertEqual(archive["matches"][key]["handicap_source"], "simulated")
+        espn_fixture = {**fixture, "source": "ESPN scoreboard"}
+        archive = update_prediction_archive(archive, [espn_fixture], self.dataset, self.now + timedelta(minutes=1))
+        record = archive["matches"][key]
+        self.assertEqual(record["predictions"], original)
+        self.assertTrue(record["require_real_handicap"])
+        self.assertEqual(record["handicap_source"], "unavailable")
+        self.assertIsNone(record.get("asian_handicap"))
+        public = public_record(record, "stable", self.now + timedelta(minutes=1))
+        self.assertEqual(public["integrated_selection"]["status"], "skip")
+        self.assertEqual(public["recommendation_selection"]["status"], "skip")
+        self.assertEqual(public["pattern_selection"]["status"], "skip")
+        self.assertNotEqual(public["pattern_selection"].get("handicap_source"), "1x2_converted")
 
     def test_ranking_uses_only_matches_before_kickoff_date(self):
         before = ranking_snapshot(self.fixture, self.league)
