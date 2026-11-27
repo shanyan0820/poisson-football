@@ -12,7 +12,7 @@ ELO_CONFIG={"start":1500.0,"home_advantage":60.0,"K":20.0}
 BOOTSTRAP_PATH=ROOT/"data/elo_bootstrap_2026_27.json"
 
 def evaluate_panshi(model_handicap,institution_line,home_ev,elo_difference,real_asian):
-    """机构只提供真实结算盘口、真实赔率与风险否决，不独立决定方向。"""
+    """可用亚盘提供结算盘口、赔率与风险否决，不独立决定方向。"""
     values=(model_handicap,institution_line,home_ev,elo_difference)
     if not real_asian or any(v is None for v in values):return None
     if model_handicap<=-1.0 and elo_difference>=150 and home_ev>=.05 and model_handicap-institution_line>-.50:
