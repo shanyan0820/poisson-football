@@ -26,19 +26,6 @@
     "roi": 4.3
   },
   {
-    "id": "B1|{\"l\": 0.75}",
-    "league": "B1",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.75
-    },
-    "grade": "C",
-    "n": 358,
-    "wr": 53.66,
-    "roi": 3.21
-  },
-  {
     "id": "BRA|{\"m\": 0.5}",
     "league": "BRA",
     "kind": "model",
@@ -78,32 +65,6 @@
     "roi": 2.67
   },
   {
-    "id": "F2|{\"l\": 0.5}",
-    "league": "F2",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.5
-    },
-    "grade": "C",
-    "n": 502,
-    "wr": 53.58,
-    "roi": 2.86
-  },
-  {
-    "id": "FIN|{\"l\": 0.25}",
-    "league": "FIN",
-    "kind": "inst",
-    "side": "away",
-    "params": {
-      "l": 0.25
-    },
-    "grade": "A",
-    "n": 255,
-    "wr": 54.93,
-    "roi": 8.48
-  },
-  {
     "id": "G1|{\"d\": 0.25}",
     "league": "G1",
     "kind": "div",
@@ -130,32 +91,6 @@
     "roi": 6.82
   },
   {
-    "id": "I2|{\"l\": 0.75}",
-    "league": "I2",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.75
-    },
-    "grade": "A",
-    "n": 268,
-    "wr": 58.0,
-    "roi": 9.85
-  },
-  {
-    "id": "JPN|{\"l\": 0.5}",
-    "league": "JPN",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.5
-    },
-    "grade": "B",
-    "n": 521,
-    "wr": 54.12,
-    "roi": 7.25
-  },
-  {
     "id": "N1|{\"d\": 0.375}",
     "league": "N1",
     "kind": "div",
@@ -167,19 +102,6 @@
     "n": 499,
     "wr": 57.13,
     "roi": 8.43
-  },
-  {
-    "id": "NOR|{\"l\": 0.25}",
-    "league": "NOR",
-    "kind": "inst",
-    "side": "away",
-    "params": {
-      "l": 0.25
-    },
-    "grade": "B",
-    "n": 272,
-    "wr": 53.51,
-    "roi": 6.33
   },
   {
     "id": "P1|{\"m\": 0.75}",
@@ -195,19 +117,6 @@
     "roi": 5.8
   },
   {
-    "id": "ROU|{\"l\": 0.25}",
-    "league": "ROU",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.25
-    },
-    "grade": "C",
-    "n": 879,
-    "wr": 52.27,
-    "roi": 3.17
-  },
-  {
     "id": "RUS|{\"m\": 0.25}",
     "league": "RUS",
     "kind": "model",
@@ -219,19 +128,6 @@
     "n": 445,
     "wr": 56.3,
     "roi": 10.32
-  },
-  {
-    "id": "SC0|{\"l\": 0.25}",
-    "league": "SC0",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.25
-    },
-    "grade": "C",
-    "n": 536,
-    "wr": 53.77,
-    "roi": 3.57
   },
   {
     "id": "SP2|{\"m\": 0.25}",
@@ -247,19 +143,6 @@
     "roi": 2.82
   },
   {
-    "id": "SWE|{\"l\": 0.75}",
-    "league": "SWE",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 0.75
-    },
-    "grade": "B",
-    "n": 371,
-    "wr": 54.7,
-    "roi": 7.79
-  },
-  {
     "id": "SWZ|{\"d\": 0.375}",
     "league": "SWZ",
     "kind": "div",
@@ -271,32 +154,6 @@
     "n": 398,
     "wr": 54.47,
     "roi": 6.46
-  },
-  {
-    "id": "T1|{\"l\": 0.5}",
-    "league": "T1",
-    "kind": "inst",
-    "side": "away",
-    "params": {
-      "l": 0.5
-    },
-    "grade": "A",
-    "n": 186,
-    "wr": 58.36,
-    "roi": 10.94
-  },
-  {
-    "id": "USA|{\"l\": 1.0}",
-    "league": "USA",
-    "kind": "inst",
-    "side": "home",
-    "params": {
-      "l": 1.0
-    },
-    "grade": "C",
-    "n": 379,
-    "wr": 52.2,
-    "roi": 3.77
   },
   {
     "id": "D|I1|0.625|away",
@@ -616,19 +473,6 @@
     "n": 136,
     "wr": 57.08,
     "roi": 9.92,
-    "grade": "A"
-  },
-  {
-    "id": "I1_INST_050",
-    "league": "I1",
-    "kind": "inst",
-    "side": "away",
-    "params": {
-      "l": 0.5
-    },
-    "n": 321,
-    "wr": 59.29,
-    "roi": 13.74,
     "grade": "A"
   }
 ]
