@@ -339,13 +339,14 @@ def update_fusion_report(report, public_records, now):
 
 
 def update_fusion_current_files(now=None):
-    from prediction_pipeline import public_record
+    from prediction_pipeline import dedupe_fixture_records, public_record
     now = now or datetime.now(UTC)
     archive = read_json("data/prediction_archive.json")
     predictions = read_json("data/predictions.json")
     report = read_json("data/fusion_report.json")
+    frozen_matches = dedupe_fixture_records(list(archive.get("matches", {}).values()))
     records = [public_record(record, predictions.get("featured_model_id", "stable"), now)
-               for record in archive.get("matches", {}).values()]
+               for record in frozen_matches]
     updated = update_fusion_report(report, records, now)
     write_json("data/fusion_report.json", updated)
     print(f"Fusion current season: {updated['current']['n']} matches; cutoff {updated['cutoff']}; "
