@@ -174,6 +174,63 @@ def score_prediction(forecast: dict, actual: str) -> dict:
     return {"hit": predicted_outcome(forecast) == actual, "brier": brier, "log_loss": log_loss}
 
 
+def reference_score_mode(pattern: dict | None) -> str | None:
+    """AHh<0为主队让球、AHh>0为主队受让；0球盘按让球方结构展示。"""
+    if not pattern or pattern.get("status") != "candidate" or pattern.get("side") not in ("home", "away"):
+        return None
+    line = float(pattern.get("institution_line") or 0)
+    receiving = (pattern["side"] == "home" and line > 0) or (pattern["side"] == "away" and line < 0)
+    return "receiving" if receiving else "giving"
+
+
+def build_reference_scores(prediction: dict | None, pattern: dict | None) -> list[dict]:
+    """按双方预期进球的独立泊松概率，围绕推荐方赢盘而非必须赢球生成比分。"""
+    if not prediction:
+        return []
+    mode = reference_score_mode(pattern)
+    if mode is None:
+        return list((prediction.get("top_scores") or [])[:3])
+    expected = prediction.get("expected_goals") or {}
+    try:
+        lambda_home, lambda_away = float(expected["home"]), float(expected["away"])
+    except (KeyError, TypeError, ValueError):
+        return []
+    if lambda_home < 0 or lambda_away < 0:
+        return []
+    home_prob = [math.exp(-lambda_home)]
+    away_prob = [math.exp(-lambda_away)]
+    for goals in range(1, 11):
+        home_prob.append(home_prob[-1] * lambda_home / goals)
+        away_prob.append(away_prob[-1] * lambda_away / goals)
+    side = pattern["side"]
+    scores = []
+    for home in range(11):
+        for away in range(11):
+            result = "H" if home > away else "A" if away > home else "D"
+            scores.append({"home": home, "away": away, "result": result,
+                           "probability": home_prob[home] * away_prob[away],
+                           "distance": abs(home - lambda_home) + abs(away - lambda_away)})
+    wanted = "H" if side == "home" else "A"
+    opposite = "A" if wanted == "H" else "H"
+
+    def ranked(results):
+        pool = [score for score in scores if score["result"] in results]
+        return sorted(pool, key=lambda score: (-score["probability"], score["distance"], score["home"], score["away"]))
+
+    def public(score):
+        return {"home": score["home"], "away": score["away"], "probability": score["probability"]}
+
+    if mode == "receiving":
+        # 受让方赢盘不要求一定赢球：一个最高概率平局＋一个最高概率推荐方胜。
+        first = sorted([ranked({"D"})[0], ranked({wanted})[0]],
+                       key=lambda score: (-score["probability"], score["distance"]))
+        third = ranked({opposite})[0]
+    else:
+        first = ranked({wanted})[:2]
+        third = ranked({"D"})[0]
+    return [public(score) for score in [*first, third]]
+
+
 def compact_prediction(result: dict) -> dict:
     forecast = result["forecast"]
     return {
@@ -1347,6 +1404,7 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
         record["integrated_selection"] = selection
     result["integrated_selection"] = selection
     result["featured_selection"] = selection
+    result["reference_scores"] = build_reference_scores(featured, result.get("pattern_selection"))
     result["market_settlement"] = settle_record_markets(record, handicap, selection, recommendation,
                                                        result.get("pattern_selection"))
     if record.get("status_reason"):
