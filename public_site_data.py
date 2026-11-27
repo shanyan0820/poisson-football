@@ -22,7 +22,7 @@ FIXTURE_FIELDS = (
     "away_source", "kickoff_utc", "kickoff_beijing", "source", "created_at",
     "status", "status_reason", "actual", "asian_handicap", "opening_1x2",
     "ranking", "prediction_window_start", "prediction_window_end",
-    "featured_model_id", "featured_prediction",
+    "featured_model_id", "featured_prediction", "reference_scores",
 )
 SELECTION_FIELDS = (
     "status", "side", "line", "odds", "ev", "grade", "tracking_eligible",
