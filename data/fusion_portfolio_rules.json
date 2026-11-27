@@ -1,0 +1,172 @@
+[
+  {
+    "league": "DNK",
+    "league_name": "丹超",
+    "n": 605,
+    "wr": 54.47545717035611,
+    "roi": 5.752892561983469,
+    "rules": [
+      {
+        "id": "P7|DNK|1",
+        "family": "div",
+        "a": {
+          "type": "all",
+          "label": "全部A"
+        },
+        "side": "away",
+        "d": 0.25
+      },
+      {
+        "id": "P7|DNK|2",
+        "family": "div",
+        "a": {
+          "type": "all",
+          "label": "全部A"
+        },
+        "side": "home",
+        "d": 0.125
+      }
+    ]
+  },
+  {
+    "league": "G1",
+    "league_name": "希腊超",
+    "n": 396,
+    "wr": 57.85007072135785,
+    "roi": 8.938131313131311,
+    "rules": [
+      {
+        "id": "P7|G1|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "range",
+          "min": -0.75,
+          "max": -0.25,
+          "label": "-0.75≤A≤-0.25"
+        },
+        "side": "away",
+        "m": 1.0
+      }
+    ]
+  },
+  {
+    "league": "I1",
+    "league_name": "意甲",
+    "n": 1537,
+    "wr": 54.50381679389313,
+    "roi": 4.843201040988938,
+    "rules": [
+      {
+        "id": "P7|I1|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "all",
+          "label": "全部A"
+        },
+        "side": "away",
+        "m": 1.5
+      }
+    ]
+  },
+  {
+    "league": "RUS",
+    "league_name": "俄超",
+    "n": 1147,
+    "wr": 53.68366821226172,
+    "roi": 5.58064516129032,
+    "rules": [
+      {
+        "id": "P7|RUS|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "all",
+          "label": "全部A"
+        },
+        "side": "home",
+        "m": -1.5
+      }
+    ]
+  },
+  {
+    "league": "SC0",
+    "league_name": "苏超",
+    "n": 871,
+    "wr": 54.424484364604126,
+    "roi": 4.106773823191733,
+    "rules": [
+      {
+        "id": "P7|SC0|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "all",
+          "label": "全部A"
+        },
+        "side": "home",
+        "m": -1.25
+      }
+    ]
+  },
+  {
+    "league": "SP1",
+    "league_name": "西甲",
+    "n": 255,
+    "wr": 54.76190476190476,
+    "roi": 5.82941176470588,
+    "rules": [
+      {
+        "id": "P7|SP1|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "range",
+          "max": -1.0,
+          "label": "A≤-1.00"
+        },
+        "side": "home",
+        "m": -1.25
+      }
+    ]
+  },
+  {
+    "league": "USA",
+    "league_name": "美职",
+    "n": 1375,
+    "wr": 54.130808950086056,
+    "roi": 6.395999999999999,
+    "rules": [
+      {
+        "id": "P7|USA|1",
+        "family": "model_at_band",
+        "a": {
+          "type": "range",
+          "min": -0.75,
+          "max": -0.25,
+          "label": "-0.75≤A≤-0.25"
+        },
+        "side": "away",
+        "m": -0.25
+      },
+      {
+        "id": "P7|USA|2",
+        "family": "model_at_band",
+        "a": {
+          "type": "exact",
+          "value": 0.0,
+          "label": "A=0"
+        },
+        "side": "away",
+        "m": 1.25
+      },
+      {
+        "id": "P7|USA|3",
+        "family": "model_at_band",
+        "a": {
+          "type": "exact",
+          "value": -0.25,
+          "label": "A=-0.25"
+        },
+        "side": "away",
+        "m": 1.5
+      }
+    ]
+  }
+]
