@@ -49,4 +49,17 @@ class PanshiEloTest(unittest.TestCase):
         self.assertEqual(report['double']['n'],1954)
         self.assertEqual(report['triple']['n'],10)
         self.assertEqual(report['current']['net_wins'],29)
+        self.assertEqual(report['cutoff_utc'],'2026-11-27T04:00:00+00:00')
+        self.assertTrue(all(row['date']<='2026-11-27' for row in report['current']['matches']))
+    def test_converted_market_can_trigger_panshi_in_refresh_path(self):
+        from refresh_validated_public import refresh
+        record={'league_id':'TEST','handicap_source':'simulated','elo_difference':160,
+                'featured_prediction':{'expected_goals':{'home':2.2,'away':1.0}},
+                'handicap_analysis':{'home_metrics':{'ev':.06}},
+                'asian_handicap':{'home_line':-1.0,'home_odds':1.9,'away_odds':1.9,'source':'等效换算｜test'}}
+        refresh(record)
+        self.assertEqual(record['pattern_selection']['level'],'S')
+        self.assertEqual(record['pattern_selection']['side'],'home')
+        self.assertEqual(record['pattern_selection']['handicap_source'],'1x2_converted')
+        self.assertEqual(record['pattern_selection']['odds'],1.9)
 if __name__=='__main__':unittest.main()
