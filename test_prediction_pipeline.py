@@ -11,7 +11,7 @@ from prediction_pipeline import (
     map_espn_team, outcome, parse_espn_events, ranking_snapshot, prediction_window,
     parse_main_fixtures, parse_espn_opening_1x2, parse_espn_opening_asian_handicap, parse_opening_1x2, predicted_outcome, public_record, rolling_backtest, score_prediction,
     main_fixture_source_freshness, merge_fixture_sources, load_daily_fixtures, archived_window_fixtures,
-    dedupe_fixture_records, settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
+    dedupe_fixture_records, build_reference_scores, reference_score_mode, settle_margin, split_quarter_line, summarize_market_rows, update_handicap_snapshot, update_prediction_archive,
 )
 
 
@@ -655,6 +655,41 @@ class ArchiveTests(unittest.TestCase):
         self.assertIs(found, match)
 
 
+class ReferenceScoreTests(unittest.TestCase):
+    def prediction(self):
+        return {"expected_goals": {"home": 1.35, "away": 1.10},
+                "top_scores": [{"home": 1, "away": 1}, {"home": 1, "away": 0}, {"home": 2, "away": 1}]}
+
+    @staticmethod
+    def outcome(score):
+        return "H" if score["home"] > score["away"] else "A" if score["away"] > score["home"] else "D"
+
+    def test_receiving_side_gets_draw_and_side_win_then_favorite_win(self):
+        for side, line, wanted, favorite in [("home", .75, "H", "A"), ("away", -.75, "A", "H")]:
+            with self.subTest(side=side):
+                pattern = {"status": "candidate", "side": side, "institution_line": line}
+                self.assertEqual(reference_score_mode(pattern), "receiving")
+                scores = build_reference_scores(self.prediction(), pattern)
+                self.assertEqual(len(scores), 3)
+                self.assertEqual({self.outcome(score) for score in scores[:2]}, {"D", wanted})
+                self.assertEqual(self.outcome(scores[2]), favorite)
+                self.assertEqual(len({(s["home"], s["away"]) for s in scores}), 3)
+
+    def test_giving_side_gets_two_side_wins_then_draw(self):
+        for side, line, wanted in [("home", -.75, "H"), ("away", .75, "A")]:
+            with self.subTest(side=side):
+                pattern = {"status": "candidate", "side": side, "institution_line": line}
+                self.assertEqual(reference_score_mode(pattern), "giving")
+                scores = build_reference_scores(self.prediction(), pattern)
+                self.assertEqual([self.outcome(score) for score in scores[:2]], [wanted, wanted])
+                self.assertEqual(self.outcome(scores[2]), "D")
+                self.assertEqual(len({(s["home"], s["away"]) for s in scores}), 3)
+
+    def test_no_recommendation_keeps_model_top_scores(self):
+        prediction = self.prediction()
+        self.assertEqual(build_reference_scores(prediction, {"status": "skip"}), prediction["top_scores"])
+
+
 class PageContractTests(unittest.TestCase):
     def test_mobile_page_uses_three_handicaps_without_rule_labels(self):
         html = Path(__file__).with_name("index.html").read_text(encoding="utf-8")
@@ -689,9 +724,12 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("versus-grid", html)
         self.assertIn("模型信号", html)
         self.assertIn("级推荐", html)
-        self.assertIn("allow=home?(h,a)=>h>a:(h,a)=>a>h", html)
-        self.assertIn("第三项参考预期进球", html)
-        self.assertIn("used.has", html)
+        self.assertIn("r.reference_scores", html)
+        self.assertNotIn("前两项符合", html)
+        self.assertNotIn("第三项参考预期进球", html)
+        self.assertNotIn("按模型概率排序", html)
+        self.assertNotIn("受让赢盘", html)
+        self.assertNotIn("让球赢盘", html)
         self.assertIn("分析依据", html)
         self.assertIn("${esc(p.reason)}", html)
         self.assertIn("S级·双重确认", html)
