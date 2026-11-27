@@ -430,7 +430,7 @@ class MarketModelTests(unittest.TestCase):
         }
         public = public_record(record)
         self.assertEqual(public["integrated_selection"]["status"], "candidate")
-        self.assertIn("recommendation", public["market_settlement"])
+        self.assertNotIn("recommendation", public["market_settlement"])
         self.assertIn("integrated", public["market_settlement"])
         self.assertEqual(public["recommendation_selection"]["rule_version"], "exact-15-lines-v1")
         self.assertEqual(public["integrated_selection"]["rule_version"], "exact-15-lines-v1-grade-a")
@@ -449,10 +449,10 @@ class MarketModelTests(unittest.TestCase):
         self.assertNotIn("total_goals", tracking)
         self.assertEqual(tracking["integrated"]["overall"]["n"], 0)
         self.assertEqual(tracking["recommendation"]["overall"]["n"], 0)
-        public["market_settlement"]["recommendation"]["tracking_eligible"] = True
+        public["market_settlement"]["integrated"]["tracking_eligible"] = True
         formal = build_market_tracking([public])
-        self.assertEqual(formal["integrated"]["overall"]["n"], 0)
-        self.assertEqual(formal["recommendation"]["by_league"]["T1"]["overall"]["n"], 1)
+        self.assertEqual(formal["integrated"]["by_league"]["T1"]["overall"]["n"], 1)
+        self.assertEqual(formal["recommendation"]["overall"]["n"], 0)
         for settlement in public["market_settlement"]["rule_settlements"].values():
             settlement["tracking_eligible"] = True
         with_rules = build_market_tracking([public])
@@ -460,7 +460,7 @@ class MarketModelTests(unittest.TestCase):
         self.assertEqual(with_rules["rules"]["A01"]["overall"]["effective_win_rate"], 0)
         self.assertEqual(with_rules["rules"]["A01"]["by_source"]["real"]["n"], 1)
         self.assertEqual(with_rules["rules"]["A01"]["by_source"]["simulated"]["n"], 0)
-        self.assertEqual(with_rules["recommendation"]["by_league"]["T1"]["by_source"]["real"]["n"], 1)
+        self.assertEqual(with_rules["integrated"]["by_league"]["T1"]["by_source"]["real"]["n"], 1)
         self.assertEqual(len(with_rules["rule_definitions"]), 15)
 
 
@@ -633,8 +633,9 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("模型盘口", html)
         self.assertIn("机构盘口", html)
         self.assertIn("Market Signal Model", html)
-        self.assertIn('<option value="SIGNAL">模型信号</option>', html)
-        self.assertIn("status==='SIGNAL'", html)
+        self.assertIn('<option value="RECOMMENDED">推荐比赛</option>', html)
+        self.assertIn("status==='RECOMMENDED'", html)
+        self.assertNotIn('value="SIGNAL"', html)
         self.assertIn("grid-template-columns:repeat(3,minmax(0,1fr))", html)
         self.assertNotIn("盘口规则与验证口径", html)
         self.assertNotIn("15条", html)
@@ -660,9 +661,12 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("模型信号", html)
         self.assertIn("级推荐", html)
         self.assertIn("allow=home?(h,a)=>h>a:(h,a)=>a>h", html)
+        self.assertIn("第三项参考预期进球", html)
+        self.assertIn("used.has", html)
         self.assertIn("分析依据", html)
-        self.assertIn("function professionalReason", html)
-        self.assertIn("主客场表现、预期进球、联赛排名与盘口定价", html)
+        self.assertIn("${esc(p.reason)}", html)
+        self.assertIn("S级·双重确认", html)
+        self.assertIn("S级·三重确认", html)
         self.assertIn("${referenceScoresHtml(r)}", html)
         self.assertNotIn("触发规则", html)
         self.assertNotIn("阈值", html)
@@ -691,24 +695,22 @@ class PageContractTests(unittest.TestCase):
         self.assertIn("当前上线：Market Signal Model", research)
         self.assertIn("consensus-summary", research)
         self.assertIn("Market Signal Model", predictions)
-        self.assertIn("本赛季实跑", predictions)
-        self.assertIn('<option value="ALL">全部档位</option>', predictions)
-        self.assertIn("ALL:'全部档位'", predictions)
-        self.assertIn("function gradeSummary", predictions)
+        self.assertIn("本赛季统计", predictions)
+        self.assertIn('<option value="ALL">全部</option>', predictions)
+        self.assertIn("ALL:'全部'", predictions)
+        self.assertIn("function summaryFor", predictions)
         self.assertIn("BACKTEST.current.by_league", predictions)
         self.assertNotIn("03 / 本赛季实跑", predictions)
         self.assertIn("03 / 五季融合回测", predictions)
-        self.assertIn("本赛季实跑注数（含走盘）", predictions)
-        self.assertIn('id="match-rows"', predictions)
-        self.assertIn("function renderMatches", predictions)
-        self.assertIn("机构让球", predictions)
+        self.assertIn("净胜场次", predictions)
+        self.assertNotIn("准确率", predictions)
+        self.assertNotIn('value="C"', predictions)
+        self.assertIn('id="match-list"', predictions)
+        self.assertIn("function currentMatches", predictions)
         self.assertIn("推荐方向", predictions)
-        self.assertIn('<div><span>推荐方向</span><b>${selection}</b></div>', predictions)
-        self.assertNotIn('${signedLine(match.selection_line)}', predictions)
-        self.assertIn("输赢结果", predictions)
         self.assertIn("BACKTEST.current.matches", predictions)
         self.assertIn("overflow-y:auto", predictions)
-        self.assertIn("磐石是唯一S级", predictions)
+        self.assertIn("双、三重", predictions)
         self.assertIn("table-layout:fixed", predictions)
         self.assertIn("五季融合回测", predictions)
         self.assertIn("data/public_predictions.json", predictions)
@@ -729,9 +731,11 @@ class LeaguePatternTests(unittest.TestCase):
         from league_pattern import league_gate
         self.assertEqual(league_gate("TEST")["status"], "paused")
         self.assertFalse(league_gate("TEST")["recommend_enabled"])
-        for league in ("NOR", "JPN", "P1", "D2"):
+        for league in ("D2", "E0", "I1", "USA"):
             self.assertEqual(league_gate(league)["status"], "active")
             self.assertTrue(league_gate(league)["pattern_enabled"])
+        for league in ("NOR", "JPN"):
+            self.assertEqual(league_gate(league)["status"], "paused")
 
     def test_pattern_hit_and_miss(self):
         from league_pattern import evaluate_pattern
@@ -739,7 +743,7 @@ class LeaguePatternTests(unittest.TestCase):
         self.assertEqual(hit["status"], "candidate")
         self.assertEqual(hit["side"], "away")
         self.assertEqual(hit["line"], -0.50)
-        self.assertIn(hit["level"], {"A", "B", "C"})
+        self.assertIn(hit["level"], {"A", "B"})
         self.assertEqual(evaluate_pattern("D2", 0.30, -0.50)["status"], "skip")
         self.assertEqual(evaluate_pattern("TEST", -0.30, -0.50)["status"], "skip")
 
@@ -752,12 +756,23 @@ class LeaguePatternTests(unittest.TestCase):
         self.assertIn("B05", hit["rule_ids"])
         self.assertIn("F05_AWAY", hit["rule_ids"])
         self.assertNotEqual(hit["level"], "S")
-        self.assertIn("不自动升S", hit["reason"])
+        self.assertEqual(hit["confirmation_count"], 1)
+        self.assertIn("基础规则支持", hit["reason"])
 
-    def test_t1_institution_rule_is_not_duplicated(self):
+    def test_double_system_confirmation_is_s(self):
+        from league_pattern import evaluate_pattern
+        hit = evaluate_pattern("I1", 1.4, 0)
+        self.assertEqual(hit["status"], "candidate")
+        self.assertEqual(hit["level"], "S")
+        self.assertEqual(hit["confirmation_count"], 2)
+        self.assertIn("双重同向确认", hit["reason"])
+
+    def test_pure_institution_rules_are_excluded(self):
         import json
         from pathlib import Path
         rules = json.loads(Path(__file__).with_name("data").joinpath("fusion_rules.json").read_text())
-        hits = [r for r in rules if r["league"] == "T1" and r["kind"] == "inst" and r["side"] == "away" and r["params"].get("l") == .5]
-        self.assertEqual(len(hits), 1)
-        self.assertEqual(hits[0]["id"], 'T1|{"l": 0.5}')
+        self.assertEqual(len(rules), 35)
+        self.assertFalse(any(r["kind"] == "inst" for r in rules))
+        portfolios = json.loads(Path(__file__).with_name("data").joinpath("fusion_portfolio_rules.json").read_text())
+        self.assertEqual(len(portfolios), 7)
+        self.assertEqual(len({p["league"] for p in portfolios}), 7)
