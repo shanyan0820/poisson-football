@@ -77,7 +77,7 @@
 <div id="content" class="hidden">
   <div class="section-head"><div><div class="step">02 / 让球预测</div><h2 class="section-title">本周期比赛列表</h2></div><p class="hint" id="fixture-count"></p></div>
   <div id="fixtures"></div>
-  <section class="source"><b>数据来源</b><p>赛果、主赛程、真实亚盘：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；每日北京时间13点后，未提供的比赛由ESPN补齐。无真实亚盘时使用欧赔等效换算，并标注“等效盘口（1X2）”。联赛排名由开球前真实赛果计算。</p></section>
+  <section class="source"><b>数据来源</b><p>赛果与主赛程：<a href="https://www.football-data.co.uk/" target="_blank" rel="noopener">football-data.co.uk</a>；每日北京时间13点后，未提供的比赛由ESPN补齐，并优先读取ESPN pointSpread.open真实让球初盘。确实没有真实亚盘时才使用统一欧赔均衡换算，并标注“等效盘口（1X2）”。联赛排名由开球前真实赛果计算。</p></section>
 </div>
 <footer class="footer">老杨足球实验室 · Market Signal Model · 赛前冻结、赛后结算</footer>
 </main>
@@ -94,7 +94,7 @@ function line(v){if(v==null)return'—';if(Number(v)===0)return'0';return(Number
 function isStarted(r){return Date.parse(r.kickoff_utc)<=Date.now()}
 function statusBadge(r){if(r.actual)return'<span class="badge">已核对</span>';if(isStarted(r))return'<span class="badge gray">已开赛</span>';return'<span class="badge amber">未开赛</span>'}
 function settlementHtml(r){const s=r.market_settlement||{},recommendation=s.recommendation,featured=s.integrated;if(!recommendation&&!featured)return'';return`<div class="settlement">${recommendation?`<span>模型信号：${resultName[recommendation.result]}</span>`:''}${featured?`<span>重点观察：${resultName[featured.result]}</span>`:''}</div>`}
-function selectionName(s){return`${s.side==='home'?'主队':'客队'} ${line(s.line)} 球`}
+function selectionName(s){return s.side==='home'?'主队':'客队'}
 function tierShort(v){if(v==null)return'';const n=Number(v),side=n<0?'主':n>0?'客':'均';const a=Math.abs(n);if(a>=1.25)return side+'大胜档';if(a>=.75)return side+'胜负档';if(a>=.25)return side+'不败档';return'旗鼓相当档'}
 function analysisHtml(r){
  const p=r.featured_prediction,f=p?.forecast,xg=p?.expected_goals,ah=r.asian_handicap,rankLine=r.ranking?.market_handicap,modelLine=xg?xg.away-xg.home:null;
@@ -122,7 +122,7 @@ function professionalReason(s){
  return`${gradeText}。基于主客场表现、预期进球、联赛排名与盘口定价的综合评估，${side}方向的比赛画像更具关注度。赔率用于衡量潜在回报，不单独决定方向；请结合临场阵容与市场变化审慎参考。`;
 }
 function patternText(p){const n=p.n_all||0,wr=p.wr_all,r=p.roi_all,src=p.level==='S'?'真实亚盘':p.handicap_source==='1x2_converted'?'1X2折算盘口':'亚盘盘口';return `五季 ${n} 注 · 胜率 ${wr==null?'—':(wr*100).toFixed(1)+'%'}${r==null?'':` · 收益 ${(r*100).toFixed(1)}%`} · ${src}`}
-function recommendationHtml(r){const p=r.pattern_selection||{};if(p.status==='candidate'){const level=p.level||'C',cls=level==='S'||level==='A'?'selected featured':'selected pattern',overlap=p.rule_count>1?` · ${p.rule_count}条同向`:'';return `<div class="recommendation-v2 ${cls}"><span class="rec-label">${level==='S'?'S级·磐石':level+'级推荐'}${overlap}</span><span class="rec-direction">${p.side==='home'?'主队':'客队'} ${line(p.line)} 球</span><span class="rec-market">${patternText(p)}</span><span class="rec-reason"><b>分析依据｜</b>${esc(p.reason)}</span></div>`}return '<div class="recommendation-v2"><span class="rec-label">本场观察</span><span class="rec-direction">暂无推荐</span><span class="rec-reason">本场未触发融合规则，或不同规则方向冲突。</span></div>'}
+function recommendationHtml(r){const p=r.pattern_selection||{};if(p.status==='candidate'){const level=p.level||'C',cls=level==='S'||level==='A'?'selected featured':'selected pattern',overlap=p.rule_count>1?` · ${p.rule_count}条同向`:'';return `<div class="recommendation-v2 ${cls}"><span class="rec-label">${level==='S'?'S级·磐石':level+'级推荐'}${overlap}</span><span class="rec-direction">${p.side==='home'?'主队':'客队'}</span><span class="rec-market">${patternText(p)}</span><span class="rec-reason"><b>分析依据｜</b>${esc(p.reason)}</span></div>`}return '<div class="recommendation-v2"><span class="rec-label">本场观察</span><span class="rec-direction">暂无推荐</span><span class="rec-reason">本场未触发融合规则，或不同规则方向冲突。</span></div>'}
 function teamRank(r,side){const rank=r.ranking?.[`${side}_rank`];return rank==null?'排名 —':`第 ${rank} 名`}
 function fixtureHtml(r){
  const p=r.featured_prediction,xg=p?.expected_goals,[date,time]=kickoffTime(r.kickoff_beijing).split(' ');
@@ -138,7 +138,7 @@ async function init(){try{
  const response=await fetch(`data/public_predictions.json?v=${Date.now()}`,{cache:'no-store'});if(!response.ok)throw new Error(`数据文件 HTTP ${response.status}`);DATA=await response.json();
  const names={};DATA.fixtures.forEach(r=>names[r.league_id]=r.league_name);const ids=Object.keys(names).sort((a,b)=>names[a].localeCompare(names[b],'zh-CN'));
  $('league').innerHTML='<option value="ALL">全部联赛</option>'+ids.map(id=>`<option value="${esc(id)}">${esc(names[id])}</option>`).join('');
- const featured=DATA.featured_model_id||DATA.backtest.global[0].model_id,config=DATA.models.find(m=>m.id===featured);$('model-note').textContent=`当前列表模型：${config.name}。${config.description} 每日12点生成主源预测，13点补源并重算等效盘口推荐；其后仅同步赛果。`;
+ const featured=DATA.featured_model_id||DATA.backtest.global[0].model_id,config=DATA.models.find(m=>m.id===featured);$('model-note').textContent=`当前列表模型：${config.name}。${config.description} 每日12点生成主源预测，13点补源并优先读取真实盘口；缺失时使用统一等效换算，其后仅同步赛果。`;
  $('date-title').textContent=DATA.window_start?`${kickoffTime(DATA.window_start)} — ${kickoffTime(DATA.window_end)}`:`${DATA.target_date} · 北京时间`;$('total-count').textContent=DATA.fixtures.length;$('started-count').textContent=DATA.fixtures.filter(isStarted).length;$('upcoming-count').textContent=DATA.fixtures.filter(r=>!isStarted(r)).length;$('featured-count').textContent=DATA.fixtures.filter(r=>r.pattern_selection?.status==='candidate'&&r.pattern_selection?.level==='S').length;
  $('updated').textContent=`数据更新：${utcTime(DATA.generated_at)}`;$('content').classList.remove('hidden');render();
  }catch(e){$('error').textContent='今日数据读取失败：'+e.message;$('error').style.display='block';$('updated').textContent='数据读取失败'}finally{$('loading').classList.add('hidden')}}
