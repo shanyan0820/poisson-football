@@ -414,52 +414,70 @@ def _independent_poisson_outcomes(lambda_home: float, lambda_away: float) -> tup
     return home / coverage, draw / coverage, away / coverage
 
 
+def parse_espn_opening_asian_handicap(competition: dict) -> dict | None:
+    """优先读取 ESPN 所载两队让球初盘；open 缺失时不拿 close 冒充初盘。"""
+    for offer in competition.get("odds") or []:
+        spread = (offer or {}).get("pointSpread") or {}
+        try:
+            home_line = float(str(spread["home"]["open"]["line"]).replace("+", ""))
+            away_line = float(str(spread["away"]["open"]["line"]).replace("+", ""))
+            home_odds = american_to_decimal(spread["home"]["open"]["odds"])
+            away_odds = american_to_decimal(spread["away"]["open"]["odds"])
+        except (KeyError, TypeError, ValueError):
+            continue
+        if abs(home_line + away_line) > 1e-9:
+            continue
+        provider = (offer.get("provider") or {}).get("name") or "ESPN provider"
+        return {
+            "home_line": home_line, "home_odds": home_odds, "away_odds": away_odds,
+            "bet365_home_odds": None, "bet365_away_odds": None,
+            "average_home_odds": None, "average_away_odds": None,
+            "provider": provider, "source": f"ESPN {provider} pointSpread.open 初盘",
+            "line_convention": "AHh 为主队让球数：负数表示主队让球，正数表示主队受让。",
+        }
+    return None
+
+
+def market_side_odds(market: dict | None, side: str) -> float | None:
+    """真实盘口使用来源方水位；football-data 旧记录继续兼容 Bet365 字段。"""
+    if not market or side not in ("home", "away"):
+        return None
+    value = market.get(f"{side}_odds")
+    if value is None:
+        value = market.get(f"bet365_{side}_odds")
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    return number if number > 1 else None
+
+
 def fit_poisson_to_1x2(odds: dict) -> dict:
-    """去水后用两个 λ 最小二乘拟合三项概率；保存拟合误差，不宣称完全等同真实盘口。"""
+    """页面和推荐共用同一个 1X2 均衡盘口，禁止再用净胜球期望另算一条线。"""
+    converted = convert_asian_odds(odds)
+    if not converted:
+        raise ValueError("无法由当前 1X2 初盘换算亚盘")
     inverse = {side: 1 / float(odds[side]) for side in ("home", "draw", "away")}
     overround = sum(inverse.values())
     target = {side: value / overround for side, value in inverse.items()}
-
-    def error(lambda_home: float, lambda_away: float) -> float:
-        fitted = _independent_poisson_outcomes(lambda_home, lambda_away)
-        return sum((value - target[side]) ** 2 for side, value in zip(("home", "draw", "away"), fitted))
-
-    best = (math.inf, 1.3, 1.1)
-    for home_step in range(1, 21):
-        lambda_home = home_step * .25
-        for away_step in range(1, 21):
-            lambda_away = away_step * .25
-            candidate = (error(lambda_home, lambda_away), lambda_home, lambda_away)
-            if candidate < best:
-                best = candidate
-    for step in (.1, .04, .015, .005):
-        _, center_home, center_away = best
-        for h_offset in range(-2, 3):
-            lambda_home = min(6.0, max(.05, center_home + h_offset * step))
-            for a_offset in range(-2, 3):
-                lambda_away = min(6.0, max(.05, center_away + a_offset * step))
-                candidate = (error(lambda_home, lambda_away), lambda_home, lambda_away)
-                if candidate < best:
-                    best = candidate
-    squared_error, lambda_home, lambda_away = best
-    expected_difference = lambda_home - lambda_away
-    home_line = -round(expected_difference * 4) / 4
-    home_line = max(-4.0, min(4.0, home_line))
-    if abs(home_line) < 1e-9:
-        home_line = 0.0
+    lambda_home, lambda_away = converted["lambda_home"], converted["lambda_away"]
+    fitted = _independent_poisson_outcomes(lambda_home, lambda_away)
+    squared_error = sum((value - target[side]) ** 2
+                        for side, value in zip(("home", "draw", "away"), fitted))
     return {
-        "home_line": home_line,
+        "home_line": converted["home_line"],
+        "home_odds": converted["home_odds"], "away_odds": converted["away_odds"],
         "bet365_home_odds": None, "bet365_away_odds": None,
         "average_home_odds": None, "average_away_odds": None,
         "source": f"等效换算｜{odds['source']}",
         "line_convention": "AHh 为主队让球数：负数表示主队让球，正数表示主队受让。",
         "estimation": {
-            "method": "初盘欧赔去水 + 独立泊松最小二乘拟合；AHh=-round((λ主-λ客)×4)/4，限制在±4球。",
+            "method": "初盘欧赔去水 + 独立泊松拟合；在0.25球网格中选择主队赢盘与输盘等效份额最接近的均衡线。",
             "lambda_home": lambda_home, "lambda_away": lambda_away,
-            "expected_goal_difference": expected_difference,
+            "expected_goal_difference": lambda_home - lambda_away,
             "normalized_probabilities": target, "overround": overround,
             "rmse": math.sqrt(squared_error / 3),
-            "odds_note": "没有真实亚盘赔率，bet365_home_odds/bet365_away_odds保持为空，不构造赔率或收益。",
+            "odds_note": "home_odds/away_odds 是1X2换算等效水位，不是真实机构报价；Bet365字段保持为空。",
         },
     }
 
@@ -514,7 +532,7 @@ def choose_positive_ev(candidates: list[tuple[str, float, dict]]) -> tuple[str |
 
 def compare_handicap(prediction: dict | None, market: dict | None,
                      threshold: float = HANDICAP_EDGE_THRESHOLD) -> dict | None:
-    """保留模型/盘口差值，并以 Bet365 赔率计算两侧赛前理论 EV。"""
+    """保留模型/盘口差值，并用盘口来源方水位计算两侧赛前理论 EV。"""
     if not prediction or not market or market.get("home_line") is None:
         return None
     expected = prediction["expected_goals"]
@@ -527,8 +545,8 @@ def compare_handicap(prediction: dict | None, market: dict | None,
         side, line = "away", -market["home_line"]
     else:
         side, line = "neutral", None
-    home = market_metrics(normalized_margins(prediction, "home"), market["home_line"], market.get("bet365_home_odds"))
-    away = market_metrics(normalized_margins(prediction, "away"), -market["home_line"], market.get("bet365_away_odds"))
+    home = market_metrics(normalized_margins(prediction, "home"), market["home_line"], market_side_odds(market, "home"))
+    away = market_metrics(normalized_margins(prediction, "away"), -market["home_line"], market_side_odds(market, "away"))
     ev_side, ev_line, ev_value = choose_positive_ev([("home", market["home_line"], home), ("away", -market["home_line"], away)])
     return {
         "model_goal_difference": model_difference, "market_goal_baseline": market_baseline,
@@ -536,7 +554,7 @@ def compare_handicap(prediction: dict | None, market: dict | None,
         "edge": edge, "threshold": threshold, "side": side, "line": line,
         "home_metrics": home, "away_metrics": away,
         "ev_side": ev_side, "ev_line": ev_line, "ev_value": ev_value,
-        "selection_rule": "Bet365 理论 EV>0 才形成候选；两侧均为正时取较高值，暂不设差值排除阈值。",
+        "selection_rule": "以来源方真实水位或明确标注的等效水位计算理论 EV>0；两侧均为正时取较高值。",
         "method": "模型净胜球差 = λ主 − λ客；盘口基准 = −AHh；差值 = 模型净胜球差 − 盘口基准。",
     }
 
@@ -619,7 +637,10 @@ def update_market_snapshot(record: dict, market: dict | None, now: datetime, fie
 
 def update_handicap_snapshot(record: dict, market: dict | None, now: datetime,
                              allow_simulated: bool = True) -> None:
-    """真实 AHh 优先；ESPN补源缺真实亚盘时保持为空，不把欧赔换算冒充真实盘口。"""
+    """真实初盘优先；盘口来源或水位改变时，赛前重算依赖旧盘口的冻结选择。"""
+    previous = record.get("asian_handicap") or {}
+    previous_signature = (previous.get("home_line"), previous.get("source"),
+                          market_side_odds(previous, "home"), market_side_odds(previous, "away"))
     if market:
         update_market_snapshot(record, market, now, "asian_handicap")
     current = record.get("asian_handicap")
@@ -640,6 +661,12 @@ def update_handicap_snapshot(record: dict, market: dict | None, now: datetime,
         record["handicap_source"] = "simulated"
     else:
         record["handicap_source"] = "real"
+    current_signature = ((current or {}).get("home_line"), (current or {}).get("source"),
+                         market_side_odds(current, "home"), market_side_odds(current, "away"))
+    if (previous_signature[0] is not None and previous_signature != current_signature
+            and datetime.fromisoformat(record["kickoff_utc"]) > now):
+        for field in ("recommendation_selection", "integrated_selection", "rule_evaluations"):
+            record.pop(field, None)
 
 
 def prediction_window(now: datetime) -> tuple[datetime, datetime]:
@@ -751,6 +778,7 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
                 home, away, error = home_raw, away_raw, str(exc)
             item = base_fixture(league, home, away, kickoff, "ESPN scoreboard", event_id)
             item["opening_1x2"] = parse_espn_opening_1x2(competition)
+            item["asian_handicap"] = parse_espn_opening_asian_handicap(competition)
             item["espn_home"] = home_raw
             item["espn_away"] = away_raw
             # ESPN 的 completed 状态和双方比分仅在终场后采用；进行中或字段缺失不生成赛果。
@@ -1253,14 +1281,17 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     real_handicap_required = bool(record.get("require_real_handicap")) and record.get("handicap_source") != "real"
     converted = None if real_handicap_required else convert_asian_odds(record.get("opening_1x2"))
     asian_complete = (asian.get("home_line") is not None
-                      and asian.get("bet365_home_odds") and asian.get("bet365_away_odds"))
-    if asian_complete:
-        institution_line, handicap_source = asian.get("home_line"), "asian"
+                      and market_side_odds(asian, "home") and market_side_odds(asian, "away"))
+    selection_market = asian
+    if asian.get("home_line") is not None:
+        institution_line = asian["home_line"]
+        handicap_source = "1x2_converted" if record.get("handicap_source") == "simulated" else "asian"
     elif converted:
         institution_line, handicap_source = converted["home_line"], "1x2_converted"
+        selection_market = converted
     else:
-        institution_line, handicap_source = asian.get("home_line"), "asian"
-        if institution_line is None and handicap:
+        institution_line, handicap_source = None, "asian"
+        if handicap:
             institution_line, handicap_source = handicap.get("market_line"), "model"
     result["pattern_selection"] = evaluate_pattern(
         record.get("league_id"), model_line, institution_line,
@@ -1277,18 +1308,13 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
         result["pattern_selection"] = pattern
     if pattern.get("status") in ("candidate", "observe"):
         side = pattern["side"]
-        if handicap_source == "1x2_converted":
-            side_odds = converted[f"{side}_odds"]
-        elif handicap_source == "asian":
-            side_odds = (asian.get("bet365_home_odds" if side == "home" else "bet365_away_odds"))
-            if side_odds is None and handicap:
-                side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
-        else:
-            side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds") if handicap else None
+        side_odds = market_side_odds(selection_market, side)
+        if side_odds is None and handicap:
+            side_odds = (handicap.get(f"{side}_metrics") or {}).get("odds")
         pattern["odds"] = side_odds
         if side_odds is None and pattern.get("status") == "candidate":
             pattern["status"] = "skip"
-            pattern["reason"] = "本场没有可用的真实盘口赔率，不输出推荐。"
+            pattern["reason"] = "本场没有可用的真实盘口赔率或等效水位，不输出推荐。"
     derived_recommendation = choose_recommendation(handicap, record.get("ranking"), rules)
     if real_handicap_required:
         derived_recommendation = {**derived_recommendation, "status": "skip", "candidate_count": 0,
