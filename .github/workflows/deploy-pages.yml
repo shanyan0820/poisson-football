@@ -6,6 +6,9 @@ on:
     branches: [main]
     paths:
       - predictions.html
+      - prediction_pipeline.py
+      - public_site_data.py
+      - test_prediction_pipeline.py
       - data/fusion_report.json
       - .github/workflows/deploy-pages.yml
   schedule:
