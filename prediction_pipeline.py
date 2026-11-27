@@ -56,6 +56,7 @@ ESPN_RESULT_LEAGUES = {
     "F1": "fra.1", "F2": "fra.2", "N1": "ned.1", "B1": "bel.1",
     "SC0": "sco.1", "T1": "tur.1", "G1": "gre.1",
 }
+MAIN_ESPN_LEAGUES = {code: ESPN_RESULT_LEAGUES[code] for code in MAIN_FIXTURE_LEAGUES}
 
 MODEL_CONFIGS = [
     {"id": "baseline", "name": "联赛均值基准", "description": "每场均使用截至赛前的联赛主、客队进球均值。", "baseline_only": True},
@@ -71,6 +72,11 @@ MODEL_BY_ID = {m["id"]: m for m in MODEL_CONFIGS}
 
 # ESPN 展示名到 football-data 队名。只做明确别名，不用模糊匹配冒充同一支球队。
 ESPN_TEAM_ALIASES = {
+    "Nottingham Forest": "Nott'm Forest", "Racing Santander": "Santander",
+    "Caykur Rizespor": "Rizespor", "1. FC Heidenheim 1846": "Heidenheim",
+    "1. FC Nürnberg": "Nurnberg", "VfL Bochum": "Bochum", "SV Darmstadt 98": "Darmstadt",
+    "FC Groningen": "Groningen", "Borussia Mönchengladbach": "M'gladbach",
+    "CD Sabadell": "Sabadell", "OH Leuven": "Oud-Heverlee Leuven", "KV Kortrijk": "Kortrijk",
     "FC Porto": "Porto", "Sporting CP": "Sp Lisbon", "Sporting Lisbon": "Sp Lisbon",
     "Cardiff City": "Cardiff", "Preston North End": "Preston",
     "Charlton Athletic": "Charlton", "Lincoln City": "Lincoln",
@@ -611,12 +617,17 @@ def update_market_snapshot(record: dict, market: dict | None, now: datetime, fie
     record[field] = {**market, "captured_at": now.astimezone(UTC).isoformat(timespec="seconds")}
 
 
-def update_handicap_snapshot(record: dict, market: dict | None, now: datetime) -> None:
-    """真实 AHh 优先；仅在缺失且未开赛时用初盘欧赔换算，赛后不回填等效盘口。"""
+def update_handicap_snapshot(record: dict, market: dict | None, now: datetime,
+                             allow_simulated: bool = True) -> None:
+    """真实 AHh 优先；ESPN补源缺真实亚盘时保持为空，不把欧赔换算冒充真实盘口。"""
     if market:
         update_market_snapshot(record, market, now, "asian_handicap")
     current = record.get("asian_handicap")
-    if not current and not market:
+    if not allow_simulated and current and str(current.get("source", "")).startswith("等效换算"):
+        record.pop("asian_handicap", None)
+        record.pop("asian_handicap_history", None)
+        current = None
+    if allow_simulated and not current and not market:
         kickoff = datetime.fromisoformat(record["kickoff_utc"])
         opening = record.get("opening_1x2")
         if opening and kickoff > now:
@@ -759,36 +770,102 @@ def parse_espn_events(payloads: list[dict], league: dict, source_names: list[str
     return fixtures
 
 
+def main_fixture_source_freshness(csv_text: str, window_start: datetime) -> dict:
+    """检查主赛程是否仍停留在当前预测周期之前，避免把下载成功误当成数据完整。"""
+    rows = csv.DictReader(io.StringIO(csv_text))
+    kickoffs = []
+    for row in rows:
+        if row.get("Div", "").strip() not in MAIN_FIXTURE_LEAGUES:
+            continue
+        try:
+            naive = datetime.strptime(f"{row['Date']} {row['Time']}", "%d/%m/%Y %H:%M")
+        except (KeyError, ValueError):
+            continue
+        kickoffs.append(naive.replace(tzinfo=LONDON).astimezone(UTC))
+    latest = max(kickoffs) if kickoffs else None
+    return {"latest_kickoff": latest.astimezone(BEIJING).isoformat(timespec="seconds") if latest else None,
+            "stale": latest is None or latest < window_start.astimezone(UTC)}
+
+
+def merge_fixture_sources(primary: list[dict], supplemental: list[dict]) -> list[dict]:
+    """主源优先；ESPN只补同联赛、同球队、同北京日期中不存在的比赛。"""
+    def matchup_key(item):
+        return (item["league_id"], item["home_source"], item["away_source"], item["kickoff_beijing"][:10])
+
+    merged = list(primary)
+    keys = {matchup_key(item) for item in primary}
+    primary_leagues = {item["league_id"] for item in primary}
+    for item in supplemental:
+        if item.get("mapping_error") and item["league_id"] in primary_leagues:
+            continue
+        key = matchup_key(item) if not item.get("mapping_error") else ("espn", fixture_key(item))
+        if key in keys:
+            continue
+        keys.add(key)
+        merged.append(item)
+    return sorted(merged, key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"]))
+
+
 def load_daily_fixtures(dataset: dict, now: datetime) -> tuple[list[dict], list[dict]]:
     leagues = {l["id"]: l for l in dataset["leagues"]}
     window_start, window_end = prediction_window(now)
-    fixtures, coverage = [], []
+    primary, supplemental = [], []
+    primary_error = ""
+    freshness = {"latest_kickoff": None, "stale": True}
     try:
         text = fetch_csv(FIXTURES_URL)
-        fixtures.extend(parse_main_fixtures(text, leagues, window_start, window_end))
-        for league_id in sorted(MAIN_FIXTURE_LEAGUES):
-            coverage.append({"league_id": league_id, "status": "supported", "source": "football-data fixtures.csv"})
+        primary = parse_main_fixtures(text, leagues, window_start, window_end)
+        freshness = main_fixture_source_freshness(text, window_start)
     except Exception as exc:
-        for league_id in sorted(MAIN_FIXTURE_LEAGUES):
-            coverage.append({"league_id": league_id, "status": "error", "reason": str(exc)})
+        primary_error = str(exc)
     start_utc = window_start.astimezone(UTC)
     end_utc = window_end.astimezone(UTC)
     days = sorted({start_utc.date(), end_utc.date()})
-    for league_id, slug in ESPN_LEAGUES.items():
+    espn_errors = {}
+    for league_id, slug in {**MAIN_ESPN_LEAGUES, **ESPN_LEAGUES}.items():
         league = leagues[league_id]
         try:
             payloads = [fetch_json(espn_scoreboard_url(slug, day)) for day in days]
             source_names = sorted({m[k] for m in league["matches"] for k in ["home_source", "away_source"]})
-            fixtures.extend(parse_espn_events(payloads, league, source_names, window_start, window_end))
-            coverage.append({"league_id": league_id, "status": "supported", "source": "ESPN scoreboard"})
+            supplemental.extend(parse_espn_events(payloads, league, source_names, window_start, window_end))
         except Exception as exc:
-            coverage.append({"league_id": league_id, "status": "error", "reason": str(exc)})
+            espn_errors[league_id] = str(exc)
+    fixtures = [{**f, "prediction_window_start": window_start.isoformat(timespec="seconds"),
+                 "prediction_window_end": window_end.isoformat(timespec="seconds")}
+                for f in merge_fixture_sources(primary, supplemental)]
+    coverage = []
+    for league_id in sorted(MAIN_FIXTURE_LEAGUES):
+        added = sum(f["league_id"] == league_id and f["source"] == "ESPN scoreboard" for f in fixtures)
+        item = {"league_id": league_id, "status": "supported",
+                "source": "football-data fixtures.csv + ESPN补源" if added else "football-data fixtures.csv（ESPN已核对）",
+                "primary_stale": freshness["stale"], "primary_latest_kickoff": freshness["latest_kickoff"],
+                "supplemented_fixtures": added}
+        if primary_error:
+            item["primary_error"] = primary_error
+        if league_id in espn_errors:
+            item["fallback_error"] = espn_errors[league_id]
+        if primary_error and league_id in espn_errors:
+            item["status"] = "error"
+            item["reason"] = "主赛程与ESPN补源均失败"
+        elif freshness["stale"]:
+            item["warning"] = "主赛程源未覆盖当前预测周期，已核对ESPN补源"
+            if league_id in espn_errors:
+                item["status"] = "degraded"
+        coverage.append(item)
+    for league_id in sorted(ESPN_LEAGUES):
+        if league_id in espn_errors:
+            coverage.append({"league_id": league_id, "status": "error", "reason": espn_errors[league_id]})
+        else:
+            coverage.append({"league_id": league_id, "status": "supported", "source": "ESPN scoreboard"})
     coverage.append({"league_id": "POL", "status": "unavailable", "reason": "football-data 未提供未赛赛程，ESPN pol.1 当前返回 HTTP 400；回测仍正常。"})
-    unique = {fixture_key(f): {**f,
-                              "prediction_window_start": window_start.isoformat(timespec="seconds"),
-                              "prediction_window_end": window_end.isoformat(timespec="seconds")}
-              for f in fixtures}
-    return sorted(unique.values(), key=lambda f: (f["kickoff_utc"], f["league_id"], f["home"])), coverage
+    if freshness["stale"]:
+        print(f"FIXTURE_SOURCE_STALE latest={freshness['latest_kickoff']} window_start={window_start.isoformat()}")
+    for item in coverage:
+        if item.get("supplemented_fixtures"):
+            print(f"FIXTURE_SUPPLEMENT {item['league_id']} added={item['supplemented_fixtures']}")
+        if item.get("warning") or item["status"] == "degraded":
+            print(f"FIXTURE_SOURCE_WARNING {item}")
+    return fixtures, coverage
 
 
 def load_result_fixtures(dataset: dict, now: datetime, fixtures: list[dict]) -> list[dict]:
@@ -824,6 +901,19 @@ def find_result(fixture: dict, league: dict, max_day_difference: int = 3) -> dic
         return None
     candidates.sort(key=lambda x: (x[0], x[1]))
     return candidates[0][2]
+
+
+def populate_record_predictions(record: dict, league: dict) -> None:
+    history = [to_model_match(m, league["name"]) for m in league["matches"]]
+    for config in MODEL_CONFIGS:
+        try:
+            record["predictions"][config["id"]] = predict_with_config(
+                history, record["home"], record["away"], config)
+        except ValueError as exc:
+            record.setdefault("model_errors", {})[config["id"]] = str(exc)
+    record["status"] = "scheduled" if record["predictions"] else "untracked"
+    if not record["predictions"]:
+        record["status_reason"] = "历史样本不足，未生成预测。"
 
 
 def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict, now: datetime,
@@ -866,28 +956,32 @@ def update_prediction_archive(archive: dict, fixtures: list[dict], dataset: dict
             elif datetime.fromisoformat(fixture["kickoff_utc"]) <= now:
                 record["status_reason"] = "首次读取时已开赛或已结束，不补造赛前预测。"
             else:
-                league = leagues[fixture["league_id"]]
-                history = [to_model_match(m, league["name"]) for m in league["matches"]]
-                for config in MODEL_CONFIGS:
-                    try:
-                        record["predictions"][config["id"]] = predict_with_config(
-                            history, fixture["home"], fixture["away"], config)
-                    except ValueError as exc:
-                        record.setdefault("model_errors", {})[config["id"]] = str(exc)
-                record["status"] = "scheduled" if record["predictions"] else "untracked"
-                if not record["predictions"]:
-                    record["status_reason"] = "历史样本不足，未生成预测。"
+                populate_record_predictions(record, league)
         else:
             # 预测、created_at 与 key 保持不变；允许源站修正开球时间。
             for field in ["kickoff_utc", "kickoff_beijing", "source", "source_event_id",
                           "prediction_window_start", "prediction_window_end"]:
                 if fixture.get(field) is not None:
                     record[field] = fixture[field]
+            # 同一ESPN事件的旧队名映射失败且尚无预测时，允许明确别名修复后首次生成。
+            if (not record.get("predictions") and not fixture.get("mapping_error")
+                    and str(record.get("status_reason", "")).startswith("ESPN 球队无法")
+                    and datetime.fromisoformat(record["kickoff_utc"]) > now):
+                for field in ["home", "away", "home_source", "away_source", "source_date"]:
+                    record[field] = fixture[field]
+                record.pop("status_reason", None)
+                record.pop("model_errors", None)
+                populate_record_predictions(record, league)
         record["ranking"] = fixture["ranking"]
         freeze_elo(record, fixture, elo_maps.get(fixture["league_id"], {}), now)
         if fixture.get("opening_1x2") and not record.get("opening_1x2") and datetime.fromisoformat(record["kickoff_utc"]) > now:
             record["opening_1x2"] = fixture["opening_1x2"]
-        update_handicap_snapshot(record, fixture.get("asian_handicap"), now)
+        if fixture.get("source") == "ESPN scoreboard" and not fixture.get("asian_handicap"):
+            record["require_real_handicap"] = True
+        elif fixture.get("asian_handicap"):
+            record["require_real_handicap"] = False
+        update_handicap_snapshot(record, fixture.get("asian_handicap"), now,
+                                 allow_simulated=not record.get("require_real_handicap", False))
         result = find_result(fixture, league)
         espn_actual = espn_results.get(result_identity(fixture))
         if result or espn_actual:
@@ -1140,7 +1234,8 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     model_line = (expected["away"] - expected["home"]) if expected else (
         -handicap["model_goal_difference"] if handicap and handicap.get("model_goal_difference") is not None else None)
     asian = record.get("asian_handicap") or {}
-    converted = convert_asian_odds(record.get("opening_1x2"))
+    real_handicap_required = bool(record.get("require_real_handicap")) and record.get("handicap_source") != "real"
+    converted = None if real_handicap_required else convert_asian_odds(record.get("opening_1x2"))
     asian_complete = (asian.get("home_line") is not None
                       and asian.get("bet365_home_odds") and asian.get("bet365_away_odds"))
     if asian_complete:
@@ -1160,6 +1255,10 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
     pattern = result["pattern_selection"]
     pattern["handicap_source"] = handicap_source
     pattern["institution_line"] = institution_line
+    if real_handicap_required and pattern.get("status") in ("candidate", "observe"):
+        pattern = {**pattern, "status": "skip", "odds": None,
+                   "reason": "ESPN补源没有真实亚盘赔率，只展示赛程和模型概率，不生成盘口推荐。"}
+        result["pattern_selection"] = pattern
     if pattern.get("status") in ("candidate", "observe"):
         side = pattern["side"]
         if handicap_source == "1x2_converted":
@@ -1175,18 +1274,30 @@ def public_record(record: dict, featured_model_id: str = "stable", now: datetime
             pattern["status"] = "skip"
             pattern["reason"] = "本场没有可用的真实盘口赔率，不输出推荐。"
     derived_recommendation = choose_recommendation(handicap, record.get("ranking"), rules)
+    if real_handicap_required:
+        derived_recommendation = {**derived_recommendation, "status": "skip", "candidate_count": 0,
+                                  "reason": "没有真实亚盘赔率，不生成推荐。"}
     if not gate["recommend_enabled"]:
         derived_recommendation = {**derived_recommendation, "status": "skip", "candidate_count": 0,
                                   "featured_class": None, "reason": gate["reason"]}
     recommendation = freeze_recommendation_selection(record, derived_recommendation, now or datetime.now(UTC))
+    if real_handicap_required and recommendation.get("status") == "candidate":
+        recommendation = {**derived_recommendation, "tracking_eligible": False, "freeze_status": "market_unavailable"}
+        record["recommendation_selection"] = recommendation
     result["recommendation_selection"] = recommendation
     derived_selection = choose_integrated_selection(handicap, record.get("ranking"), rules)
+    if real_handicap_required:
+        derived_selection = {**derived_selection, "status": "skip", "featured": False, "candidate_count": 0,
+                             "reason": "没有真实亚盘赔率，不生成重点推荐。"}
     if not gate["t1_enabled"]:
         derived_selection = {**derived_selection, "status": "skip", "featured": False,
                              "candidate_count": 0,
                              "reason": gate["reason"] if not gate["recommend_enabled"]
                              else "该联赛原有重点规则五季真实收益为负，已停用；本场走联赛规律信号。"}
     selection = freeze_integrated_selection(record, derived_selection, now or datetime.now(UTC))
+    if real_handicap_required and selection.get("status") == "candidate":
+        selection = {**derived_selection, "tracking_eligible": False, "freeze_status": "market_unavailable"}
+        record["integrated_selection"] = selection
     result["integrated_selection"] = selection
     result["featured_selection"] = selection
     result["market_settlement"] = settle_record_markets(record, handicap, selection, recommendation,
@@ -1221,7 +1332,7 @@ def build_public_dataset(dataset: dict, archive: dict, fixtures: list[dict], cov
             "brier": "三分类 Brier = (p主胜-y主胜)² + (p平-y平)² + (p客胜-y客胜)²。",
             "backtest": f"逐场滚动回测，每场仅使用该场之前的赛果；每联赛至少先有 {MIN_HISTORY_MATCHES} 场历史。",
             "freeze": "北京时间每日12:00生成并冻结当日12:00至次日12:00预测；20:00和次日02:00只回写赛果，不改推荐。",
-            "handicap": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发，全部独立结算。A 级只作重点观察，不代表实盘验证通过。机构盘口优先真实AHh初盘，缺失时等效值标记simulated；无真实亚盘赔率则不构造收益。",
+            "handicap": "五季合并切出的 15 条精确盘口规则；机构盘口精确命中、模型盘口越过阈值才触发，全部独立结算。A 级只作重点观察，不代表实盘验证通过。football-data 真实AHh初盘优先；ESPN补源没有真实亚盘时只展示赛程和模型概率，不展示模拟盘口，也不生成盘口推荐。",
             "market_handicap": "市场盘口=V2B：赛季场均积分盘80%＋近6场场均积分盘20%；负数主队强，正数客队强，双方赛前均需满7轮。",
         },
         "featured_model_id": featured_model_id,
