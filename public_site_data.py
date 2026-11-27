@@ -10,6 +10,7 @@ from pathlib import Path
 
 from generate_data import TEAM_ZH
 
+TEAM_SORT_SOURCE = {chinese: source for source, chinese in TEAM_ZH.items()}
 UTC = timezone.utc
 BEIJING = timezone(timedelta(hours=8))
 
@@ -315,8 +316,8 @@ def update_fusion_report(report, public_records, now):
     for row in live:
         merged[row["key"] or (row["date"], row["league_id"], row["home"], row["away"])] = row
     matches = list(merged.values())
-    # 保留基线原有的同时间、同联赛顺序，避免中文化改变浮点汇总舍入。
-    matches.sort(key=lambda row: (row.get("kickoff_utc") or row["date"], row["league_id"]), reverse=True)
+    # 按源队名维持基线顺序，中文展示不得改变浮点汇总舍入。
+    matches.sort(key=lambda row: (row.get("kickoff_utc") or row["date"], row["league_id"], TEAM_SORT_SOURCE.get(row["home"], row["home"])), reverse=True)
     by_league = defaultdict(list)
     for row in matches:
         by_league[row["league_id"]].append(row)
