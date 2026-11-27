@@ -103,20 +103,13 @@ function analysisHtml(r){
  return`<div class="analysis-table">${cells.map(([label,value,cls,tier])=>`<div class="analysis-cell ${cls}"><span>${label}</span><b>${value}</b>${tier?`<small>${tier}</small>`:''}</div>`).join('')}</div>`;
 }
 function referenceScores(r){
- const p=r.featured_prediction,xg=p?.expected_goals,s=r.pattern_selection;if(!xg)return[];
- const selected=s?.status==='candidate';if(!selected)return(p?.top_scores||[]).slice(0,3);
- const home=s.side==='home',allow=home?(h,a)=>h>a:(h,a)=>a>h;
- const hp=[Math.exp(-Number(xg.home))],ap=[Math.exp(-Number(xg.away))],scores=[],directional=[];
- for(let i=1;i<=10;i++){hp[i]=hp[i-1]*Number(xg.home)/i;ap[i]=ap[i-1]*Number(xg.away)/i}
- for(let h=0;h<=10;h++)for(let a=0;a<=10;a++){const item={home:h,away:a,probability:hp[h]*ap[a],distance:Math.abs(h-Number(xg.home))+Math.abs(a-Number(xg.away))};scores.push(item);if(allow(h,a))directional.push(item)}
- const first=directional.sort((a,b)=>b.probability-a.probability).slice(0,2),used=new Set(first.map(x=>`${x.home}:${x.away}`));
- const third=scores.sort((a,b)=>a.distance-b.distance||b.probability-a.probability).find(x=>!used.has(`${x.home}:${x.away}`));
- return third?[...first,third]:first;
+ const p=r.featured_prediction,s=r.pattern_selection;
+ if(s?.status==='candidate')return Array.isArray(r.reference_scores)?r.reference_scores.slice(0,3):[];
+ return(p?.top_scores||[]).slice(0,3);
 }
 function referenceScoresHtml(r){
- const scores=referenceScores(r),s=r.pattern_selection,selected=s?.status==='candidate';if(!scores.length)return'';
- const note=selected?`前两项符合「${s.side==='home'?'主队':'客队'}」· 第三项参考预期进球`:'按模型概率排序';
- return`<div class="score-section"><div class="score-heading"><b>参考比分</b><span>${note}</span></div><div class="score-grid">${scores.map(score=>`<div class="score-item">${score.home} : ${score.away}</div>`).join('')}</div></div>`;
+ const scores=referenceScores(r);if(!scores.length)return'';
+ return`<div class="score-section"><div class="score-heading"><b>参考比分</b></div><div class="score-grid">${scores.map(score=>`<div class="score-item">${score.home} : ${score.away}</div>`).join('')}</div></div>`;
 }
 function patternText(p){const n=p.n_all||0,wr=p.wr_all,r=p.roi_all;return `五季 ${n} 注 · 胜率 ${wr==null?'—':(wr*100).toFixed(1)+'%'}${r==null?'':` · ROI ${(r*100).toFixed(1)}%`}`}
 function recommendationHtml(r){const p=r.pattern_selection||{};if(p.status==='candidate'){const level=p.level||'B',cls=level==='S'?'selected featured':level==='A'?'selected grade-a':'selected pattern',n=Number(p.confirmation_count||1),label=level==='S'?(n>=3?'S级·三重确认':n===2?'S级·双重确认':'S级·磐石'):level+'级推荐';return `<div class="recommendation-v2 ${cls}"><span class="rec-label">${label}</span><span class="rec-direction">${p.side==='home'?'主队':'客队'}</span><span class="rec-market">${patternText(p)}</span><span class="rec-reason"><b>分析依据｜</b>${esc(p.reason)}</span></div>`}return '<div class="recommendation-v2"><span class="rec-label">本场观察</span><span class="rec-direction">暂无推荐</span><span class="rec-reason">本场未触发融合规则，或不同规则方向冲突。</span></div>'}
