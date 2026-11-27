@@ -78,7 +78,7 @@ function resultClass(outcome){if(outcome==='全赢')return'result-win';if(outcom
 function matchHtml(match){
  const selection=match.selection==='home'?'主队':'客队';
  const badge=match.grade==='S'?`S级·磐石${match.rule_count>1?` · ${match.rule_count}条同向`:''}`:`${match.grade}级${match.rule_count>1?` · ${match.rule_count}条同向`:''}`;
- return`<article class="match-item"><div class="match-top"><span>${esc(match.date)} · ${esc(match.league_name)}</span><span class="match-grade">${esc(badge)}</span></div><div class="match-teams"><span class="match-home">${esc(match.home)}</span><span class="match-vs">VS</span><span class="match-away">${esc(match.away)}</span></div><div class="match-score">实际比分 ${esc(match.score)}</div><div class="match-meta"><div><span>机构让球</span><b>主队 ${signedLine(match.home_line)}</b></div><div><span>推荐方向</span><b>${selection} ${signedLine(match.selection_line)}</b></div><div><span>输赢结果</span><b class="${resultClass(match.outcome)}">${esc(match.outcome)}</b></div></div></article>`;
+ return`<article class="match-item"><div class="match-top"><span>${esc(match.date)} · ${esc(match.league_name)}</span><span class="match-grade">${esc(badge)}</span></div><div class="match-teams"><span class="match-home">${esc(match.home)}</span><span class="match-vs">VS</span><span class="match-away">${esc(match.away)}</span></div><div class="match-score">实际比分 ${esc(match.score)}</div><div class="match-meta"><div><span>机构让球</span><b>主队 ${signedLine(match.home_line)}</b></div><div><span>推荐方向</span><b>${selection}</b></div><div><span>输赢结果</span><b class="${resultClass(match.outcome)}">${esc(match.outcome)}</b></div></div></article>`;
 }
 function renderMatches(){
  const league=$('league').value,grade=$('model').value;
