@@ -48,9 +48,11 @@ class PanshiEloTest(unittest.TestCase):
         self.assertEqual(report['grades']['S']['overall']['n'],2105);self.assertEqual(report['version'],'fusion-panshi-35-7-v8')
         self.assertEqual(report['double']['n'],1954)
         self.assertEqual(report['triple']['n'],10)
-        self.assertEqual(report['current']['net_wins'],29)
-        self.assertEqual(report['cutoff_utc'],'2026-11-27T04:00:00+00:00')
-        self.assertTrue(all(row['date']<='2026-11-27' for row in report['current']['matches']))
+        current=report['current'];self.assertEqual(current['n'],len(current['matches']))
+        self.assertEqual(current['net_wins'],current['full_win']+current['half_win']-current['full_loss']-current['half_loss'])
+        self.assertEqual(sum(report['grades'][g]['current']['n'] for g in ('S','A','B')),current['n'])
+        cutoff=datetime.fromisoformat(report['cutoff_utc']);self.assertEqual((cutoff.hour,cutoff.minute),(4,0))
+        self.assertTrue(all(not row.get('kickoff_utc') or datetime.fromisoformat(row['kickoff_utc'])<cutoff for row in current['matches']))
     def test_converted_market_can_trigger_panshi_in_refresh_path(self):
         from refresh_validated_public import refresh
         record={'league_id':'TEST','handicap_source':'simulated','elo_difference':160,
@@ -62,4 +64,37 @@ class PanshiEloTest(unittest.TestCase):
         self.assertEqual(record['pattern_selection']['side'],'home')
         self.assertEqual(record['pattern_selection']['handicap_source'],'1x2_converted')
         self.assertEqual(record['pattern_selection']['odds'],1.9)
+def fusion_daily_base():
+    old={'date':'2026-11-23','league':'E0','league_name':'英超','home':'旧主队','away':'旧客队','score':'2-0','grade':'A','selection':'home','home_line':-1.0,'outcome':'全赢','unit_profit':.9}
+    return {'version':'fusion-panshi-35-7-v8','overall':{'n':12099},'current':{'matches':[old]},
+            'grades':{g:{'overall':{'n':100},'current':{}} for g in ('S','A','B')},'double':{'n':1954},'triple':{'n':10}}
+
+def fusion_daily_record(kickoff='2026-11-25T20:00:00+00:00'):
+    return {'key':'live-1','league_id':'E1','league_name':'英冠','home':'新主队','away':'新客队','kickoff_utc':kickoff,
+            'actual':{'date':'2026-11-25','home_goals':2,'away_goals':0},
+            'pattern_selection':{'rule_version':'fusion-panshi-35-7-v8','status':'candidate','side':'home','line':-1.0,'odds':1.9,'level':'B','confirmation_count':1}}
+
+class FusionDailyCurrentTest(unittest.TestCase):
+    def test_latest_noon_cutoff(self):
+        from public_site_data import latest_noon_cutoff
+        self.assertEqual(latest_noon_cutoff(datetime.fromisoformat('2026-11-28T03:59:00+00:00')).isoformat(),'2026-11-27T04:00:00+00:00')
+        self.assertEqual(latest_noon_cutoff(datetime.fromisoformat('2026-11-28T04:00:00+00:00')).isoformat(),'2026-11-28T04:00:00+00:00')
+    def test_full_season_daily_append_is_idempotent(self):
+        from public_site_data import update_fusion_report
+        now=datetime.fromisoformat('2026-11-27T11:00:00+00:00');base=fusion_daily_base()
+        updated=update_fusion_report(base,[fusion_daily_record()],now)
+        self.assertEqual(updated['current']['n'],2);self.assertEqual(updated['current']['net_wins'],2)
+        self.assertEqual(updated['grades']['A']['current']['n'],1);self.assertEqual(updated['grades']['B']['current']['n'],1)
+        self.assertEqual(updated['daily_current']['season'],'2026-27');self.assertEqual(updated['daily_current']['baseline_through'],'2026-11-23')
+        self.assertEqual(updated['current']['matches'][0]['home'],'新主队');self.assertEqual(updated['current']['matches'][1]['home'],'旧主队')
+        again=update_fusion_report(updated,[fusion_daily_record()],now)
+        self.assertEqual(again['current'],updated['current']);self.assertEqual(again['current']['n'],2)
+        self.assertEqual(updated['overall'],base['overall']);self.assertEqual(updated['double'],base['double'])
+    def test_after_noon_and_unfinished_are_excluded(self):
+        from public_site_data import update_fusion_report
+        now=datetime.fromisoformat('2026-11-27T11:00:00+00:00')
+        self.assertEqual(update_fusion_report(fusion_daily_base(),[fusion_daily_record('2026-11-27T04:00:00+00:00')],now)['current']['n'],1)
+        unfinished=fusion_daily_record();unfinished['actual']=None
+        self.assertEqual(update_fusion_report(fusion_daily_base(),[unfinished],now)['current']['n'],1)
+
 if __name__=='__main__':unittest.main()
