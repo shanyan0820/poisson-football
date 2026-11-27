@@ -311,17 +311,24 @@ def update_fusion_report(report, public_records, now):
     matches.sort(key=lambda row: (row.get("kickoff_utc") or row["date"], row["league_id"], row["home"]), reverse=True)
     by_league = defaultdict(list)
     for row in matches:
-        by_league[row["league_name"]].append(row)
+        by_league[row["league_id"]].append(row)
     current = fusion_summary(matches)
     current["by_league"] = {name: fusion_summary(rows) for name, rows in sorted(by_league.items())}
+    current["league_names"] = {row["league_id"]: row["league_name"] for row in matches if row.get("league_id")}
     current["matches"] = matches
     report["current"] = current
     report["cutoff_utc"] = cutoff.isoformat(timespec="seconds")
-    report["cutoff"] = cutoff.astimezone(BEIJING).isoformat(timespec="seconds")
+    report["cutoff"] = cutoff.astimezone(BEIJING).strftime("%Y-%m-%d %H:%M") + "（北京时间）"
     report["grades"] = dict(report["grades"])
     for grade in ("S", "A", "B"):
+        grade_rows = [row for row in matches if row.get("level") == grade]
+        grade_leagues = defaultdict(list)
+        for row in grade_rows:
+            grade_leagues[row["league_id"]].append(row)
         report["grades"][grade] = dict(report["grades"][grade])
-        report["grades"][grade]["current"] = fusion_summary([row for row in matches if row.get("level") == grade])
+        report["grades"][grade]["current"] = fusion_summary(grade_rows)
+        report["grades"][grade]["current"]["by_league"] = {
+            league_id: fusion_summary(rows) for league_id, rows in sorted(grade_leagues.items())}
     report["daily_current"] = {
         "version": "fusion-current-live-v1", "generated_at": now.astimezone(UTC).isoformat(timespec="seconds"),
         "source": "赛前冻结预测归档＋每日真实赛果", "season": "2026-27", "baseline_through": baseline_through,
