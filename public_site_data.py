@@ -315,7 +315,8 @@ def update_fusion_report(report, public_records, now):
     for row in live:
         merged[row["key"] or (row["date"], row["league_id"], row["home"], row["away"])] = row
     matches = list(merged.values())
-    matches.sort(key=lambda row: (row.get("kickoff_utc") or row["date"], row["league_id"], row["home"]), reverse=True)
+    # 保留基线原有的同时间、同联赛顺序，避免中文化改变浮点汇总舍入。
+    matches.sort(key=lambda row: (row.get("kickoff_utc") or row["date"], row["league_id"]), reverse=True)
     by_league = defaultdict(list)
     for row in matches:
         by_league[row["league_id"]].append(row)
