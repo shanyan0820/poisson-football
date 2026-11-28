@@ -87,6 +87,8 @@ jobs:
               ranking = fixture.get('ranking', {})
               if ranking.get('rank_ratio') is not None:
                   assert 0 <= ranking['rank_ratio'] <= 1
+              if ranking.get('market_handicap') is not None:
+                  assert ranking['season_market'] is not None and ranking['recent6_market'] is not None
                   expected = .8 * ranking['season_market'] + .2 * ranking['recent6_market']
                   assert abs(ranking['market_handicap'] - expected) < 1e-9
                   assert ranking['market_version'] == 'points_form20'
